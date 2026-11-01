@@ -1,0 +1,18 @@
+[Unit]
+Description=Radio Remote (web remote head for a two-way radio)
+After=network-online.target sound.target
+Wants=network-online.target
+
+[Service]
+User=radio
+Group=radio
+SupplementaryGroups=gpio audio
+WorkingDirectory=/opt/radio-remote
+ExecStart=/opt/radio-remote/.venv/bin/python -m server -c /opt/radio-remote/config.yaml
+Restart=always
+RestartSec=3
+# Audio thread benefits from a bit of priority.
+Nice=-5
+
+[Install]
+WantedBy=multi-user.target

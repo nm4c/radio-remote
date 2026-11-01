@@ -1,0 +1,64 @@
+# Radio Remote – configuration
+# Copy to config.yaml and edit.
+
+radio:
+  # Shown in the web UI header and browser tab.
+  name: "IC-F621"
+
+server:
+  host: 0.0.0.0
+  port: 8080
+  # Shared password for operators. CHANGE THIS.
+  password: "change-me"
+  # Optional TLS (browsers only allow microphone access over HTTPS or localhost).
+  # Easiest alternative: `sudo tailscale serve --bg 8080` – see README.
+  tls_cert: null
+  tls_key: null
+  # Where the last known channel is remembered between restarts.
+  state_file: state.json
+
+gpio:
+  # gpiozero = real Raspberry Pi pins, mock = log only (for development on a laptop)
+  backend: gpiozero
+  # BCM pin numbers. 17/27/22 default to pull-DOWN at boot, so the radio
+  # will not key up while the Pi is booting. Avoid GPIO 0-8 (pulled high at boot).
+  ptt_pin: 17
+  up_pin: 27
+  down_pin: 22
+  # true = GPIO high turns the optocoupler LED on (normal wiring in docs/HARDWARE.md)
+  active_high: true
+  # Optional: input from the radio's busy/squelch-open signal (via opto).
+  # If null, "busy" is estimated from RX audio level instead.
+  busy_pin: null
+  # true = enable internal pull-up, input is "busy" when pulled LOW (open-collector/opto)
+  busy_pull_up: true
+
+channel:
+  count: 16            # channels programmed in the radio's zone
+  wrap: true           # does UP on the last channel go to channel 1?
+  start: 1             # assumed channel on first ever start (use "Sync" in the UI to correct)
+  press_ms: 120        # how long each UP/DOWN "button press" is held
+  gap_ms: 250          # pause between presses when jumping several channels
+  names:
+    1: "Ops 1"
+    2: "Ops 2"
+    3: "Site Repeater"
+
+ptt:
+  max_tx_seconds: 120  # hard transmit time limit (server-side timeout timer)
+  hold_timeout_ms: 1500  # drop PTT if the browser stops sending keepalives (network loss)
+  tail_ms: 400         # max time to finish playing buffered audio after PTT release
+
+audio:
+  # sounddevice = real sound card, mock = test tone generator (development)
+  backend: sounddevice
+  # Device name substring (see `python -m sounddevice`) or index. null = system default.
+  input_device: null
+  output_device: null
+  device_rate: 48000   # sound card rate; must be an integer multiple of wire_rate
+  wire_rate: 16000     # rate sent over the network
+  frame_ms: 20
+  rx_gain: 1.0         # radio -> browser
+  tx_gain: 1.0         # browser -> radio
+  tx_prebuffer_ms: 80  # jitter buffer before TX audio starts playing to the radio
+  busy_threshold_dbfs: -45  # RX level considered "signal present" if no busy_pin
