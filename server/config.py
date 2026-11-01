@@ -25,6 +25,7 @@ DEFAULTS = {
         "active_high": True,
         "busy_pin": None,
         "busy_pull_up": True,
+        "busy_invert": False,
     },
     "channel": {
         "count": 16,

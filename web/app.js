@@ -51,39 +51,64 @@ function showLogin(error) {
 }
 
 // ---------- audio ----------
+const IS_IOS = /iPhone|iPad|iPod/.test(navigator.userAgent)
+  || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1); // iPadOS reports as Mac
+
+// Must be called from a click/tap handler the first time (browsers require a user gesture).
 async function setupAudio() {
-  if (S.ctx) {
-    await S.ctx.resume();
-    return;
+  if (!S.ctx) {
+    // Create the context synchronously inside the gesture: iOS refuses to start it otherwise.
+    const ctx = new AudioContext({ latencyHint: "interactive" });
+    ctx.onstatechange = updateAudioHint;
+    S.ctx = ctx;
+    const resumed = ctx.resume();
+    await ctx.audioWorklet.addModule("/static/worklet.js");
+    const rx = new AudioWorkletNode(ctx, "rx-player", {
+      numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [1],
+    });
+    rx.connect(ctx.destination);
+    rx.port.postMessage({ gain: Number($("#vol").value) });
+    S.rxNode = rx;
+    await resumed;
   }
-  const ctx = new AudioContext({ latencyHint: "interactive" });
-  await ctx.audioWorklet.addModule("/static/worklet.js");
+  await setupMic();
+  updateAudioHint();
+}
 
-  const rx = new AudioWorkletNode(ctx, "rx-player", {
-    numberOfInputs: 0, numberOfOutputs: 1, outputChannelCount: [1],
-  });
-  rx.connect(ctx.destination);
-  rx.port.postMessage({ gain: Number($("#vol").value) });
-  S.ctx = ctx;
-  S.rxNode = rx;
+function micLive() {
+  return !!S.micStream && S.micStream.getAudioTracks().some((t) => t.readyState === "live");
+}
 
+// (Re)acquire the microphone. iOS can end the mic track after a phone call, Siri, or a lock.
+function setupMic() {
+  if (micLive()) return Promise.resolve();
+  if (!S.micPending) S.micPending = acquireMic().finally(() => { S.micPending = null; });
+  return S.micPending;
+}
+
+async function acquireMic() {
+  if (S.micSource) { S.micSource.disconnect(); S.micSource = null; }
   try {
     if (!window.isSecureContext) throw new Error("insecure context");
     const mic = await navigator.mediaDevices.getUserMedia({
       audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true },
     });
-    const tx = new AudioWorkletNode(ctx, "tx-capture", {
-      numberOfInputs: 1, numberOfOutputs: 0,
-      processorOptions: { frameSamples: S.frameSamples },
-    });
-    ctx.createMediaStreamSource(mic).connect(tx);
-    tx.port.postMessage({ gain: Number($("#micGain").value) });
-    tx.port.onmessage = (e) => {
-      const d = e.data;
-      if (d.level !== undefined) $("#micMeter").style.width = `${Math.min(100, d.level * 140)}%`;
-      if (d.frame) sendFrame(d.frame);
-    };
-    S.txNode = tx;
+    if (!S.txNode) {
+      const tx = new AudioWorkletNode(S.ctx, "tx-capture", {
+        numberOfInputs: 1, numberOfOutputs: 0,
+        processorOptions: { frameSamples: S.frameSamples },
+      });
+      tx.port.postMessage({ gain: Number($("#micGain").value) });
+      tx.port.onmessage = (e) => {
+        const d = e.data;
+        if (d.level !== undefined) $("#micMeter").style.width = `${Math.min(100, d.level * 140)}%`;
+        if (d.frame) sendFrame(d.frame);
+      };
+      S.txNode = tx;
+    }
+    S.micSource = S.ctx.createMediaStreamSource(mic);
+    S.micSource.connect(S.txNode);
+    S.micStream = mic;
     S.micOk = true;
   } catch (err) {
     S.micOk = false;
@@ -91,7 +116,32 @@ async function setupAudio() {
       ? `Microphone unavailable (${err.message}). Receive only.`
       : "Microphone needs HTTPS. Receive only.", "error");
   }
-  await ctx.resume();
+  render();
+}
+
+// Restart audio after iOS interrupted or suspended it. Call it from tap handlers when possible.
+function wakeAudio() {
+  if (!S.ctx) return;
+  if (S.ctx.state !== "running") S.ctx.resume().then(updateAudioHint, () => {});
+  if (S.micOk && !micLive()) setupMic();
+}
+
+function updateAudioHint() {
+  $("#audioHint").hidden = !(S.ctx && S.authed && S.ctx.state !== "running");
+}
+
+// Keep the screen on while connected (iOS stops audio when the phone locks).
+async function keepAwake(on) {
+  try {
+    if (on && !S.wakeLock && "wakeLock" in navigator && !document.hidden) {
+      S.wakeLock = await navigator.wakeLock.request("screen");
+      S.wakeLock.addEventListener("release", () => { S.wakeLock = null; });
+    } else if (!on && S.wakeLock) {
+      const lock = S.wakeLock;
+      S.wakeLock = null;
+      await lock.release();
+    }
+  } catch { /* not supported or refused: page still works */ }
 }
 
 function sendFrame(buf) {
@@ -156,6 +206,8 @@ function handle(m) {
       setStatus("online", `Online · ${m.name}`);
       $("#login").hidden = true;
       $("#head").hidden = false;
+      keepAwake(true);
+      updateAudioHint();
       break;
     case "hello":
       S.channels = m.channels;
@@ -183,8 +235,10 @@ function handle(m) {
 
 // ---------- PTT ----------
 function pttPress() {
+  wakeAudio(); // a PTT press is a user gesture, so iOS will let us restart audio here
   if (S.pttWanted || !S.authed || !S.ws) return;
   if (!S.micOk) { toast("No microphone – can't transmit"); return; }
+  if (!micLive()) { toast("Restarting microphone. Press PTT again."); return; }
   const st = S.server;
   if (st && st.ptt.active && !st.ptt.mine) { toast(`Radio in use by ${st.ptt.by}`); return; }
   if (st && st.stepping) { toast("Wait for channel change to finish"); return; }
@@ -232,7 +286,18 @@ function bindPtt() {
   });
   // Never leave the radio keyed if the window loses focus.
   window.addEventListener("blur", () => pttRelease());
-  document.addEventListener("visibilitychange", () => { if (document.hidden) pttRelease(); });
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      pttRelease();
+    } else if (S.authed) {
+      keepAwake(true); // the wake lock is dropped whenever the page is hidden
+      wakeAudio();
+      // iOS may have silently killed the socket while we were in the background.
+      if (!S.ws && !S.manualClose) connect();
+    }
+  });
+  // Any tap counts as a gesture that lets iOS resume interrupted audio.
+  document.addEventListener("pointerdown", wakeAudio, true);
 }
 
 // ---------- rendering ----------
@@ -301,6 +366,7 @@ function init() {
   const saved = store.get("password");
   if (saved) { $("#password").value = saved; $("#remember").checked = true; }
   $("#secureHint").hidden = window.isSecureContext;
+  $("#iosNote").hidden = !IS_IOS;
 
   $("#loginForm").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -327,6 +393,8 @@ function init() {
     S.authed = false;
     pttRelease();
     if (S.ws) S.ws.close();
+    keepAwake(false);
+    updateAudioHint();
     setStatus("offline", "Offline");
     showLogin();
   });

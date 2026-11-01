@@ -60,6 +60,7 @@ class Radio:
         self._up = _output(backend, g["up_pin"], g["active_high"], "UP")
         self._down = _output(backend, g["down_pin"], g["active_high"], "DOWN")
         self._busy = _input(backend, g["busy_pin"], g["busy_pull_up"])
+        self._busy_invert = bool(g.get("busy_invert", False))
 
         self.count = int(c["count"])
         self.wrap = bool(c["wrap"])
@@ -87,7 +88,7 @@ class Radio:
     @property
     def busy_input(self):
         """True/False from the hardware busy line, or None if not wired."""
-        return None if self._busy is None else bool(self._busy.is_active)
+        return None if self._busy is None else bool(self._busy.is_active) != self._busy_invert
 
     # ---- PTT --------------------------------------------------------------
 

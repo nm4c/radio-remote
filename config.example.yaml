@@ -27,11 +27,13 @@ gpio:
   down_pin: 22
   # true = GPIO high turns the optocoupler LED on (normal wiring in docs/HARDWARE.md)
   active_high: true
-  # Optional: input from the radio's busy/squelch-open signal (via opto).
+  # Optional: input from the radio's busy/squelch-open signal (via opto U4, GPIO23 = pin 16).
   # If null, "busy" is estimated from RX audio level instead.
   busy_pin: null
   # true = enable internal pull-up, input is "busy" when pulled LOW (open-collector/opto)
   busy_pull_up: true
+  # true if the radio's signal is the other way round (opto LED is ON when the channel is idle)
+  busy_invert: false
 
 channel:
   count: 16            # channels programmed in the radio's zone

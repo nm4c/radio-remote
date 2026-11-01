@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1190 830" width="1190" height="830" font-family="Helvetica, Arial, sans-serif" font-size="13">
+  <style>
+    .pi { stroke: #1d4ed8; stroke-width: 2; fill: none; }
+    .rd { stroke: #c2410c; stroke-width: 2; fill: none; }
+    .part { fill: #ffffff; stroke: #333; stroke-width: 1.5; }
+    .lbl { fill: #222; }
+    .sm { font-size: 11px; fill: #555; }
+    .hd { font-size: 12px; font-weight: bold; fill: #444; letter-spacing: .04em; }
+    .dotp { fill: #1d4ed8; }
+    .dotr { fill: #c2410c; }
+  </style>
+  <rect width="1190" height="830" fill="#ffffff"/>
+  <text x="30" y="28" font-size="18" font-weight="bold" fill="#111">Radio Remote: wiring</text>
+  <text x="300" y="28" class="sm">Blue = Pi / sound-card side.  Orange = radio side.  The two sides only meet through optocouplers and transformers.  Dot = joined, plain crossing = not joined.</text>
+
+  <!-- ===== Raspberry Pi ===== -->
+  <rect x="30" y="60" width="200" height="410" rx="10" fill="#eef6ee" stroke="#2e7d32" stroke-width="2"/>
+  <text x="130" y="86" text-anchor="middle" font-weight="bold" font-size="15">Raspberry Pi</text>
+  <text x="130" y="103" text-anchor="middle" class="sm">40-pin header (physical pin · BCM)</text>
+  <text x="222" y="122" text-anchor="end" class="lbl">pin 11 · GPIO17</text>
+  <text x="222" y="202" text-anchor="end" class="lbl">pin 13 · GPIO27</text>
+  <text x="222" y="282" text-anchor="end" class="lbl">pin 15 · GPIO22</text>
+  <text x="222" y="362" text-anchor="end" class="lbl">pin 16 · GPIO23</text>
+  <text x="222" y="434" text-anchor="end" class="lbl">pin 9 · GND</text>
+  <circle cx="230" cy="118" r="4" class="dotp"/><circle cx="230" cy="198" r="4" class="dotp"/>
+  <circle cx="230" cy="278" r="4" class="dotp"/><circle cx="230" cy="358" r="4" class="dotp"/>
+  <circle cx="230" cy="430" r="4" class="dotp"/>
+
+  <!-- USB cable -->
+  <path d="M130 470 V550" class="pi" stroke-dasharray="6 4"/>
+  <text x="140" y="514" class="sm">USB cable</text>
+
+  <!-- ===== Control section ===== -->
+  <text x="265" y="52" class="hd">CONTROL: OPTOCOUPLERS (PC817)</text>
+
+  <!-- Pi GND bus -->
+  <path d="M230 430 H350 V142" class="pi"/>
+  <circle cx="350" cy="222" r="3.5" class="dotp"/><circle cx="350" cy="302" r="3.5" class="dotp"/><circle cx="350" cy="382" r="3.5" class="dotp"/>
+  <!-- Radio GND bus -->
+  <path d="M560 142 V430 H900" class="rd"/>
+  <circle cx="560" cy="222" r="3.5" class="dotr"/><circle cx="560" cy="302" r="3.5" class="dotr"/><circle cx="560" cy="382" r="3.5" class="dotr"/>
+
+  <!-- Row: PTT (c=130) -->
+  <text x="440" y="94" text-anchor="middle" class="hd">PTT</text>
+  <path d="M230 118 H265 M325 118 H380" class="pi"/>
+  <rect x="265" y="108" width="60" height="20" class="part"/><text x="295" y="122" text-anchor="middle">330Ω</text>
+  <path d="M380 142 H350" class="pi"/>
+  <rect x="380" y="100" width="120" height="60" rx="4" class="part"/>
+  <text x="440" y="134" text-anchor="middle" font-weight="bold">U1</text>
+  <text x="386" y="114" class="sm">1</text><text x="386" y="155" class="sm">2</text>
+  <text x="494" y="114" class="sm" text-anchor="end">4</text><text x="494" y="155" class="sm" text-anchor="end">3</text>
+  <path d="M500 118 H900 M500 142 H560" class="rd"/>
+
+  <!-- Row: UP (c=210) -->
+  <text x="440" y="174" text-anchor="middle" class="hd">UP</text>
+  <path d="M230 198 H265 M325 198 H380" class="pi"/>
+  <rect x="265" y="188" width="60" height="20" class="part"/><text x="295" y="202" text-anchor="middle">330Ω</text>
+  <path d="M380 222 H350" class="pi"/>
+  <rect x="380" y="180" width="120" height="60" rx="4" class="part"/>
+  <text x="440" y="214" text-anchor="middle" font-weight="bold">U2</text>
+  <text x="386" y="194" class="sm">1</text><text x="386" y="235" class="sm">2</text>
+  <text x="494" y="194" class="sm" text-anchor="end">4</text><text x="494" y="235" class="sm" text-anchor="end">3</text>
+  <path d="M500 198 H900 M500 222 H560" class="rd"/>
+
+  <!-- Row: DOWN (c=290) -->
+  <text x="440" y="254" text-anchor="middle" class="hd">DOWN</text>
+  <path d="M230 278 H265 M325 278 H380" class="pi"/>
+  <rect x="265" y="268" width="60" height="20" class="part"/><text x="295" y="282" text-anchor="middle">330Ω</text>
+  <path d="M380 302 H350" class="pi"/>
+  <rect x="380" y="260" width="120" height="60" rx="4" class="part"/>
+  <text x="440" y="294" text-anchor="middle" font-weight="bold">U3</text>
+  <text x="386" y="274" class="sm">1</text><text x="386" y="315" class="sm">2</text>
+  <text x="494" y="274" class="sm" text-anchor="end">4</text><text x="494" y="315" class="sm" text-anchor="end">3</text>
+  <path d="M500 278 H900 M500 302 H560" class="rd"/>
+
+  <!-- Row: BUSY (c=370) – reversed: LED on radio side -->
+  <text x="440" y="334" text-anchor="middle" class="hd">BUSY (optional)</text>
+  <path d="M230 358 H380 M380 382 H350" class="pi"/>
+  <rect x="380" y="340" width="120" height="60" rx="4" class="part"/>
+  <text x="440" y="374" text-anchor="middle" font-weight="bold">U4</text>
+  <text x="386" y="354" class="sm">4</text><text x="386" y="395" class="sm">3</text>
+  <text x="494" y="354" class="sm" text-anchor="end">1</text><text x="494" y="395" class="sm" text-anchor="end">2</text>
+  <path d="M500 358 H600 M660 358 H900 M500 382 H560" class="rd"/>
+  <rect x="600" y="348" width="60" height="20" class="part"/><text x="630" y="362" text-anchor="middle">R5*</text>
+  <text x="600" y="342" class="sm">* see doc</text>
+
+  <!-- ===== Radio ===== -->
+  <rect x="900" y="60" width="270" height="745" rx="10" fill="#fff4e8" stroke="#c2410c" stroke-width="2"/>
+  <text x="1035" y="86" text-anchor="middle" font-weight="bold" font-size="15">Radio (e.g. IC-F621)</text>
+  <text x="915" y="104" class="sm">Mic connector (check pins in service manual)</text>
+  <text x="915" y="122" class="lbl">PTT</text>
+  <text x="915" y="202" class="lbl">UP  (or shared UP/DN line)</text>
+  <text x="915" y="282" class="lbl">DOWN  (or shared UP/DN line)</text>
+  <text x="915" y="362" class="lbl">BUSY out (accessory conn.)</text>
+  <text x="915" y="434" class="lbl">GND</text>
+  <text x="915" y="504" class="lbl" fill="#b91c1c">+8V mic power: DO NOT CONNECT</text>
+  <text x="915" y="594" class="lbl">MIC (audio in)</text>
+  <text x="915" y="644" class="lbl">MIC GND</text>
+  <text x="915" y="684" class="sm">External speaker jack</text>
+  <text x="915" y="704" class="lbl">SP +</text>
+  <text x="915" y="754" class="lbl">SP −  (may NOT be ground: BTL amp)</text>
+  <circle cx="900" cy="118" r="4" class="dotr"/><circle cx="900" cy="198" r="4" class="dotr"/>
+  <circle cx="900" cy="278" r="4" class="dotr"/><circle cx="900" cy="358" r="4" class="dotr"/>
+  <circle cx="900" cy="430" r="4" class="dotr"/>
+  <path d="M893 493 l14 14 M907 493 l-14 14" stroke="#b91c1c" stroke-width="2"/>
+  <circle cx="900" cy="590" r="4" class="dotr"/><circle cx="900" cy="640" r="4" class="dotr"/>
+  <circle cx="900" cy="700" r="4" class="dotr"/><circle cx="900" cy="750" r="4" class="dotr"/>
+
+  <!-- ===== USB sound card ===== -->
+  <rect x="30" y="550" width="200" height="255" rx="10" fill="#e8f0fe" stroke="#1565c0" stroke-width="2"/>
+  <text x="130" y="572" text-anchor="middle" font-weight="bold" font-size="15">USB sound card</text>
+  <text x="222" y="594" text-anchor="end" class="lbl">Headphone TIP</text>
+  <text x="222" y="644" text-anchor="end" class="lbl">Headphone SLEEVE</text>
+  <text x="222" y="704" text-anchor="end" class="lbl">Mic TIP</text>
+  <text x="222" y="754" text-anchor="end" class="lbl">Mic SLEEVE</text>
+  <text x="130" y="785" text-anchor="middle" class="sm">green jack = out, pink = in</text>
+  <circle cx="230" cy="590" r="4" class="dotp"/><circle cx="230" cy="640" r="4" class="dotp"/>
+  <circle cx="230" cy="700" r="4" class="dotp"/><circle cx="230" cy="750" r="4" class="dotp"/>
+
+  <text x="265" y="545" class="hd">AUDIO: ISOLATION TRANSFORMERS + ATTENUATORS</text>
+
+  <!-- TX: sound card -> T1 -> pad -> radio MIC -->
+  <text x="430" y="571" class="sm">TX audio (to radio): line level → mic level, about −40 dB</text>
+  <path d="M230 590 H300 M230 640 H300" class="pi"/>
+  <rect x="300" y="577" width="80" height="76" rx="4" class="part"/>
+  <text x="340" y="612" text-anchor="middle" font-weight="bold">T1</text>
+  <text x="340" y="630" text-anchor="middle" class="sm">600:600</text>
+  <path d="M380 590 H430 M500 590 H620 M680 590 H900 M380 640 H900 M540 590 V600 M540 630 V640" class="rd"/>
+  <rect x="430" y="580" width="70" height="20" class="part"/><text x="465" y="594" text-anchor="middle">R1 10k</text>
+  <rect x="530" y="600" width="20" height="30" class="part"/><text x="556" y="620" class="lbl">R2 100Ω</text>
+  <rect x="620" y="580" width="60" height="20" class="part"/><text x="650" y="594" text-anchor="middle">C1 1µF</text>
+  <text x="684" y="584" class="sm">+</text>
+  <circle cx="540" cy="590" r="3.5" class="dotr"/><circle cx="540" cy="640" r="3.5" class="dotr"/>
+
+  <!-- RX: radio speaker -> T2 -> pad -> sound card mic -->
+  <text x="430" y="681" class="sm">RX audio (from radio): speaker level → mic level, about −27 dB</text>
+  <path d="M900 700 H780 M900 750 H780" class="rd"/>
+  <rect x="700" y="687" width="80" height="76" rx="4" class="part"/>
+  <text x="740" y="722" text-anchor="middle" font-weight="bold">T2</text>
+  <text x="740" y="740" text-anchor="middle" class="sm">600:600</text>
+  <path d="M700 700 H650 M590 700 H460 M400 700 H230 M700 750 H230 M540 700 V710 M540 740 V750" class="pi"/>
+  <rect x="590" y="690" width="60" height="20" class="part"/><text x="620" y="704" text-anchor="middle">R3 10k</text>
+  <rect x="530" y="710" width="20" height="30" class="part"/><text x="556" y="730" class="lbl">R4 470Ω</text>
+  <rect x="400" y="690" width="60" height="20" class="part"/><text x="430" y="704" text-anchor="middle">C2 1µF</text>
+  <text x="396" y="694" class="sm" text-anchor="end">+</text>
+  <circle cx="540" cy="700" r="3.5" class="dotp"/><circle cx="540" cy="750" r="3.5" class="dotp"/>
+</svg>

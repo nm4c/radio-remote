@@ -72,6 +72,22 @@ sudo tailscale serve --bg 8080
 Then open `https://<pi-name>.<your-tailnet>.ts.net` on any device in your tailnet.
 You can also set `server.tls_cert` / `tls_key` to your own certificate.
 
+### Using an iPhone
+
+1. Install the Tailscale app and connect, then open the `https://…ts.net` address in Safari.
+2. Tap **Share → Add to Home Screen** so it opens full-screen like an app.
+3. Use headphones (wired or Bluetooth). iOS turns the loudspeaker down while a web page
+   has the mic open.
+
+Things to know:
+- **Keep it on screen.** iOS pauses web audio and connections when the phone locks or you
+  switch apps. The page keeps the screen awake while connected (iOS 16.4+), and drops PTT
+  safely if it goes to the background.
+- **After a call or Siri** the page shows "Audio paused. Tap here to resume". Any tap
+  restarts audio, and if iOS released the mic, the next PTT press re-acquires it.
+- **No hardware PTT.** A web page can't use the volume or headset buttons, so it's the
+  on-screen button only.
+
 ## Channel tracking
 
 Mic-line button emulation can't read the channel back from the radio, so the Pi **tracks the

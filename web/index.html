@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#14171b">
   <title>Radio Remote</title>
+  <link rel="manifest" href="/static/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/static/icons/icon-180.png">
+  <link rel="icon" type="image/png" href="/static/icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Radio">
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -35,6 +42,7 @@
 
   <!-- Radio head -->
   <main id="head" class="head" hidden>
+    <button id="audioHint" class="banner" hidden>Audio paused. Tap here to resume.</button>
     <div class="lcd" id="lcd">
       <div class="lcd-flags">
         <span class="flag" id="flagBusy">BUSY</span>
@@ -67,6 +75,12 @@
       <label>Speaker volume <input id="vol" type="range" min="0" max="2" step="0.05" value="1"></label>
       <label>Mic gain <input id="micGain" type="range" min="0" max="3" step="0.05" value="1"></label>
       <div class="micmeter" aria-label="Microphone level"><div id="micMeter"></div></div>
+      <p class="note" id="iosNote" hidden>
+        iPhone tips: use headphones (wired or Bluetooth) for full volume, because iOS turns the
+        speaker down while the mic is open. Keep this page on screen to keep listening: iOS
+        pauses audio when the phone locks or you switch apps. Share → Add to Home Screen opens
+        it full-screen like an app.
+      </p>
     </div>
 
     <details class="settings">
