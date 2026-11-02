@@ -8,6 +8,7 @@ import yaml
 DEFAULTS = {
     "radio": {
         "name": "Radio",
+        "type": "buttons",   # buttons = external radio via the Radio Remote HAT, sa818 = SA818S HAT
     },
     "server": {
         "host": "0.0.0.0",
@@ -26,6 +27,21 @@ DEFAULTS = {
         "busy_pin": None,
         "busy_pull_up": True,
         "busy_invert": False,
+    },
+    "sa818": {
+        "port": "/dev/serial0",
+        "baud": 9600,
+        "pd_pin": 27,
+        "low_power_pin": 22,
+        "band": [400.0, 480.0],
+        "bandwidth": "narrow",
+        "squelch": 4,
+        "volume": 6,
+        "low_power": False,
+        "tail_tone": False,
+        "filters": {"emphasis": True, "highpass": True, "lowpass": True},
+        "rssi_ms": 500,
+        "rssi_offset_db": None,
     },
     "channel": {
         "count": 16,
@@ -58,7 +74,7 @@ DEFAULTS = {
 def _merge(base, over):
     out = copy.deepcopy(base)
     for key, value in (over or {}).items():
-        if isinstance(value, dict) and isinstance(out.get(key), dict) and key != "names":
+        if isinstance(value, dict) and isinstance(out.get(key), dict) and key not in ("names",):
             out[key] = _merge(out[key], value)
         else:
             out[key] = value
@@ -75,8 +91,16 @@ def load(path):
     a = cfg["audio"]
     if int(a["device_rate"]) % int(a["wire_rate"]):
         raise SystemExit("config: audio.device_rate must be a multiple of audio.wire_rate")
-    if int(cfg["channel"]["count"]) < 1:
+    kind = cfg["radio"]["type"]
+    if kind not in ("buttons", "sa818"):
+        raise SystemExit("config: radio.type must be buttons or sa818")
+    if kind == "buttons" and int(cfg["channel"]["count"]) < 1:
         raise SystemExit("config: channel.count must be >= 1")
+    if kind == "sa818":
+        g, s = cfg["gpio"], cfg["sa818"]
+        clash = {g["ptt_pin"], g["busy_pin"]} & {s["pd_pin"], s["low_power_pin"]}
+        if clash:
+            raise SystemExit(f"config: GPIO {sorted(clash)} used twice (gpio vs sa818 pins)")
 
     # Resolve the state file relative to the config file.
     state = Path(cfg["server"]["state_file"])

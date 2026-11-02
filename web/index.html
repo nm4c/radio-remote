@@ -48,13 +48,20 @@
         <span class="flag" id="flagBusy">BUSY</span>
         <span class="flag tx" id="flagTx">TX</span>
         <span class="flag" id="flagChg">CHG</span>
+        <span class="flag" id="flagLow" hidden>LOW</span>
         <span class="lcd-timer" id="txTimer"></span>
       </div>
       <div class="lcd-main">
         <div class="lcd-ch"><small>CH</small><span id="chNum">--</span></div>
         <div class="lcd-name" id="chName">—</div>
       </div>
-      <div class="meter" aria-label="Receive level"><div class="meter-fill" id="rxMeter"></div></div>
+      <div class="lcd-freq" id="lcdFreq" hidden></div>
+      <div class="meter" aria-label="Receive audio level"><div class="meter-fill" id="rxMeter"></div></div>
+      <div class="rssi" id="rssiRow" hidden>
+        <span class="rssi-label">SIG</span>
+        <div class="meter" aria-label="Signal strength"><div class="meter-fill" id="rssiMeter"></div></div>
+        <span class="rssi-val" id="rssiVal">--</span>
+      </div>
       <div class="lcd-foot" id="lcdFoot">&nbsp;</div>
     </div>
 
@@ -71,6 +78,20 @@
 
     <div class="channels" id="channelGrid" aria-label="Channels"></div>
 
+    <form class="tune" id="tuneForm" hidden autocomplete="off">
+      <label>Frequency (MHz)
+        <input id="tuneFreq" inputmode="decimal" placeholder="439.1250" required>
+      </label>
+      <label>TX if different
+        <input id="tuneTx" inputmode="decimal" placeholder="same">
+      </label>
+      <label>Tone
+        <input id="tuneTone" placeholder="91.5 or D023N">
+      </label>
+      <button type="submit">Tune</button>
+      <p class="tune-hint" id="tuneHint"></p>
+    </form>
+
     <div class="sliders">
       <label>Speaker volume <input id="vol" type="range" min="0" max="2" step="0.05" value="1"></label>
       <label>Mic gain <input id="micGain" type="range" min="0" max="3" step="0.05" value="1"></label>
@@ -86,10 +107,12 @@
     <details class="settings">
       <summary>Settings</summary>
       <div class="settings-body">
-        <p>If someone changed channel on the radio itself, tell the remote head which channel the radio is really on (no buttons are pressed):</p>
-        <div class="row">
-          <select id="syncSelect"></select>
-          <button id="syncBtn">Set current channel</button>
+        <div class="sync" id="syncBlock">
+          <p>If someone changed channel on the radio itself, tell the remote head which channel the radio is really on (no buttons are pressed):</p>
+          <div class="row">
+            <select id="syncSelect"></select>
+            <button id="syncBtn">Set current channel</button>
+          </div>
         </div>
         <p class="ops">Connected operators: <span id="operators">—</span></p>
         <button id="logout" class="danger">Disconnect</button>

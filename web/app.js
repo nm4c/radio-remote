@@ -14,6 +14,7 @@ const S = {
   txNode: null,
   micOk: false,
   channels: [],
+  radio: { type: "buttons", canSync: true, canTune: false, band: null },
   holdIntervalMs: 300,
   frameSamples: 320,
   server: null, // last "state" message
@@ -211,6 +212,10 @@ function handle(m) {
       break;
     case "hello":
       S.channels = m.channels;
+      S.radio = { type: m.radio_type || "buttons", canSync: m.can_sync !== false, canTune: !!m.can_tune, band: m.band };
+      $("#syncBlock").hidden = !S.radio.canSync;
+      $("#tuneForm").hidden = !S.radio.canTune;
+      $("#tuneHint").textContent = S.radio.band ? `${S.radio.band[0]}–${S.radio.band[1]} MHz` : "";
       $("#radioName").textContent = m.radio_name;
       document.title = `${m.radio_name} · Radio Remote`;
       S.holdIntervalMs = m.hold_interval_ms;
@@ -225,6 +230,12 @@ function handle(m) {
     case "meter":
       $("#rxMeter").style.width = `${Math.max(0, Math.min(100, ((m.rx_dbfs + 60) / 60) * 100))}%`;
       $("#flagBusy").classList.toggle("on", !!m.busy);
+      $("#rssiRow").hidden = m.rssi == null;
+      if (m.rssi != null) {
+        // RSSI is 0-255 in 1 dB steps; the useful range on a quiet channel is roughly 30-130.
+        $("#rssiMeter").style.width = `${Math.max(0, Math.min(100, m.rssi - 30))}%`;
+        $("#rssiVal").textContent = m.rssi_dbm != null ? `${Math.round(m.rssi_dbm)} dBm` : String(m.rssi);
+      }
       break;
     case "notice":
       toast(m.text, m.level);
@@ -310,7 +321,7 @@ function buildChannels() {
     const b = document.createElement("button");
     b.dataset.ch = ch.n;
     const label = document.createElement("b");
-    label.textContent = `CH ${ch.n}`;
+    label.textContent = ch.freq ? `CH ${ch.n} · ${ch.freq}` : `CH ${ch.n}`;
     b.append(label, ch.name);
     b.addEventListener("click", () => send({ type: "channel", action: "goto", channel: ch.n }));
     grid.appendChild(b);
@@ -330,12 +341,23 @@ function render() {
   const otherTx = p.active && !p.mine;
   const busyRadio = p.active || st.stepping;
 
-  $("#chNum").textContent = String(st.channel).padStart(2, "0");
+  $("#chNum").textContent = st.channel === 0 ? "VF" : String(st.channel).padStart(2, "0");
   $("#chName").textContent = st.channel_name;
+  const info = st.info;
+  $("#lcdFreq").hidden = !info;
+  $("#flagLow").hidden = !info || !info.low_power;
+  if (info) {
+    let t = info.rx;
+    if (info.tx !== info.rx) t += `  TX ${info.tx}`;
+    const tone = info.tx_tone === info.rx_tone ? info.tx_tone : `${info.tx_tone || "–"} / ${info.rx_tone || "–"}`;
+    if (tone) t += `  T ${tone}`;
+    if (info.bandwidth === "wide") t += "  W";
+    $("#lcdFreq").textContent = t;
+  }
   $("#flagTx").classList.toggle("on", p.active);
   $("#flagChg").classList.toggle("on", st.stepping);
   $("#lcd").classList.toggle("tx", p.mine);
-  $("#lcdFoot").textContent = otherTx ? `TX by ${p.by}` : st.stepping ? "Changing channel…" : " ";
+  $("#lcdFoot").textContent = st.error || (otherTx ? `TX by ${p.by}` : st.stepping ? "Changing channel…" : " ");
 
   const btn = $("#ptt");
   btn.classList.toggle("live", p.mine);
@@ -343,6 +365,7 @@ function render() {
   btn.classList.toggle("locked", otherTx || !S.micOk);
   $("#pttLabel").textContent = p.mine ? "ON AIR" : otherTx ? "IN USE" : "PTT";
 
+  $("#tuneForm").querySelector("button").disabled = busyRadio;
   $("#chUp").disabled = busyRadio;
   $("#chDown").disabled = busyRadio;
   for (const b of $("#channelGrid").children) {
@@ -385,6 +408,13 @@ function init() {
   $("#syncBtn").addEventListener("click", () => {
     send({ type: "channel", action: "sync", channel: Number($("#syncSelect").value) });
     toast("Channel display updated");
+  });
+  $("#tuneForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const freq = parseFloat($("#tuneFreq").value);
+    if (!Number.isFinite(freq)) { toast("Enter a frequency in MHz, e.g. 439.125"); return; }
+    const tx = $("#tuneTx").value.trim();
+    send({ type: "channel", action: "tune", freq, tx_freq: tx ? parseFloat(tx) : null, tone: $("#tuneTone").value.trim() || null });
   });
   $("#vol").addEventListener("input", (e) => S.rxNode && S.rxNode.port.postMessage({ gain: Number(e.target.value) }));
   $("#micGain").addEventListener("input", (e) => S.txNode && S.txNode.port.postMessage({ gain: Number(e.target.value) }));

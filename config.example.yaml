@@ -4,6 +4,12 @@
 radio:
   # Shown in the web UI header and browser tab.
   name: "IC-F621"
+  # Which hardware this Pi drives:
+  #   buttons  an external radio through the Radio Remote HAT (pihat/) or loose optocouplers:
+  #            PTT + channel UP/DOWN pressed on the mic lines. Uses gpio: and channel.count/names.
+  #   sa818    the SA818S HAT (sa818s-hat/): built-in UHF transceiver, frequencies set over the UART.
+  #            Uses the sa818: section and channel.list. See "SA818S HAT" at the end of this file.
+  type: buttons
 
 server:
   host: 0.0.0.0
@@ -45,6 +51,16 @@ channel:
     1: "Ops 1"
     2: "Ops 2"
     3: "Site Repeater"
+  # sa818 only: the channel list, with frequencies (MHz). count/names/press_ms/gap_ms are ignored.
+  #   freq       receive (and transmit, unless tx_freq is given)
+  #   tx_freq    for repeaters
+  #   tone       CTCSS in Hz (e.g. 91.5) or DCS (D023N / D023I) on both TX and RX;
+  #              rx_tone / tx_tone to set them separately. Leave out for none.
+  #   bandwidth, squelch, low_power   override the sa818: defaults for this channel
+  list:
+    - { name: "Simplex",  freq: 439.1250 }
+    - { name: "Repeater", freq: 438.6750, tx_freq: 431.6750, tone: 91.5 }
+    - { name: "Low pwr",  freq: 439.2000, low_power: true }
 
 ptt:
   max_tx_seconds: 120  # hard transmit time limit (server-side timeout timer)
@@ -64,3 +80,26 @@ audio:
   tx_gain: 1.0         # browser -> radio
   tx_prebuffer_ms: 80  # jitter buffer before TX audio starts playing to the radio
   busy_threshold_dbfs: -45  # RX level considered "signal present" if no busy_pin
+
+# ---- SA818S HAT (radio.type: sa818) ---------------------------------------------------------
+# On the HAT: PTT = GPIO17 (gpio.ptt_pin, active_high true), busy = the module's AudioON on GPIO23,
+# so set gpio.busy_pin: 23 and busy_pull_up: true. gpio.up_pin/down_pin aren't used.
+# The Pi 4's main UART is used by Bluetooth: add  dtoverlay=disable-bt  to /boot/firmware/config.txt,
+# and turn off the serial console (sudo raspi-config > Interface > Serial: login shell No, hardware Yes).
+sa818:
+  port: /dev/serial0
+  baud: 9600
+  pd_pin: 27            # module power-down: high = on (the HAT holds it low until the server starts)
+  low_power_pin: 22     # high = 0.5 W, low = 1 W
+  band: [400.0, 480.0]  # frequencies outside this are refused (SA818S-U; the V version is 134-174)
+  bandwidth: narrow     # narrow (12.5 kHz) or wide (25 kHz)
+  squelch: 4            # 0 = open, 1-8
+  volume: 6             # module audio output level 1-8 (into the codec)
+  low_power: false
+  tail_tone: false      # squelch tail elimination tone
+  filters:              # the module's own audio filters (false = bypass)
+    emphasis: true
+    highpass: true
+    lowpass: true
+  rssi_ms: 500          # how often to read signal strength while receiving
+  rssi_offset_db: null  # set to show dBm: dBm = RSSI + offset (calibrate against a known signal)

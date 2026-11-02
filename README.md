@@ -9,6 +9,13 @@ line, which covers most land-mobile and UHF CB radios through the mic connector.
 built for an Icom Radio. Set the model name shown in the UI with `radio.name` in
 `config.yaml`.
 
+There are two hardware modes, set with `radio.type` in `config.yaml`:
+
+| `radio.type` | Hardware | Channels |
+|---|---|---|
+| `buttons` (default) | An external radio through the **[Radio Remote HAT](pihat/)** (or hand-wired optos, [docs/HARDWARE.md](docs/HARDWARE.md)) | The radio's own channels, stepped with UP/DOWN presses |
+| `sa818` | The **[SA818S HAT](sa818s-hat/)**: a 1 W UHF transceiver on the HAT, no external radio | A frequency/tone list in `config.yaml`, set over the module's serial port, plus direct frequency entry. Shows signal strength (RSSI) |
+
 ```
  Browser (phone / PC)                     Raspberry Pi                      Radio  
 ┌───────────────────┐   WebSocket    ┌──────────────────────┐  GPIO+opto  ┌──────────┐
@@ -24,6 +31,8 @@ built for an Icom Radio. Set the model name shown in the UI with `radio.name` in
 - Receive audio with a jitter buffer, an RX level meter and a BUSY indicator.
 - Channel ▲/▼ and jump-to-channel. The Pi presses UP/DOWN the right number of times.
 - Channel names are set in config.
+- With the SA818S HAT: frequencies, repeater offsets and CTCSS/DCS per channel, a VFO for any
+  frequency in the band, and an RSSI bar on the display.
 - Several operators can listen at once. Only one can transmit, and the others see who's on air.
 - Safety features:
   - Server-side transmit time-out (`max_tx_seconds`).
@@ -38,7 +47,7 @@ built for an Icom Radio. Set the model name shown in the UI with `radio.name` in
 ```bash
 cd radio-remote
 python3 -m venv .venv && source .venv/bin/activate
-pip install aiohttp numpy pyyaml sounddevice
+pip install aiohttp numpy pyyaml sounddevice pyserial
 cp config.example.yaml config.yaml
 #  in config.yaml set: gpio.backend: mock, audio.backend: mock, password: something
 python -m server -c config.yaml
@@ -46,6 +55,7 @@ python -m server -c config.yaml
 
 Open <http://localhost:8080>. `localhost` counts as secure, so the mic works.
 You'll hear a test tone burst every 10 s, and PTT/channel presses show in the server log.
+Set `radio.type: sa818` to try the SA818S mode: the mock module answers commands and reports a wandering RSSI.
 Set `audio.backend: sounddevice` to use your laptop's own mic and speakers as a pretend radio.
 
 ## Install on the Pi
@@ -57,7 +67,8 @@ Set `audio.backend: sounddevice` to use your laptop's own mic and speakers as a 
    sudo ./deploy/install.sh
    sudo nano /opt/radio-remote/config.yaml
    ```
-   Set `password`, `channel.count`, `channel.names`, and the sound card
+   Set `password`, `radio.type`, the channels (`channel.count` / `names` for an external radio,
+   `channel.list` for the SA818S HAT; the SA818S HAT also needs the UART set up, see the `sa818:` section), and the sound card
    (`input_device` / `output_device`, for example `"USB Audio"`. List them with
    `/opt/radio-remote/.venv/bin/python -m sounddevice`).
 3. `sudo systemctl start radio-remote` and watch the log with `journalctl -u radio-remote -f`.
@@ -106,15 +117,17 @@ WebSocket at `/ws`. The first message must be
 | → | `{"type":"ptt","on":true\|false}` |
 | → | `{"type":"ptt_hold"}` every `hold_interval_ms` while transmitting |
 | → | `{"type":"channel","action":"up"\|"down"}` |
-| → | `{"type":"channel","action":"goto"\|"sync","channel":5}` |
+| → | `{"type":"channel","action":"goto"\|"sync","channel":5}` (`sync` only for `buttons`) |
+| → | `{"type":"channel","action":"tune","freq":439.125,"tx_freq":null,"tone":"91.5"}` (`sa818` only: VFO, channel 0) |
 | → | binary: TX audio, int16 LE mono 16 kHz, 20 ms frames. Ignored unless you hold PTT. |
-| ← | `auth`, `hello` (channel list, timing), `state` (channel, PTT owner, TOT remaining), `meter` (5 Hz), `notice` |
+| ← | `auth`, `hello` (channel list, timing, `radio_type`, `can_sync`, `can_tune`, `band`), `state` (channel, PTT owner, TOT remaining, `info` = frequency/tones or null, `error`), `meter` (5 Hz, plus `rssi` / `rssi_dbm` on `sa818`), `notice` |
 | ← | binary: RX audio, same format |
 
 ## Layout
 
 ```
-server/   main.py (web + WebSocket + safety watchdog), radio.py (GPIO), audio.py (sound card, resampling)
+server/   main.py (web + WebSocket + safety watchdog), radio.py (PTT, channels, button radio),
+          sa818.py (SA818S module over UART), audio.py (sound card, resampling)
 web/      index.html, app.js, worklet.js (AudioWorklet capture/playback), style.css
 deploy/   install.sh, systemd unit
 docs/     HARDWARE.md (hand-wired interface)

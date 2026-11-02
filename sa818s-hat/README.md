@@ -51,8 +51,20 @@ The Pi 4's main UART is normally used by Bluetooth. Add `dtoverlay=disable-bt` (
 
 ## Software
 
-The server needs an SA818S radio driver (frequency table per channel in `config.yaml`, AT commands over
-the UART instead of UP/DOWN button presses). That's a separate step from the hardware.
+Set `radio.type: sa818` in `config.yaml` (see `config.example.yaml`):
+
+- `channel.list`: name, frequency, optional `tx_freq` for repeaters, `tone` (CTCSS Hz or DCS `D023N`),
+  and per-channel bandwidth, squelch or low power.
+- The web app shows the frequency and tones, an RSSI bar, and a box to tune any frequency in `sa818.band` (the VFO).
+- At start-up the server wakes the module (PD), sets volume, audio filters and tail tone, then the channel.
+  If the module stops answering, operators see the error, PTT is refused, and the server retries every 5 s.
+- `gpio.busy_pin: 23` uses the module's AudioON as the BUSY indicator.
+- RSSI is the module's raw 0–255 reading in 1 dB steps. Set `sa818.rssi_offset_db` after checking it against a
+  known signal to show dBm.
+
+Pi 4 set-up: `dtoverlay=disable-bt` in `/boot/firmware/config.txt`, the serial console off and the serial
+hardware on (`raspi-config` → Interface Options → Serial Port), then reboot. The installer adds the service user
+to `dialout` for `/dev/serial0`.
 
 ## Licence
 

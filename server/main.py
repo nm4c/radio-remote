@@ -14,7 +14,7 @@ from aiohttp import WSMsgType, web
 
 from .audio import create_audio
 from .config import load
-from .radio import Radio, RadioError
+from .radio import RadioError, create_radio
 
 log = logging.getLogger("server")
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"
@@ -61,7 +61,7 @@ class RemoteHead:
         self.cfg = cfg
         self.clients = set()
         self.loop = None
-        self.radio = Radio(cfg, self.broadcast_state)
+        self.radio = create_radio(cfg, self.broadcast_state)
         self.audio = create_audio(cfg, self._on_rx_audio)
         self._tasks = set()
         self._ptt_gen = 0
@@ -98,6 +98,8 @@ class RemoteHead:
             "channel": r.channel,
             "channel_name": r.channel_name(r.channel),
             "stepping": r.stepping,
+            "info": r.channel_info(),
+            "error": r.error,
             "ptt": {
                 "active": r.ptt_owner is not None,
                 "mine": r.ptt_owner == c.id,
@@ -137,6 +139,10 @@ class RemoteHead:
                 "type": "hello",
                 "radio_name": str(self.cfg["radio"]["name"]),
                 "channels": self.radio.channel_list(),
+                "radio_type": self.radio.kind,
+                "can_sync": self.radio.can_sync,
+                "can_tune": self.radio.can_tune,
+                "band": list(getattr(self.radio, "band", ())) or None,
                 "max_tx_seconds": self.cfg["ptt"]["max_tx_seconds"],
                 "hold_interval_ms": max(100, self.cfg["ptt"]["hold_timeout_ms"] // 5),
                 "wire_rate": self.cfg["audio"]["wire_rate"],
@@ -208,6 +214,8 @@ class RemoteHead:
                     coro = self.radio.step(-1)
                 elif action == "goto":
                     coro = self.radio.goto(int(m["channel"]))
+                elif action == "tune" and self.radio.can_tune:
+                    coro = self.radio.tune(float(m["freq"]), m.get("tx_freq") or None, m.get("tone") or None)
                 elif action == "sync":
                     self.radio.sync(int(m["channel"]))
                     log.info("%s synced channel to %s", c.name, self.radio.channel)
@@ -282,6 +290,12 @@ class RemoteHead:
                                      "text": f"PTT released: {reason}"})
             if tick % 2 == 0:  # 5 Hz meters
                 meter = {"type": "meter", "rx_dbfs": round(self.audio.rx_dbfs, 1), "busy": self._busy()}
+                rssi = self.radio.rssi
+                if rssi is not None:
+                    meter["rssi"] = rssi
+                    off = self.cfg["sa818"]["rssi_offset_db"]
+                    if off is not None:
+                        meter["rssi_dbm"] = rssi + float(off)
                 for c in self._authed():
                     c.send_json(meter)
 
@@ -291,6 +305,7 @@ class RemoteHead:
         self.loop = asyncio.get_running_loop()
         self.audio.start()
         app["watchdog"] = asyncio.create_task(self.watchdog())
+        app["radio"] = asyncio.create_task(self.radio.run())
 
     async def on_shutdown(self, app):
         self.radio.unkey("shutdown")
@@ -298,7 +313,12 @@ class RemoteHead:
             await c.ws.close(code=1001, message=b"server shutdown")
 
     async def on_cleanup(self, app):
-        app["watchdog"].cancel()
+        for key in ("watchdog", "radio"):
+            app[key].cancel()
+            try:
+                await app[key]
+            except (asyncio.CancelledError, Exception):
+                pass
         self.radio.close()
         self.audio.stop()
 

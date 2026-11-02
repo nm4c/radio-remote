@@ -1,3 +1,4 @@
+[hidden] { display: none !important; }
 :root {
   --bg: #0f1215;
   --panel: #1a1e23;
@@ -93,6 +94,10 @@ button.danger { color: var(--tx); }
 .lcd-ch small { font-size: 16px; margin-right: 6px; opacity: .7; }
 .lcd-name { font-size: 22px; text-transform: uppercase; letter-spacing: .06em; overflow-wrap: anywhere; }
 .lcd-foot { font-size: 12px; opacity: .8; margin-top: 6px; min-height: 1.2em; }
+.lcd-freq { font-size: 18px; letter-spacing: .04em; margin: -4px 0 8px; font-variant-numeric: tabular-nums; white-space: pre-wrap; }
+.rssi { display: grid; grid-template-columns: auto 1fr 4.5em; gap: 8px; align-items: center; margin-top: 6px; font-size: 12px; }
+.rssi-label { opacity: .7; }
+.rssi-val { text-align: right; font-variant-numeric: tabular-nums; }
 .meter { height: 10px; background: var(--lcd-dim); border-radius: 2px; overflow: hidden; }
 .meter-fill {
   height: 100%; width: 0%;
@@ -132,6 +137,14 @@ button.danger { color: var(--tx); }
 .micmeter { height: 6px; background: var(--panel-2); border-radius: 3px; overflow: hidden; }
 .micmeter div { height: 100%; width: 0%; background: var(--busy); transition: width .08s linear; }
 
+.tune { display: grid; grid-template-columns: 1.3fr 1fr 1fr auto; gap: 10px; align-items: end;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.tune label { display: grid; gap: 4px; color: var(--muted); font-size: 13px; }
+.tune input { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px; width: 100%;
+  font-variant-numeric: tabular-nums; }
+.tune-hint { grid-column: 1 / -1; margin: 0; color: var(--muted); font-size: 12px; }
+.tune-hint:empty { display: none; }
+.sync { display: grid; gap: 10px; }
 .settings { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
 .settings summary { cursor: pointer; color: var(--muted); }
 .settings-body { display: grid; gap: 10px; padding-top: 10px; }
@@ -152,4 +165,6 @@ button.danger { color: var(--tx); }
   .ptt { min-height: 140px; }
   .lcd-ch { font-size: 52px; }
   .sliders label { grid-template-columns: 1fr; }
+  .tune { grid-template-columns: 1fr 1fr; }
+  .tune label:first-child { grid-column: 1 / -1; }
 }
