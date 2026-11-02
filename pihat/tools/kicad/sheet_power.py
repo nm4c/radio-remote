@@ -12,7 +12,9 @@ def chain(s, pts):
         s.wire(a, b)
 
 
-def build(path, page):
+def build(path, page, fuse=("1.5A 33V", "C18198333"), vin_global=False):
+    """fuse: (value, LCSC) for F1. The SA818S board uses 2 A for a Pi 4 plus 1 W TX.
+    vin_global: make VIN a global label (the SA818S board feeds its module supply from it)."""
     s = Sheet("Power", path, page)
     G = ("pwr", "GND")
 
@@ -24,8 +26,8 @@ def build(path, page):
     s.symbol("Connector:Screw_Terminal_01x02", "J6", "13.8 V in", (25.4, y), mirror="y",
              footprint="TerminalBlock_Phoenix:TerminalBlock_Phoenix_PT-1,5-2-3.5-H_1x02_P3.50mm_Horizontal",
              lcsc="C474892", ref_at=(22.86, 45.72), val_at=(22.86, 43.18))
-    s.symbol("Device:Polyfuse", "F1", "1.5A 33V", (49.53, y), rot=90, footprint="Fuse:Fuse_1812_4532Metric",
-             lcsc="C18198333", ref_at=(49.53, 46.99), val_at=(49.53, 55.88))
+    s.symbol("Device:Polyfuse", "F1", fuse[0], (49.53, y), rot=90, footprint="Fuse:Fuse_1812_4532Metric",
+             lcsc=fuse[1], ref_at=(49.53, 46.99), val_at=(49.53, 55.88))
     s.symbol("Device:D_Schottky", "D1", "SS56", (68.58, y), rot=180, footprint="Diode_SMD:D_SMA",
              lcsc="C65009", ref_at=(68.58, 46.99), val_at=(68.58, 55.88))
     chain(s, [s.p("J6.1"), (33.02, y), s.p("F1.1")])
@@ -55,7 +57,7 @@ def build(path, page):
     s.wire((81.28, y), s.p("D3.1"))
     for ref, x in caps_in + [("C19", 142.24)]:
         s.wire((x, y), s.p(f"{ref}.1"))
-    s.label("VIN", (149.86, y), (1, 0))
+    s.label("VIN", (149.86, y), (1, 0), glob=vin_global)
     s.flag((127.0, y))
     # U3 grounds joined to one symbol
     g7, g9 = s.p("U3.7"), s.p("U3.9")

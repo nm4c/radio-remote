@@ -11,7 +11,9 @@ def chain(s, pts):
         s.wire(a, b)
 
 
-def build(path, page):
+def build(path, page, hp_n=True, lib="pihat"):
+    """hp_n=False leaves HPLCOM unconnected (single-ended TX, as on the SA818S board).
+    lib: the project symbol library holding TLV320AIC3104."""
     s = Sheet("Codec", path, page)
     G = ("pwr", "GND")
     s.text("I2S CODEC  TLV320AIC3104 (QFN-32, RHB)", (17.78, 30.48), 2.0, bold=True)
@@ -23,8 +25,8 @@ def build(path, page):
     conn = {**nc, **{k: ("label", v, 5.08) for k, v in left.items()},
             "8": ("glabel", "I2C_SCL", 5.08), "9": ("glabel", "I2C_SDA", 5.08),
             "10": ("glabel", "RX_P", 5.08), "11": ("glabel", "RX_N", 5.08),
-            "19": ("glabel", "HP_P", 5.08), "20": ("glabel", "HP_N", 5.08)}
-    s.symbol("pihat:TLV320AIC3104", "U2", "TLV320AIC3104IRHBR", (ux, uy), lcsc="C181753",
+            "19": ("glabel", "HP_P", 5.08), "20": ("glabel", "HP_N", 5.08) if hp_n else ("nc",)}
+    s.symbol(f"{lib}:TLV320AIC3104", "U2", "TLV320AIC3104IRHBR", (ux, uy), lcsc="C181753",
              footprint="Package_DFN_QFN:QFN-32-1EP_5x5mm_P0.5mm_EP3.45x3.45mm",
              datasheet="https://www.ti.com/lit/ds/symlink/tlv320aic3104.pdf",
              ref_at=(ux - 38.1, 125.73), val_at=(ux - 38.1, 128.27), ref_just="left", val_just="left", conn=conn)

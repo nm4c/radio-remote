@@ -120,6 +120,10 @@ class Sheet:
         """Power symbol whose pin sits at 'at'. body_dir: where the symbol body points (default: GND down, rails up)."""
         self.pwr_n += 1
         lib = "power:GND" if net in ("RGND",) else "power:" + net
+        try:
+            load_symbol(lib)
+        except KeyError:  # custom rail name: draw it with a stock symbol, the Value names the net
+            lib = "power:GND" if net.endswith("GND") else "power:+5V"
         default = "down" if net.endswith("GND") else "up"
         bd = body_dir or default
         order = ["down", "right", "up", "left"] if default == "down" else ["up", "left", "down", "right"]

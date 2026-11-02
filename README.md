@@ -118,7 +118,9 @@ server/   main.py (web + WebSocket + safety watchdog), radio.py (GPIO), audio.py
 web/      index.html, app.js, worklet.js (AudioWorklet capture/playback), style.css
 deploy/   install.sh, systemd unit
 docs/     HARDWARE.md (hand-wired interface)
-pihat/    Pi HAT: KiCad project, schematic reference, JLC BoM
+pihat/       Pi HAT for an external radio: KiCad project, schematic reference, JLC BoM
+sa818s-hat/  Pi HAT with a built-in SA818S 1 W UHF transceiver (no external radio)
+kicadgen/    shared KiCad schematic generator used by both HATs
 ```
 
 ## Ideas for later
@@ -135,8 +137,8 @@ but anything you distribute that's based on it must be shared under the same ter
 
 | Part | Licence | File |
 |---|---|---|
-| Software: `server/`, `web/`, `deploy/`, `pihat/tools/`, `pihat/docs/schematic/*.py` | GNU GPL v3.0 or later | [`LICENSE`](LICENSE) |
-| Hardware: the KiCad project in `pihat/` (schematics, PCB, symbols, footprints), `pihat/docs/` | CERN-OHL-S v2 | [`pihat/LICENSE`](pihat/LICENSE) |
+| Software: `server/`, `web/`, `deploy/`, `kicadgen/`, `pihat/tools/`, `sa818s-hat/tools/`, `pihat/docs/schematic/*.py` | GNU GPL v3.0 or later | [`LICENSE`](LICENSE) |
+| Hardware: the KiCad projects in `pihat/` and `sa818s-hat/` (schematics, PCB, symbols, footprints), `pihat/docs/` | CERN-OHL-S v2 | [`pihat/LICENSE`](pihat/LICENSE), [`sa818s-hat/LICENSE`](sa818s-hat/LICENSE) |
 | Documentation: this README and `docs/` | CC BY-SA 4.0 | [`docs/LICENSE`](docs/LICENSE) |
 
 Copyright © 2026 nmc. Source: <https://github.com/nm4c/radio-remote>
