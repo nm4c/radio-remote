@@ -14,3 +14,4 @@ __pycache__/
 pihat/.history/
 *-backups/
 fp-info-cache
+pihat/build/
