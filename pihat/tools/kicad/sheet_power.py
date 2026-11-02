@@ -106,13 +106,21 @@ def build(path, page):
         s.junction(pt)
 
     # compensation (values TBD)
-    s.text("COMPENSATION", (152.4, 93.98), 1.5, bold=True)
-    s.text("values TBD: TI WEBENCH or", (152.4, 97.79))
-    s.text("TPS54360 datasheet 8.2", (152.4, 100.33))
-    s.symbol("Device:R", "R29", "TBD", (190.5, 99.06), footprint=R0603, conn={"1": ("label", "COMP")})
-    s.symbol("Device:C", "C28", "TBD", (190.5, 107.95), footprint=C0603, conn={"2": G})
+    s.text("COMPENSATION  (TPS54360 datasheet 8.2.2.11)", (127.0, 93.98), 1.5, bold=True)
+    for i, t in enumerate((
+        "Cout: 3 x 22uF derated at 5 V = 42 uF",
+        "fp = Iout / (2 pi Vout Cout) = 2.25 kHz",
+        "fco = sqrt(fp x fsw / 2) = 26.9 kHz",
+        "R29 = 2 pi fco Cout Vout / (gmps Vref gmea)",
+        "    = 10.7k -> 10k   (gmps 12, gmea 350u)",
+        "C28 = 1 / (2 pi R29 fp) = 7.1 nF -> 6.8 nF",
+        "C29 = 1 / (pi R29 fsw) = 49 pF -> 47 pF",
+    )):
+        s.text(t, (127.0, 97.79 + i * 3.18))
+    s.symbol("Device:R", "R29", "10k", (190.5, 99.06), footprint=R0603, lcsc="C25804", conn={"1": ("label", "COMP")})
+    s.symbol("Device:C", "C28", "6.8nF", (190.5, 107.95), footprint=C0603, lcsc="C1631", conn={"2": G})
     s.wire(s.p("R29.2"), s.p("C28.1"))
-    s.symbol("Device:C", "C29", "TBD", (205.74, 99.06), footprint=C0603, conn={"1": ("label", "COMP"), "2": G})
+    s.symbol("Device:C", "C29", "47pF C0G", (205.74, 99.06), footprint=C0603, lcsc="C1671", conn={"1": ("label", "COMP"), "2": G})
 
     # feedback divider
     s.text("FEEDBACK", (226.06, 86.36), 1.5, bold=True)

@@ -12,7 +12,7 @@ so re-check before ordering.
 
 | | Unique parts |
 |---|---|
-| **Basic** (no loading fee) | 20 |
+| **Basic** (no loading fee) | 22 |
 | **Extended** (≈ US$3 each, per order) | 17 |
 
 That's about US$51 in loading fees per order, not per board. To cut it:
@@ -42,7 +42,7 @@ That's about US$51 in loading fees per order, not per board. To cut it:
 
 See the "Before layout" checklist at the end of the schematic page. In short:
 - **Y1 pinout:** confirm it (the datasheet is encrypted).
-- **U3 compensation:** calculate R29, C28 and C29.
+- **U3 compensation:** R29/C28/C29 are calculated (10k / 6.8 nF / 47 pF). Confirm with a load-step test at bring-up.
 - **Codec clock:** confirm the clock setup at bring-up.
 - **Mic-jack numbering:** check each radio's mic-jack numbering before patching J4 → J5.
 - **Isolation clearance:** keep radio-side copper ≥ 2 mm from Pi-side copper.

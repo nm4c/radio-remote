@@ -247,7 +247,7 @@ def sheet_power():
     s.add('<rect x="548" y="290" width="124" height="52" class="tbd"/>')
     s.text(610, 309, "Rc + Cc ∥ Cf", "t-ref", "middle")
     s.text(610, 324, "R29 · C28 · C29", "t-val", "middle")
-    s.text(610, 337, "values TBD", "t-tbd", "middle")
+    s.text(610, 337, "10k · 6.8 nF · 47 pF", "t-val", "middle")
     s.line(610, 342, 610, 352); s.gnd(610, 352)
     # GND / PAD
     s.poly([(780, 210), (790, 210), (790, 230), (780, 230)]); s.gnd(790, 230)
@@ -587,7 +587,7 @@ NETS = [
     ("pwr", "SW", "U3.8, C20.2, D2 K, L1.1"),
     ("pwr", "BOOT", "U3.1, C20.1"),
     ("pwr", "RT", "U3.4, R28.1"),
-    ("pwr", "COMP", "U3.6, R29 / C29 (TBD)"),
+    ("pwr", "COMP", "U3.6, R29.1, C29.1 (R29.2 → C28.1)"),
     ("pwr", "FB", "U3.5, R26.2, R27.1"),
     ("pwr", "FB_MID", "R25.2, R26.1"),
     ("pwr", "5V0", "L1.2, C21–C23, R25.1, J1.2, J1.4, U4.3 IN, C24, R7"),
@@ -643,13 +643,14 @@ PARTS = [
     ("R4, R26", "2.2 kΩ 0603", "C4190", "Basic"),
     ("R5, R6", "0 Ω 0603 (or ladder values)", "C21189", "Basic"),
     ("R7, R8, R13, R24", "1 kΩ 0603", "C21190", "Basic"),
-    ("R9, R11, R12, R21, R27", "10 kΩ 0603", "C25804", "Basic"),
+    ("R9, R11, R12, R21, R27, R29", "10 kΩ 0603", "C25804", "Basic"),
     ("R10", "100 Ω 0603", "C22775", "Basic"),
     ("R14–R20", "33 Ω 0603", "C23140", "Basic"),
     ("R22, R23", "3.9 kΩ 0603", "C23018", "Basic"),
     ("R25", "51 kΩ 0603", "C23196", "Basic"),
     ("R28", "150 kΩ 0603", "C22807", "Basic"),
-    ("R29, C28, C29", "compensation, values TBD", "—", "Basic"),
+    ("C28", "6.8 nF 50 V X7R 0603 (U3 compensation)", "C1631", "Basic"),
+    ("C29", "47 pF 50 V C0G 0603 (U3 compensation)", "C1671", "Basic"),
     ("C1", "1 µF 50 V X7R 0805", "C28323", "Basic"),
     ("C2, C3, C24, C26, C27", "1 µF 50 V X5R 0603", "C15849", "Basic"),
     ("C4–C7", "100 pF C0G 0603", "C14858", "Basic"),
@@ -706,7 +707,7 @@ def write_csv(path):
 
 CHECKS = [
     ("Y1 pinout", "The HSO321S datasheet is encrypted, so pin numbers follow the usual 3225 layout. Confirm before layout; tying pin 1 high is safe either way."),
-    ("U3 compensation", "R29, C28, C29 need values from TI WEBENCH or the TPS54360 datasheet design procedure (13.8 V → 5.06 V, 3 A, 640 kHz, 3 × 22 µF)."),
+    ("U3 compensation", "R29 10k, C28 6.8 nF, C29 47 pF from the TPS54360 datasheet procedure (8.2.2.11), assuming 42 µF of derated output capacitance. Confirm at bring-up with a load-step test (0.5 A → 3 A): ringing that settles in a few cycles is fine."),
     ("Codec clocking", "The in-kernel dacberry400 overlay sets the codec PLL source to BCLK (clock id 2) while stating 12 MHz. Y1 feeds MCLK so a small custom overlay can select MCLK instead. First bring-up test: confirm 48 kHz playback is the right pitch."),
     ("IOVDD", "Runs at 3.3 V (3V3_PI) to match Pi logic. The dacberry400 overlay describes IOVDD as 1.8 V; that only names a regulator for the driver and doesn't change the hardware."),
     ("Mic-jack numbering", "RJ45 pin numbers versus each radio's numbering: confirm with a straight patch lead and a meter before setting the J4 → J5 jumpers."),

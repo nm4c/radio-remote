@@ -6096,9 +6096,9 @@
 		(color 0 0 0 0)
 		(uuid "3a02312f-27d7-56d9-a780-c4afd2df8369")
 	)
-	(text "COMPENSATION"
+	(text "COMPENSATION  (TPS54360 datasheet 8.2.2.11)"
 		(exclude_from_sim no)
-		(at 152.4 93.98 0)
+		(at 127 93.98 0)
 		(effects
 			(font
 				(size 1.5 1.5)
@@ -6106,29 +6106,84 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "98c1af04-663e-5f51-b3c6-fbbcc5898e3a")
+		(uuid "32812067-95dd-5bd9-af95-a3d1bcd1f570")
 	)
-	(text "values TBD: TI WEBENCH or"
+	(text "Cout: 3 x 22uF derated at 5 V = 42 uF"
 		(exclude_from_sim no)
-		(at 152.4 97.79 0)
+		(at 127 97.79 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
 			(justify left bottom)
 		)
-		(uuid "4f0a88e3-54d0-57a9-93cc-101f4983b330")
+		(uuid "8bb59513-43da-5bef-9a6e-86bf1ca0e99e")
 	)
-	(text "TPS54360 datasheet 8.2"
+	(text "fp = Iout / (2 pi Vout Cout) = 2.25 kHz"
 		(exclude_from_sim no)
-		(at 152.4 100.33 0)
+		(at 127 100.97 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
 			(justify left bottom)
 		)
-		(uuid "51d75cd0-04b3-5c21-a111-2004508bb799")
+		(uuid "7ce12fcb-cdee-5108-995f-1cdb187a7d05")
+	)
+	(text "fco = sqrt(fp x fsw / 2) = 26.9 kHz"
+		(exclude_from_sim no)
+		(at 127 104.15 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "e9447dad-c1b7-5fa0-a357-5203cc760d2c")
+	)
+	(text "R29 = 2 pi fco Cout Vout / (gmps Vref gmea)"
+		(exclude_from_sim no)
+		(at 127 107.33 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "a78870cc-7993-5eac-9033-1b66cdd19ca5")
+	)
+	(text "    = 10.7k -> 10k   (gmps 12, gmea 350u)"
+		(exclude_from_sim no)
+		(at 127 110.51 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "d8d60c18-54ae-5229-b6e5-45d12992f674")
+	)
+	(text "C28 = 1 / (2 pi R29 fp) = 7.1 nF -> 6.8 nF"
+		(exclude_from_sim no)
+		(at 127 113.69 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "8f701ad8-5894-54eb-a9a8-22733583f572")
+	)
+	(text "C29 = 1 / (pi R29 fsw) = 49 pF -> 47 pF"
+		(exclude_from_sim no)
+		(at 127 116.87 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "2238022f-cd03-596b-a461-fbff62e645c6")
 	)
 	(symbol
 		(lib_id "Device:R")
@@ -6152,7 +6207,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "TBD"
+		(property "Value" "10k"
 			(at 193.04 100.33 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -6186,6 +6241,17 @@
 			)
 		)
 		(property "Description" "Resistor"
+			(at 190.5 99.06 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C25804"
 			(at 190.5 99.06 0)
 			(hide yes)
 			(show_name no)
@@ -6254,7 +6320,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "TBD"
+		(property "Value" "6.8nF"
 			(at 193.04 109.22 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -6288,6 +6354,17 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor"
+			(at 190.5 107.95 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C1631"
 			(at 190.5 107.95 0)
 			(hide yes)
 			(show_name no)
@@ -6423,7 +6500,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "TBD"
+		(property "Value" "47pF C0G"
 			(at 208.28 100.33 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -6457,6 +6534,17 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor"
+			(at 205.74 99.06 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C1671"
 			(at 205.74 99.06 0)
 			(hide yes)
 			(show_name no)
