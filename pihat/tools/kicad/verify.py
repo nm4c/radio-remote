@@ -57,7 +57,20 @@ ROOT = {
     "+5V": "J1.2 J1.4",                                   # HAT back-powers the Pi
     "GND": "J1.6 J1.9 J1.14 J1.20 J1.25 J1.30 J1.34 J1.39",
 }
-SHEETS = {"root": ROOT, "power": POWER, "control": CONTROL}
+CONNECTORS = {
+    **{f"RJ{n}": f"J2.{n} J3.{n} J4.{n}" for n in range(1, 9)},
+    "R_PTT": "J5.1 J9.1",
+    "R_UP": "J5.2",
+    "R_DN": "J5.3",
+    "R_MIC": "J5.4",
+    "RGND": "J5.5 J5.6 J5.7 J5.8 J9.2 JP1.1",
+    "GND": "JP1.2",
+    "BUSY+": "J8.1",
+    "BUSY-": "J8.2",
+    "R_SPP": "J7.1",
+    "R_SPN": "J7.2",
+}
+SHEETS = {"root": ROOT, "power": POWER, "control": CONTROL, "connectors": CONNECTORS}
 NC = {"U3.3", "U5.4"}
 NAMED = {"RGND": "U1.15", "GND": "U1.2"}   # these nets must carry exactly this name
 

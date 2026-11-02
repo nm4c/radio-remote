@@ -19,11 +19,13 @@ OUT = os.path.join(PROJ, "build")
 sys.path.insert(0, HERE)
 import sheet_power  # noqa: E402
 import sheet_control  # noqa: E402
+import sheet_connectors  # noqa: E402
 
 # (sheet name, file, builder, box position on the root sheet)
 SHEETS = [
     ("Power", "power.kicad_sch", sheet_power.build, (210.82, 30.48)),
     ("Control", "control.kicad_sch", sheet_control.build, (210.82, 53.34)),
+    ("Radio connectors", "connectors.kicad_sch", sheet_connectors.build, (210.82, 76.2)),
 ]
 
 
