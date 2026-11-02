@@ -127,3 +127,23 @@ pihat/    Pi HAT: KiCad project, schematic reference, JLC BoM
 - Pluggable control backends (CI-V / CAT serial) for radios that can report channel and RSSI
 - Per-user accounts and audit log of who transmitted when
 - VOX-style recording of RX traffic
+
+## Licence
+
+This project is open source and share-alike: you can use, modify, build and sell it,
+but anything you distribute that's based on it must be shared under the same terms.
+
+| Part | Licence | File |
+|---|---|---|
+| Software: `server/`, `web/`, `deploy/`, `pihat/tools/`, `pihat/docs/schematic/*.py` | GNU GPL v3.0 or later | [`LICENSE`](LICENSE) |
+| Hardware: the KiCad project in `pihat/` (schematics, PCB, symbols, footprints), `pihat/docs/` | CERN-OHL-S v2 | [`pihat/LICENSE`](pihat/LICENSE) |
+| Documentation: this README and `docs/` | CC BY-SA 4.0 | [`docs/LICENSE`](docs/LICENSE) |
+
+Copyright © 2026 nmc. Source: <https://github.com/nm4c/radio-remote>
+
+The HAT schematic started from KiCad's built-in Raspberry Pi HAT template, which KiCad's library
+licence lets you use in any design without passing on its terms. A future custom device-tree overlay
+based on the Linux kernel's would stay GPL-2.0, as the kernel requires.
+
+"Raspberry Pi" is a trademark of Raspberry Pi Ltd. Radio makes and models are named only to describe
+compatibility.

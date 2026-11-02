@@ -23,3 +23,14 @@ The codec uses the `tlv320aic3x` driver already in Raspberry Pi OS. Use the `dac
 or a small custom overlay if bring-up shows the codec needs to run from the 12 MHz MCLK (see the
 schematic's "Before layout" notes). After that, the remote-head server sees an ordinary ALSA sound
 card. Set `audio.input_device` / `output_device` in `config.yaml` to its name.
+
+## Licence
+
+The hardware design in this folder is licensed under the **CERN Open Hardware Licence v2, Strongly
+Reciprocal (CERN-OHL-S-2.0)**. See [`LICENSE`](LICENSE). The generator scripts in `tools/` and
+`docs/schematic/gen.py` are software and are GPL-3.0-or-later (see the repository root).
+
+CERN-OHL-S asks that products made from the design say where the source can be found. Put this on
+the board's silkscreen during layout, for example:
+
+    Radio Remote HAT  CERN-OHL-S-2.0  github.com/nm4c/radio-remote
