@@ -34,9 +34,7 @@ def build(path, page):
     s.symbol("sa818s-hat:SA818S", "U6", "SA818S-U", (ux, uy), lcsc="C3001549",
              footprint="sa818s-hat:NiceRF_SA818S", ref_at=(ux - 12.7, uy - 30.48), val_at=(ux - 12.7, uy - 27.94),
              ref_just="left", val_just="left",
-             conn={"18": ("glabel", "SA_MIC", 5.08), "16": ("label", "SA_RXD", 5.08), "17": ("label", "SA_TXD", 5.08),
-                   "5": ("label", "SA_PTT", 5.08), "6": ("glabel", "GPIO27", 5.08), "7": ("label", "SA_HL", 5.08),
-                   "1": ("label", "SA_AUDIOON", 5.08), "3": ("glabel", "SA_AF", 5.08),
+             conn={"18": ("glabel", "SA_MIC", 5.08), "6": ("glabel", "GPIO27", 5.08), "3": ("glabel", "SA_AF", 5.08),
                    **{str(n): ("nc",) for n in (2, 4, 11, 13, 14, 15)}})
     # supply at the VBAT pad: +4V2_RF with C40 100 nF right at the pin (C38/C39 bulk on the RF power sheet)
     vb = s.p("U6.8")
@@ -97,10 +95,11 @@ def build(path, page):
     )):
         s.text(t, (184.15, 119.38 + i * 3.81))
 
-    # ---------------- Pi interface (left)
-    s.text("PI INTERFACE", (17.78, 45.72), 1.5, bold=True)
-    # PTT: GPIO17 -> Q1 -> SA_PTT, pulled up: boots in receive
-    def nfet(ref, gate_net, drain_net, rpd, at, pullup=None):
+    # ---------------- Pi interface (left), each circuit wired straight to its module pin
+    s.text("PI INTERFACE", (17.78, 38.1), 1.5, bold=True)
+
+    def nfet(ref, gate_net, rpd, at, pullup=None):
+        """N-FET with gate pulldown; returns the drain-side terminal the module pin is wired to."""
         x, y = at
         s.symbol("Transistor_FET:2N7002", ref, "2N7002", (x, y), lcsc="C8545",
                  footprint="Package_TO_SOT_SMD:SOT-23", ref_at=(x + 3.81, y - 1.27), val_at=(x + 3.81, y + 1.27),
@@ -115,39 +114,53 @@ def build(path, page):
         s.wire(gn, s.p(f"{rpd}.1"))
         d = s.p(f"{ref}.3")
         dt = (d[0], d[1] - 5.08)
-        chain(s, [d, dt, (dt[0] + 7.62, dt[1])])
-        s.label(drain_net, (dt[0] + 7.62, dt[1]), (1, 0))
+        s.wire(d, dt)
         if pullup:
             s.junction(dt)
             s.symbol("Device:R", pullup, "10k", (dt[0], dt[1] - 6.35), footprint=R0603, lcsc="C25804",
                      fields_dir="left", conn={"1": ("pwr", "+3V3")})
             s.wire(s.p(f"{pullup}.2"), dt)
+        return dt
 
-    nfet("Q1", "GPIO17", "SA_PTT", "R41", (45.72, 66.04), pullup="R40")
-    nfet("Q2", "GPIO22", "SA_HL", "R42", (45.72, 101.6))
-
-    # PD pull-down (sleep until the server wakes the module)
-    s.symbol("Device:R", "R43", "100k", (99.06, 152.4), footprint=R0603, lcsc="C25803", conn={"1": ("glabel", "GPIO27", 5.08), "2": G})
-
-    # UART: Pi TX -> 1k -> module RXD; module TXD -> 10k/22k -> Pi RX
-    y = 134.62
-    s.text("UART  (9600 8N1, Pi GPIO14/15)", (17.78, y - 6.35), 1.27, bold=True)
-    s.symbol("Device:R", "R48", "1k", (38.1, y), rot=90, footprint=R0603, lcsc="C21190", ref_at=(38.1, y - 3.81), val_at=(38.1, y + 3.81))
-    a, b = sorted([s.p("R48.1"), s.p("R48.2")])
-    chain(s, [(27.94, y), a]); s.label("UART_TXD", (27.94, y), (-1, 0), glob=True)
-    chain(s, [b, (48.26, y)]); s.label("SA_RXD", (48.26, y), (1, 0))
-
-    def divider(top_net, out_net, rt, rb, at, out_glob=True):
-        x, y0 = at
-        s.symbol("Device:R", rt, "10k", (x, y0), footprint=R0603, lcsc="C25804", conn={"1": ("label", top_net, 5.08)})
+    def divider(out_net, rt, rb, x, y0):
+        """10k/22k divider, module output on top; returns the terminal above R(top)."""
+        s.symbol("Device:R", rt, "10k", (x, y0), footprint=R0603, lcsc="C25804")
         s.symbol("Device:R", rb, "22k", (x, y0 + 10.16), footprint=R0603, lcsc="C31850", conn={"2": G})
         n = (x, y0 + 5.08)
         chain(s, [s.p(f"{rt}.2"), n, s.p(f"{rb}.1")])
-        s.wire(n, (x + 7.62, n[1])); s.junction(n)
-        s.label(out_net, (x + 7.62, n[1]), (1, 0), glob=out_glob)
+        s.wire(n, (x - 7.62, n[1])); s.junction(n)
+        s.label(out_net, (x - 7.62, n[1]), (-1, 0), glob=True)
+        t = s.p(f"{rt}.1")
+        term = (t[0], t[1] - 2.54)
+        s.wire(t, term)
+        return term
 
-    divider("SA_TXD", "UART_RXD", "R46", "R47", (99.06, 58.42))
-    divider("SA_AUDIOON", "GPIO23", "R44", "R45", (99.06, 104.14))
+    # UART: Pi TX -> 1k -> module RXD
+    y = 50.8
+    s.text("UART 9600 8N1 (GPIO14/15)", (17.78, y - 5.08), 1.27, bold=True)
+    s.symbol("Device:R", "R48", "1k", (38.1, y), rot=90, footprint=R0603, lcsc="C21190", ref_at=(38.1, y - 3.81), val_at=(38.1, y + 3.81))
+    a, b = sorted([s.p("R48.1"), s.p("R48.2")])
+    chain(s, [(27.94, y), a]); s.label("UART_TXD", (27.94, y), (-1, 0), glob=True)
+
+    src = {   # module pin -> terminal of the circuit that drives / reads it
+        "16": b,
+        "17": divider("UART_RXD", "R46", "R47", 91.44, 62.23),
+        "5": nfet("Q1", "GPIO17", "R41", (45.72, 96.52), pullup="R40"),
+        "7": nfet("Q2", "GPIO22", "R42", (45.72, 127.0)),
+        "1": divider("GPIO23", "R44", "R45", 91.44, 128.27),
+    }
+    # route: across at the terminal's height, down/up a lane, across to the pin.
+    # Sources above their pins take lanes right-to-left from the top, those below left-to-right.
+    lanes = {"16": 124.46, "17": 119.38, "5": 114.3, "7": 104.14, "1": 109.22}
+    for pin, t in src.items():
+        pp = s.p(f"U6.{pin}")
+        lx = lanes[pin]
+        pts = [t, (lx, t[1]), (lx, pp[1]), pp]
+        chain(s, [q for k, q in enumerate(pts) if k == 0 or q != pts[k - 1]])
+
+    # PD pull-down (sleep until the server wakes the module)
+    s.symbol("Device:R", "R43", "100k", (124.46, 147.32), footprint=R0603, lcsc="C25803", conn={"1": ("glabel", "GPIO27", 5.08), "2": G})
+
     for i, t in enumerate((
         "PTT: GPIO17 high = transmit. R40 keeps the module in receive at boot.",
         "H/L: never driven high. Q2 off = high power (1 W), on = 0.5 W.",
