@@ -55,7 +55,7 @@ CONTROL = {
 }
 ROOT = {
     "+5V": "J1.2 J1.4",                                   # HAT back-powers the Pi
-    "GND": "J1.6 J1.9 J1.14 J1.20 J1.25 J1.30 J1.34 J1.39",
+    "GND": "J1.6 J1.9 J1.14 J1.20 J1.25 J1.30 J1.34 J1.39 U6.4",
 }
 CONNECTORS = {
     **{f"RJ{n}": f"J2.{n} J3.{n} J4.{n}" for n in range(1, 9)},
@@ -63,15 +63,55 @@ CONNECTORS = {
     "R_UP": "J5.2",
     "R_DN": "J5.3",
     "R_MIC": "J5.4",
-    "RGND": "J5.5 J5.6 J5.7 J5.8 J9.2 JP1.1",
+    "RGND": "J5.5 J5.6 J5.7 J5.8 J9.2 JP1.1 J2.SH J3.SH",
     "GND": "JP1.2",
     "BUSY+": "J8.1",
     "BUSY-": "J8.2",
     "R_SPP": "J7.1",
     "R_SPN": "J7.2",
 }
-SHEETS = {"root": ROOT, "power": POWER, "control": CONTROL, "connectors": CONNECTORS}
-NC = {"U3.3", "U5.4"}
+CODEC = {
+    "I2C_SCL": "U2.8 J1.5",
+    "I2C_SDA": "U2.9 J1.3",
+    "CODEC_RST": "U2.31 R21.1 J1.37",
+    "OSC_12M": "Y1.3 R16.1",
+    "U2_MCLK": "R16.2 U2.1",
+    "I2S_BCLK": "R17.1 J1.12",
+    "U2_BCLK": "R17.2 U2.2",
+    "I2S_LRCLK": "R18.1 J1.35",
+    "U2_WCLK": "R18.2 U2.3",
+    "I2S_DIN": "R19.1 J1.40",
+    "U2_DIN": "R19.2 U2.4",
+    "I2S_DOUT": "R20.1 J1.38",
+    "U2_DOUT": "R20.2 U2.5",
+    "+3V3": "U2.7 Y1.4 Y1.1 C11.1 C14.1 J1.1 J1.17 U6.8",
+    "+1V8": "U2.32 C12.1",
+    "+3.3VA": "U2.25 U2.18 U2.24 C8.1 C9.1 C10.1 C13.1",
+    "GND": "U2.6 U2.17 U2.26 U2.21 U2.33 R21.2 Y1.2 C8.2 C9.2 C10.2 C11.2 C12.2 C13.2 C14.2",
+    "RX_P": "U2.10 C2.1",
+    "RX_N": "U2.11 C3.1",
+    "HP_P": "U2.19 R14.1",
+    "HP_N": "U2.20 R15.1",
+}
+AUDIO = {
+    "T1_1": "R14.2 T1.1",
+    "T1_3": "R15.2 T1.3",
+    "T1_6": "T1.6 R9.1",
+    "TXPAD": "R9.2 R10.1 C1.1",
+    "C1_FB4": "C1.2 FB4.1",
+    "R_MIC": "FB4.2 C7.1",
+    "RGND": "T1.4 R10.2 C7.2",
+    "T2_6": "T2.6 FB5.1",
+    "R_SPP": "FB5.2",
+    "T2_4": "T2.4 FB6.1",
+    "R_SPN": "FB6.2",
+    "T2_1": "T2.1 R11.2",
+    "RXP": "R11.1 R13.1 C2.2",
+    "T2_3": "T2.3 R12.2",
+    "RXN": "R12.1 R13.2 C3.2",
+}
+SHEETS = {"root": ROOT, "power": POWER, "control": CONTROL, "connectors": CONNECTORS, "codec": CODEC, "audio": AUDIO}
+NC = {"U3.3", "U5.4", "T1.2", "T1.5", "T2.2", "T2.5"} | {f"U2.{n}" for n in (12, 13, 14, 15, 16, 22, 23, 27, 28, 29, 30)}
 NAMED = {"RGND": "U1.15", "GND": "U1.2"}   # these nets must carry exactly this name
 
 

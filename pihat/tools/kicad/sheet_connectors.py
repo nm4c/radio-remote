@@ -1,7 +1,7 @@
 """Sheet: Radio connectors. RJ45 mic jacks (parallel), J4/J5 patch headers, screw terminals, JP1 ground link."""
 from schbuild import Sheet
 
-RJ45_FP = "Connector_RJ:RJ45_Amphenol_54602-x08_Horizontal"
+RJ45_FP = "Connector_RJ:RJ45_Amphenol_RJHSE5380"   # Amphenol RJHSE5380, LCSC C464586 (no magnetics)
 HDR_FP = "Connector_PinHeader_2.54mm:PinHeader_1x08_P2.54mm_Vertical"
 TERM_FP = "TerminalBlock_Phoenix:TerminalBlock_Phoenix_PT-1,5-2-3.5-H_1x02_P3.50mm_Horizontal"
 
@@ -14,12 +14,13 @@ def chain(s, pts):
 def build(path, page):
     s = Sheet("Radio connectors", path, page)
     s.text("MIC CONNECTORS  (wired pin for pin)", (17.78, 30.48), 2.0, bold=True)
+    s.text("Shields to RGND", (17.78, 34.29))
 
     # J2 to the radio's mic socket, J3 for the original mic: every pin in parallel via RJ1..RJ8
     for ref, val, y in (("J2", "RJ45 to radio mic", 63.5), ("J3", "RJ45 original mic", 106.68)):
-        s.symbol("Connector:8P8C", ref, val, (33.02, y), footprint=RJ45_FP, lcsc="C2902702",
-                 ref_at=(33.02, y - 15.24), val_at=(33.02, y + 13.97),
-                 conn={str(n): ("label", f"RJ{n}", 5.08) for n in range(1, 9)})
+        s.symbol("Connector:8P8C_Shielded", ref, val, (33.02, y), footprint=RJ45_FP, lcsc="C464586",
+                 ref_at=(33.02, y - 15.24), val_at=(45.72, y + 12.7), val_just="left",
+                 conn={**{str(n): ("label", f"RJ{n}", 5.08) for n in range(1, 9)}, "SH": ("pwr", "RGND")})
 
     # J4: RJ45 pins on a header; J5: board functions. Patched per radio with jumper wires.
     s.text("PATCH HEADERS", (88.9, 30.48), 2.0, bold=True)

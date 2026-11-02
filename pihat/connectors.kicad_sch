@@ -11,7 +11,7 @@
 		(company "Radio Remote HAT")
 	)
 	(lib_symbols
-		(symbol "Connector:8P8C"
+		(symbol "Connector:8P8C_Shielded"
 			(pin_names
 				(offset 1.016)
 			)
@@ -31,7 +31,7 @@
 					(justify right)
 				)
 			)
-			(property "Value" "8P8C"
+			(property "Value" "8P8C_Shielded"
 				(at 2.54 13.97 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -64,7 +64,7 @@
 					)
 				)
 			)
-			(property "Description" "RJ connector, 8P8C (8 positions 8 connected), RJ31/RJ32/RJ33/RJ34/RJ35/RJ41/RJ45/RJ49/RJ61"
+			(property "Description" "RJ connector, 8P8C (8 positions 8 connected), RJ31/RJ32/RJ33/RJ34/RJ35/RJ41/RJ45/RJ49/RJ61, Shielded"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -97,7 +97,7 @@
 					)
 				)
 			)
-			(symbol "8P8C_0_1"
+			(symbol "8P8C_Shielded_0_1"
 				(polyline
 					(pts
 						(xy -6.35 1.905)
@@ -245,7 +245,7 @@
 					)
 				)
 			)
-			(symbol "8P8C_1_1"
+			(symbol "8P8C_Shielded_1_1"
 				(pin passive line
 					(at 10.16 -7.62 180)
 					(length 2.54)
@@ -383,6 +383,144 @@
 						)
 					)
 					(number "8"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 0 -12.7 90)
+					(length 2.54)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "SH"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
+		(symbol "power:GND"
+			(power global)
+			(pin_numbers
+				(hide yes)
+			)
+			(pin_names
+				(offset 0)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "#PWR"
+				(at 0 -6.35 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "GND"
+				(at 0 -3.81 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "global power"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "GND_0_1"
+				(polyline
+					(pts
+						(xy 0 0)
+						(xy 0 -1.27)
+						(xy 1.27 -1.27)
+						(xy 0 -2.54)
+						(xy -1.27 -1.27)
+						(xy 0 -1.27)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "GND_1_1"
+				(pin power_in line
+					(at 0 0 270)
+					(length 0)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -715,126 +853,6 @@
 						)
 					)
 					(number "8"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-			(embedded_fonts no)
-		)
-		(symbol "power:GND"
-			(power global)
-			(pin_numbers
-				(hide yes)
-			)
-			(pin_names
-				(offset 0)
-				(hide yes)
-			)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(in_pos_files yes)
-			(duplicate_pin_numbers_are_jumpers no)
-			(property "Reference" "#PWR"
-				(at 0 -6.35 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Value" "GND"
-				(at 0 -3.81 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Footprint" ""
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Datasheet" ""
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "ki_keywords" "global power"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(symbol "GND_0_1"
-				(polyline
-					(pts
-						(xy 0 0)
-						(xy 0 -1.27)
-						(xy 1.27 -1.27)
-						(xy 0 -2.54)
-						(xy -1.27 -1.27)
-						(xy 0 -1.27)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-			)
-			(symbol "GND_1_1"
-				(pin power_in line
-					(at 0 0 270)
-					(length 0)
-					(name ""
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -1248,8 +1266,19 @@
 		)
 		(uuid "ea43df37-e6fa-57d9-a79a-6874eac00ef8")
 	)
+	(text "Shields to RGND"
+		(exclude_from_sim no)
+		(at 17.78 34.29 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "f9e249f7-c5c8-5ba0-ab4e-4428e3a4cb61")
+	)
 	(symbol
-		(lib_id "Connector:8P8C")
+		(lib_id "Connector:8P8C_Shielded")
 		(at 33.02 63.5 0)
 		(unit 1)
 		(body_style 1)
@@ -1270,16 +1299,17 @@
 			)
 		)
 		(property "Value" "RJ45 to radio mic"
-			(at 33.02 77.47 0)
+			(at 45.72 76.2 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
+				(justify left)
 			)
 		)
-		(property "Footprint" "Connector_RJ:RJ45_Amphenol_54602-x08_Horizontal"
+		(property "Footprint" "Connector_RJ:RJ45_Amphenol_RJHSE5380"
 			(at 33.02 63.5 0)
 			(hide yes)
 			(show_name no)
@@ -1301,7 +1331,7 @@
 				)
 			)
 		)
-		(property "Description" "RJ connector, 8P8C (8 positions 8 connected), RJ31/RJ32/RJ33/RJ34/RJ35/RJ41/RJ45/RJ49/RJ61"
+		(property "Description" "RJ connector, 8P8C (8 positions 8 connected), RJ31/RJ32/RJ33/RJ34/RJ35/RJ41/RJ45/RJ49/RJ61, Shielded"
 			(at 33.02 63.5 0)
 			(hide yes)
 			(show_name no)
@@ -1312,7 +1342,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C2902702"
+		(property "LCSC" "C464586"
 			(at 33.02 63.5 0)
 			(hide yes)
 			(show_name no)
@@ -1346,6 +1376,9 @@
 		)
 		(pin "8"
 			(uuid "8ac0c530-1905-5aee-b527-f7e1c2d0a61d")
+		)
+		(pin "SH"
+			(uuid "a1420ba7-8b91-5ac7-8950-b4032eeeabad")
 		)
 		(instances
 			(project "pihat"
@@ -1525,7 +1558,84 @@
 		(uuid "b9fbbec8-a48a-560e-a83d-87611b7f9a83")
 	)
 	(symbol
-		(lib_id "Connector:8P8C")
+		(lib_id "power:GND")
+		(at 33.02 76.2 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom no)
+		(on_board no)
+		(in_pos_files no)
+		(dnp no)
+		(uuid "12726ff3-d444-5fe4-89ab-282f5e547636")
+		(property "Reference" "#PWR401"
+			(at 33.02 76.2 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "RGND"
+			(at 33.02 81.28 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 33.02 76.2 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 33.02 76.2 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 33.02 76.2 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "2d77c2e7-4291-5c15-97f2-c447d2fbbfa9")
+		)
+		(instances
+			(project "pihat"
+				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/d719f268-11e4-4291-92f6-50fb56446bc7"
+					(reference "#PWR401")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Connector:8P8C_Shielded")
 		(at 33.02 106.68 0)
 		(unit 1)
 		(body_style 1)
@@ -1546,16 +1656,17 @@
 			)
 		)
 		(property "Value" "RJ45 original mic"
-			(at 33.02 120.65 0)
+			(at 45.72 119.38 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
+				(justify left)
 			)
 		)
-		(property "Footprint" "Connector_RJ:RJ45_Amphenol_54602-x08_Horizontal"
+		(property "Footprint" "Connector_RJ:RJ45_Amphenol_RJHSE5380"
 			(at 33.02 106.68 0)
 			(hide yes)
 			(show_name no)
@@ -1577,7 +1688,7 @@
 				)
 			)
 		)
-		(property "Description" "RJ connector, 8P8C (8 positions 8 connected), RJ31/RJ32/RJ33/RJ34/RJ35/RJ41/RJ45/RJ49/RJ61"
+		(property "Description" "RJ connector, 8P8C (8 positions 8 connected), RJ31/RJ32/RJ33/RJ34/RJ35/RJ41/RJ45/RJ49/RJ61, Shielded"
 			(at 33.02 106.68 0)
 			(hide yes)
 			(show_name no)
@@ -1588,7 +1699,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C2902702"
+		(property "LCSC" "C464586"
 			(at 33.02 106.68 0)
 			(hide yes)
 			(show_name no)
@@ -1622,6 +1733,9 @@
 		)
 		(pin "8"
 			(uuid "10ddbe27-75e9-58fa-8063-2340f136cb49")
+		)
+		(pin "SH"
+			(uuid "377e5f3a-e297-5d50-9ccd-f7a33a97b5b0")
 		)
 		(instances
 			(project "pihat"
@@ -1799,6 +1913,83 @@
 			(justify left bottom)
 		)
 		(uuid "aa1ccd18-c2f7-50f7-a277-d5a32eabcbf9")
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 33.02 119.38 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom no)
+		(on_board no)
+		(in_pos_files no)
+		(dnp no)
+		(uuid "789f7b47-f380-530f-90c8-8f5cb8f9738e")
+		(property "Reference" "#PWR402"
+			(at 33.02 119.38 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "RGND"
+			(at 33.02 124.46 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 33.02 119.38 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 33.02 119.38 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 33.02 119.38 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "8e2b0a43-f96c-53ab-acd3-74c8fa31ca18")
+		)
+		(instances
+			(project "pihat"
+				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/d719f268-11e4-4291-92f6-50fb56446bc7"
+					(reference "#PWR402")
+					(unit 1)
+				)
+			)
+		)
 	)
 	(text "PATCH HEADERS"
 		(exclude_from_sim no)
@@ -2405,8 +2596,8 @@
 		(on_board no)
 		(in_pos_files no)
 		(dnp no)
-		(uuid "12726ff3-d444-5fe4-89ab-282f5e547636")
-		(property "Reference" "#PWR401"
+		(uuid "de009c50-efc8-5942-8cbd-e20d4fe97bb0")
+		(property "Reference" "#PWR403"
 			(at 149.86 78.74 0)
 			(hide yes)
 			(show_name no)
@@ -2461,12 +2652,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "2d77c2e7-4291-5c15-97f2-c447d2fbbfa9")
+			(uuid "42725d06-c26c-52d2-92ae-198000504dc7")
 		)
 		(instances
 			(project "pihat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/d719f268-11e4-4291-92f6-50fb56446bc7"
-					(reference "#PWR401")
+					(reference "#PWR403")
 					(unit 1)
 				)
 			)
@@ -2976,8 +3167,8 @@
 		(on_board no)
 		(in_pos_files no)
 		(dnp no)
-		(uuid "789f7b47-f380-530f-90c8-8f5cb8f9738e")
-		(property "Reference" "#PWR402"
+		(uuid "85ed5a0a-e398-5eba-9309-69a079bee1d9")
+		(property "Reference" "#PWR404"
 			(at 213.36 96.52 0)
 			(hide yes)
 			(show_name no)
@@ -3032,12 +3223,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "8e2b0a43-f96c-53ab-acd3-74c8fa31ca18")
+			(uuid "61c1fad9-3826-5cdf-a472-3a4bed760559")
 		)
 		(instances
 			(project "pihat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/d719f268-11e4-4291-92f6-50fb56446bc7"
-					(reference "#PWR402")
+					(reference "#PWR404")
 					(unit 1)
 				)
 			)
@@ -3221,8 +3412,8 @@
 		(on_board no)
 		(in_pos_files no)
 		(dnp no)
-		(uuid "de009c50-efc8-5942-8cbd-e20d4fe97bb0")
-		(property "Reference" "#PWR403"
+		(uuid "ee4c5481-053b-5494-8d97-8a5d99821928")
+		(property "Reference" "#PWR405"
 			(at 45.72 154.94 0)
 			(hide yes)
 			(show_name no)
@@ -3277,12 +3468,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "42725d06-c26c-52d2-92ae-198000504dc7")
+			(uuid "1d560c3e-efbd-5956-adf0-4b7839f179b8")
 		)
 		(instances
 			(project "pihat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/d719f268-11e4-4291-92f6-50fb56446bc7"
-					(reference "#PWR403")
+					(reference "#PWR405")
 					(unit 1)
 				)
 			)
@@ -3320,8 +3511,8 @@
 		(on_board no)
 		(in_pos_files no)
 		(dnp no)
-		(uuid "85ed5a0a-e398-5eba-9309-69a079bee1d9")
-		(property "Reference" "#PWR404"
+		(uuid "e403bf1b-ccd2-57dc-a83e-9b386dd8dacd")
+		(property "Reference" "#PWR406"
 			(at 66.04 154.94 0)
 			(hide yes)
 			(show_name no)
@@ -3376,12 +3567,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "61c1fad9-3826-5cdf-a472-3a4bed760559")
+			(uuid "2a0d4ceb-6a07-56aa-8fcb-c8e8bba6f103")
 		)
 		(instances
 			(project "pihat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/d719f268-11e4-4291-92f6-50fb56446bc7"
-					(reference "#PWR404")
+					(reference "#PWR406")
 					(unit 1)
 				)
 			)

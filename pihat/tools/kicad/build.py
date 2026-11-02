@@ -20,12 +20,17 @@ sys.path.insert(0, HERE)
 import sheet_power  # noqa: E402
 import sheet_control  # noqa: E402
 import sheet_connectors  # noqa: E402
+import sheet_codec  # noqa: E402
+import sheet_audio  # noqa: E402
+import projlib  # noqa: E402
 
 # (sheet name, file, builder, box position on the root sheet)
 SHEETS = [
     ("Power", "power.kicad_sch", sheet_power.build, (210.82, 30.48)),
     ("Control", "control.kicad_sch", sheet_control.build, (210.82, 53.34)),
     ("Radio connectors", "connectors.kicad_sch", sheet_connectors.build, (210.82, 76.2)),
+    ("Codec", "codec.kicad_sch", sheet_codec.build, (210.82, 99.06)),
+    ("Audio isolation", "audio.kicad_sch", sheet_audio.build, (210.82, 121.92)),
 ]
 
 
@@ -105,9 +110,14 @@ def renumber_root(text):
 
 # Header nets the HAT uses: local labels on the template's header become global labels.
 GLOBAL_NETS = {"GPIO17", "GPIO27", "GPIO22", "GPIO23"}
+# template label -> HAT net name (made global)
+# (KiCad stores "/" inside label names as {slash})
+RENAME = {"GPIO18{slash}PCM.CLK": "I2S_BCLK", "GPIO19{slash}PCM.FS": "I2S_LRCLK", "GPIO20{slash}PCM.DIN": "I2S_DOUT",
+          "GPIO21{slash}PCM.DOUT": "I2S_DIN", "GPIO2{slash}SDA1": "I2C_SDA", "GPIO3{slash}SCL1": "I2C_SCL",
+          "GPIO26": "CODEC_RST"}
 
 
-def globalize_root(text, names=GLOBAL_NETS):
+def globalize_root(text, names=GLOBAL_NETS | set(RENAME)):
     """Turn the root sheet's local labels with these names into global labels (idempotent)."""
     out, i = [], 0
     for m in re.finditer(r'\t\(label "([^"]+)"\n\t\t\(at ([\d.]+) ([\d.]+) (\d+)\)', text):
@@ -118,7 +128,8 @@ def globalize_root(text, names=GLOBAL_NETS):
         # a local label sits over its wire; a global label points away from it, so face the other way
         ang = (int(m.group(4)) + 180) % 360
         just = "right" if ang == 180 else "left"
-        block = (f'\t(global_label "{m.group(1)}"\n\t\t(shape bidirectional)\n'
+        new_name = RENAME.get(m.group(1), m.group(1))
+        block = (f'\t(global_label "{new_name}"\n\t\t(shape bidirectional)\n'
                  f'\t\t(at {m.group(2)} {m.group(3)} {ang})\n\t\t(fields_autoplaced yes)\n'
                  f'\t\t(effects\n\t\t\t(font\n\t\t\t\t(size 1.27 1.27)\n\t\t\t)\n\t\t\t(justify {just})\n\t\t)\n'
                  f'\t\t(uuid "{u}")\n\t)\n')
@@ -130,6 +141,7 @@ def globalize_root(text, names=GLOBAL_NETS):
 
 
 def build():
+    projlib.write_all(PROJ)
     text = globalize_root(renumber_root(open(ROOT).read()))
     ru = root_uuid(text)
     for page, (name, fname, fn, at) in enumerate(SHEETS, start=2):

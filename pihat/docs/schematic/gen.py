@@ -659,7 +659,7 @@ PARTS = [
     ("C19", "100 µF 50 V electrolytic 8×10.2", "C72480", "Ext"),
     ("C21–C23", "22 µF 25 V X5R 1206", "C12891", "Basic"),
     ("J1", "2×20 female header 2.54 mm", "C2977589", "Ext · THT"),
-    ("J2, J3", "RJ45 8P8C, no magnetics", "C2902702", "Ext · THT"),
+    ("J2, J3", "RJ45 8P8C shielded, no magnetics (Amphenol RJHSE5380)", "C464586", "Ext · THT"),
     ("J4, J5", "1×8 male header 2.54 mm", "C492407", "Ext · THT"),
     ("J6–J9", "KF350-3.5-2P screw terminal", "C474892", "Ext · THT"),
     ("JP1, JP2, TP1", "PCB features only (solder jumpers, test pad)", "—", "—"),
@@ -671,7 +671,7 @@ FOOTPRINT = {
     "C160457": "Oscillator_SMD_3225-4Pin", "C840532": "Bourns_SM-LP-5001", "C167221": "L_7.0x6.6mm",
     "C65009": "D_SMA", "C123819": "D_SMB", "C2128": "D_SOD-323", "C18198333": "Fuse_1812", "C2286": "LED_0603",
     "C1002": "L_0603", "C28323": "C_0805", "C15850": "C_0805", "C50254": "C_1206", "C12891": "C_1206",
-    "C72480": "CP_Elec_8x10.2", "C2977589": "PinSocket_2x20_P2.54mm_Vertical", "C2902702": "RJ45_Unshielded",
+    "C72480": "CP_Elec_8x10.2", "C2977589": "PinSocket_2x20_P2.54mm_Vertical", "C464586": "RJ45_Amphenol_RJHSE5380",
     "C492407": "PinHeader_1x08_P2.54mm_Vertical", "C474892": "TerminalBlock_P3.50mm_1x02",
 }
 

@@ -9,6 +9,9 @@ _cache = {}
 
 
 def _lib(name):
+    if name == "pihat":                       # project library, generated in code
+        from projlib import symbols
+        return symbols()
     if name not in _cache:
         path = os.path.join(STOCK, name + ".kicad_sym")
         _cache[name] = {s[1]: s for s in find_all(parse(open(path).read()), "symbol")}

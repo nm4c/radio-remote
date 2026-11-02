@@ -3292,23 +3292,27 @@
 		)
 		(uuid "29d046c2-f681-4254-89b3-1ec3aa495433")
 	)
-	(label "GPIO21{slash}PCM.DOUT"
-		(at 100.33 76.2 180)
+	(global_label "I2S_DIN"
+		(shape bidirectional)
+		(at 100.33 76.2 0)
+		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right bottom)
+			(justify left)
 		)
 		(uuid "31b15bb4-e7a6-46f1-aabc-e5f3cca1ba4f")
 	)
-	(label "GPIO19{slash}PCM.FS"
-		(at 31.75 71.12 0)
+	(global_label "I2S_LRCLK"
+		(shape bidirectional)
+		(at 31.75 71.12 180)
+		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify left bottom)
+			(justify right)
 		)
 		(uuid "3388965f-bec1-490c-9b08-dbac9be27c37")
 	)
@@ -3366,13 +3370,15 @@
 		)
 		(uuid "591fa762-d154-4cf7-8db7-a10b610ff12a")
 	)
-	(label "GPIO26"
-		(at 31.75 73.66 0)
+	(global_label "CODEC_RST"
+		(shape bidirectional)
+		(at 31.75 73.66 180)
+		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify left bottom)
+			(justify right)
 		)
 		(uuid "5f2ee32f-d6d5-4b76-8935-0d57826ec36e")
 	)
@@ -3428,13 +3434,15 @@
 		)
 		(uuid "831c710c-4564-4e13-951a-b3746ba43c78")
 	)
-	(label "GPIO2{slash}SDA1"
-		(at 31.75 30.48 0)
+	(global_label "I2C_SDA"
+		(shape bidirectional)
+		(at 31.75 30.48 180)
+		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify left bottom)
+			(justify right)
 		)
 		(uuid "8fb0631c-564a-4f96-b39b-2f827bb204a3")
 	)
@@ -3460,23 +3468,27 @@
 		)
 		(uuid "9d507609-a820-4ac3-9e87-451a1c0e6633")
 	)
-	(label "GPIO3{slash}SCL1"
-		(at 31.75 33.02 0)
+	(global_label "I2C_SCL"
+		(shape bidirectional)
+		(at 31.75 33.02 180)
+		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify left bottom)
+			(justify right)
 		)
 		(uuid "a1cb0f9a-5b27-4e0e-bc79-c6e0ff4c58f7")
 	)
-	(label "GPIO18{slash}PCM.CLK"
-		(at 100.33 40.64 180)
+	(global_label "I2S_BCLK"
+		(shape bidirectional)
+		(at 100.33 40.64 0)
+		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right bottom)
+			(justify left)
 		)
 		(uuid "a46d6ef9-bb48-47fb-afed-157a64315177")
 	)
@@ -3500,13 +3512,15 @@
 		)
 		(uuid "b2ab078a-8774-4d1b-9381-5fcf23cc6a42")
 	)
-	(label "GPIO20{slash}PCM.DIN"
-		(at 100.33 73.66 180)
+	(global_label "I2S_DOUT"
+		(shape bidirectional)
+		(at 100.33 73.66 0)
+		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right bottom)
+			(justify left)
 		)
 		(uuid "b64a2cd2-1bcf-4d65-ac61-508537c93d3e")
 	)
@@ -4815,6 +4829,90 @@
 			(project "pihat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55"
 					(page "4")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 210.82 99.06)
+		(size 38.1 12.7)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "407eaf88-a4db-490c-99bd-995294b6f442")
+		(property "Sheetname" "Codec"
+			(at 210.82 98.3484 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "codec.kicad_sch"
+			(at 210.82 112.3434 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "pihat"
+				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55"
+					(page "5")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 210.82 121.92)
+		(size 38.1 12.7)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "03e67a46-df82-40fd-bf27-56d219872ce6")
+		(property "Sheetname" "Audio isolation"
+			(at 210.82 121.2084 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "audio.kicad_sch"
+			(at 210.82 135.2034 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "pihat"
+				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55"
+					(page "6")
 				)
 			)
 		)
