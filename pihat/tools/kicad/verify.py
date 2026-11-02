@@ -55,7 +55,11 @@ CONTROL = {
 }
 ROOT = {
     "+5V": "J1.2 J1.4",                                   # HAT back-powers the Pi
-    "GND": "J1.6 J1.9 J1.14 J1.20 J1.25 J1.30 J1.34 J1.39 U6.4",
+    "GND": "J1.6 J1.9 J1.14 J1.20 J1.25 J1.30 J1.34 J1.39 U6.4 U6.1 U6.2 U6.3 JP2.2 C15.2",
+    "ID_SD": "U6.5 R22.2 J1.27",
+    "ID_SC": "U6.6 R23.2 J1.28",
+    "EE_WP": "U6.7 JP2.1 R24.2 TP1.1",
+    "+3V3": "U6.8 R22.1 R23.1 C15.1 R24.1",
 }
 CONNECTORS = {
     **{f"RJ{n}": f"J2.{n} J3.{n} J4.{n}" for n in range(1, 9)},

@@ -140,9 +140,137 @@ def globalize_root(text, names=GLOBAL_NETS | set(RENAME)):
     return "".join(out)
 
 
+# ------------------------------------------------------------------ root EEPROM / J1 tidy
+ROOT_FIELDS = {
+    "U6": {"Value": "AT24C32D-SSHM-T", "Footprint": "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm", "LCSC": "C60583",
+           "Datasheet": "https://ww1.microchip.com/downloads/en/DeviceDoc/AT24C32D-AT24C64D-Data-Sheet-DS20006035A.pdf"},
+    "R22": {"Footprint": "Resistor_SMD:R_0603_1608Metric", "LCSC": "C23018"},
+    "R23": {"Footprint": "Resistor_SMD:R_0603_1608Metric", "LCSC": "C23018"},
+    "C15": {"Value": "100nF", "Footprint": "Capacitor_SMD:C_0603_1608Metric", "LCSC": "C14663"},
+    "JP2": {"Value": "WP write enable", "Footprint": "Jumper:SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm"},
+    "J1": {"LCSC": "C2977589"},
+}
+
+
+def _symbol_block(text, ref):
+    """(start, end) of the root symbol whose Reference is ref."""
+    i = text.index(f'(property "Reference" "{ref}"')
+    start = text.rindex("\n\t(symbol\n", 0, i) + 1
+    end = text.index("\n\t)\n", i) + 4
+    return start, end
+
+
+def set_fields(text, ref, fields):
+    start, end = _symbol_block(text, ref)
+    block = text[start:end]
+    at = re.search(r"\(at ([\d.]+) ([\d.]+) \d+\)", block)
+    for name, value in fields.items():
+        pat = re.compile(r'\(property "' + re.escape(name) + r'" "[^"]*"')
+        if pat.search(block):
+            block = pat.sub(f'(property "{name}" "{value}"', block, count=1)
+        else:
+            prop = (f'\t\t(property "{name}" "{value}"\n\t\t\t(at {at.group(1)} {at.group(2)} 0)\n\t\t\t(hide yes)\n'
+                    f'\t\t\t(show_name no)\n\t\t\t(do_not_autoplace no)\n\t\t\t(effects\n\t\t\t\t(font\n'
+                    f'\t\t\t\t\t(size 1.27 1.27)\n\t\t\t\t)\n\t\t\t)\n\t\t)\n')
+            k = block.index("\t\t(pin ")
+            block = block[:k] + prop + block[k:]
+    return text[:start] + block + text[end:]
+
+
+def _remove_block(text, kind, uuid_):
+    """Remove a top-level (kind ...) item identified by its uuid."""
+    j = text.index(f'(uuid "{uuid_}")')
+    start = text.rindex(f"\n\t({kind}\n", 0, j) + 1
+    end = text.index("\n\t)\n", j) + 4
+    return text[:start] + text[end:]
+
+
+def root_eeprom(text, ru):
+    """HAT ID EEPROM to the HAT design guide: AT24C32D, A0-A2 to GND, WP pulled up (protected), JP2 to GND enables writes."""
+    for ref, f in ROOT_FIELDS.items():
+        text = set_fields(text, ref, f)
+    text = text.replace("Bridging JP1 enables write protection.",
+                        "R24 holds WP high: write-protected.\\nBridge JP2 (or ground TP1) to write it.")
+    if '(reference "R24")' in text:
+        return text
+    from schbuild import Sheet
+    from sexp import dump
+    # A0-A2: drop the no-connect flags, bus them to the ground wire
+    for u in ("00f1806c-4158-494e-882b-c5ac9b7a930a", "00f1806c-4158-494e-882b-c5ac9b7a930b",
+              "00f1806c-4158-494e-882b-c5ac9b7a930c"):
+        text = _remove_block(text, "no_connect", u)
+    text = _remove_block(text, "wire", "d4943e77-b82c-4b31-b869-1ebef0c1006c")   # (67.31,187.96)-(81.28,187.96)
+    # JP2's far side: +3V3 -> GND
+    st, en = _symbol_block(text, "#PWR0103")
+    blk = text[st:en]
+    blk = blk.replace('(lib_id "power:+3.3V")', '(lib_id "power:GND")').replace("(at 101.6 180.34 270)", "(at 101.6 180.34 0)")
+    blk = re.sub(r'\(property "Value" "\+3V3"\n(\t+)\(at [^)]*\)', r'(property "Value" "GND"\n\1(at 101.6 184.15 0)', blk)
+    blk = re.sub(r'\(property "Description" "(?:[^"\\]|\\.)*"', '(property "Description" "Power symbol creates a global label with name \\"GND\\" , ground"', blk)
+    text = text[:st] + blk + text[en:]
+
+    # U6's value text moves below its ground symbol, clear of the new WP lead
+    st, en = _symbol_block(text, "U6")
+    blk = re.sub(r'(\(property "Value" "[^"]*"\n\t+)\(at [^)]*\)', r'\1(at 81.28 197 0)', text[st:en], count=1)
+    text = text[:st] + blk + text[en:]
+
+    s = Sheet("Root", f"/{ru}", "1")
+    s.wire((67.31, 187.96), (69.85, 187.96))
+    s.wire((69.85, 187.96), (81.28, 187.96))
+    for y in (175.26, 177.8, 180.34):
+        s.wire((71.12, y), (69.85, y))
+    s.wire((69.85, 175.26), (69.85, 177.8))
+    s.wire((69.85, 177.8), (69.85, 180.34))
+    s.wire((69.85, 180.34), (69.85, 187.96))
+    for pt in ((69.85, 177.8), (69.85, 180.34), (69.85, 187.96)):
+        s.junction(pt)
+    # WP: label at JP2 pin 1, pull-up R24 and test point TP1 to the right
+    s.wire((92.71, 180.34), (92.71, 184.15))
+    s.junction((92.71, 180.34))
+    s.label("EE_WP", (92.71, 184.15), (0, 1))
+    s.symbol("Device:R_Small", "R24", "1k", (124.46, 172.72), footprint="Resistor_SMD:R_0603_1608Metric",
+             lcsc="C21190", ref_at=(126.365, 171.45), val_at=(126.365, 173.99), ref_just="left", val_just="left",
+             conn={"1": ("pwr", "+3V3", 2.54)})
+    node = (124.46, 180.34)
+    s.wire(s.p("R24.2"), node)
+    s.wire(node, (129.54, 180.34))
+    s.junction(node)
+    s.symbol("Connector:TestPoint", "TP1", "WP", (129.54, 180.34), footprint="TestPoint:TestPoint_Pad_D1.5mm",
+             in_bom=False, ref_at=(131.445, 176.53), val_at=(131.445, 179.07), ref_just="left", val_just="left")
+    s.wire(node, (124.46, 182.88))
+    s.label("EE_WP", (124.46, 182.88), (0, 1))
+    s.text("WP: R24 holds it high = write-protected.", (115.57, 190.5))
+    s.text("Close JP2 (or ground TP1) to write the EEPROM.", (115.57, 193.04))
+    items = "".join(dump(x, 1) + "\n" for x in s.items)
+    i = text.rindex("\t(sheet_instances")
+    text = text[:i] + items + text[i:]
+    # embed any library symbols the root doesn't have yet
+    k = text.index("\t(lib_symbols\n") + len("\t(lib_symbols\n")
+    extra = "".join(dump(sym, 2) + "\n" for lid, sym in s.libs.items() if f'(symbol "{lid}"' not in text)
+    return text[:k] + extra + text[k:]
+
+
+def refresh_embedded(text, lib_ids=("Device:R_Small",)):
+    """Replace the template's out-of-date embedded symbols with KiCad 10's.
+
+    Only symbols whose pins are unchanged: KiCad 10's SolderJumper_2_Open has wider pins, so the template copy stays.
+    """
+    from kicadlib import load_symbol
+    from sexp import dump
+    for lid in lib_ids:
+        key = f'\t\t(symbol "{lid}"\n'
+        if key not in text:
+            continue
+        i = text.index(key)
+        end = text.index("\n\t\t)\n", i) + 5
+        text = text[:i] + dump(load_symbol(lid), 2) + "\n" + text[end:]
+    return text
+
+
 def build():
     projlib.write_all(PROJ)
     text = globalize_root(renumber_root(open(ROOT).read()))
+    text = root_eeprom(text, root_uuid(text))
+    text = refresh_embedded(text)
     ru = root_uuid(text)
     for page, (name, fname, fn, at) in enumerate(SHEETS, start=2):
         text, su = ensure_sheet(text, name, fname, at, page)

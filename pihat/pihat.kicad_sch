@@ -8,6 +8,271 @@
 		(date "15 nov 2012")
 	)
 	(lib_symbols
+		(symbol "power:+3V3"
+			(power global)
+			(pin_numbers
+				(hide yes)
+			)
+			(pin_names
+				(offset 0)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "#PWR"
+				(at 0 -3.81 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "+3V3"
+				(at 0 3.556 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "Power symbol creates a global label with name \"+3V3\""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "global power"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "+3V3_0_1"
+				(polyline
+					(pts
+						(xy -0.762 1.27)
+						(xy 0 2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0 2.54)
+						(xy 0.762 1.27)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0 0)
+						(xy 0 2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "+3V3_1_1"
+				(pin power_in line
+					(at 0 0 90)
+					(length 0)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
+		(symbol "Connector:TestPoint"
+			(pin_numbers
+				(hide yes)
+			)
+			(pin_names
+				(offset 0.762)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "TP"
+				(at 0 6.858 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "TestPoint"
+				(at 0 5.08 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 5.08 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 5.08 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "test point"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "test point tp"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_fp_filters" "Pin* Test*"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "TestPoint_0_1"
+				(circle
+					(center 0 3.302)
+					(radius 0.762)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "TestPoint_1_1"
+				(pin passive line
+					(at 0 0 90)
+					(length 2.54)
+					(name "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 		(symbol "Connector_Generic:Conn_02x20_Odd_Even"
 			(pin_names
 				(offset 1.016)
@@ -1438,25 +1703,23 @@
 			(in_pos_files yes)
 			(duplicate_pin_numbers_are_jumpers no)
 			(property "Reference" "R"
-				(at 0.762 0.508 0)
+				(at 0 0 90)
 				(show_name no)
 				(do_not_autoplace no)
 				(effects
 					(font
-						(size 1.27 1.27)
+						(size 1.016 1.016)
 					)
-					(justify left)
 				)
 			)
 			(property "Value" "R_Small"
-				(at 0.762 -1.016 0)
+				(at 1.778 0 90)
 				(show_name no)
 				(do_not_autoplace no)
 				(effects
 					(font
 						(size 1.27 1.27)
 					)
-					(justify left)
 				)
 			)
 			(property "Footprint" ""
@@ -2415,7 +2678,7 @@
 		)
 		(uuid "36e2c557-2c2a-4fba-9b6f-1167ab8ec281")
 	)
-	(text "ID_SD and ID_SC PINS:\nThese pins are reserved for HAT ID EEPROM.\n\nAt boot time this I2C interface will be\ninterrogated to look for an EEPROM\nthat identifes the attached board and\nallows automagic setup of the GPIOs\n(and optionally, Linux drivers).\n\nBridging JP1 enables write protection.\n\nDO NOT USE these pins for anything other\nthan attaching an I2C ID EEPROM. Leave\nunconnected if ID EEPROM not required."
+	(text "ID_SD and ID_SC PINS:\nThese pins are reserved for HAT ID EEPROM.\n\nAt boot time this I2C interface will be\ninterrogated to look for an EEPROM\nthat identifes the attached board and\nallows automagic setup of the GPIOs\n(and optionally, Linux drivers).\n\nR24 holds WP high: write-protected.\nBridge JP2 (or ground TP1) to write it.\n\nDO NOT USE these pins for anything other\nthan attaching an I2C ID EEPROM. Leave\nunconnected if ID EEPROM not required."
 		(exclude_from_sim no)
 		(at 16.51 193.04 0)
 		(effects
@@ -2509,18 +2772,6 @@
 		(diameter 1.016)
 		(color 0 0 0 0)
 		(uuid "fe8d9267-7834-48d6-a191-c8724b2ee78d")
-	)
-	(no_connect
-		(at 71.12 175.26)
-		(uuid "00f1806c-4158-494e-882b-c5ac9b7a930a")
-	)
-	(no_connect
-		(at 71.12 177.8)
-		(uuid "00f1806c-4158-494e-882b-c5ac9b7a930b")
-	)
-	(no_connect
-		(at 71.12 180.34)
-		(uuid "00f1806c-4158-494e-882b-c5ac9b7a930c")
 	)
 	(wire
 		(pts
@@ -3131,16 +3382,6 @@
 			(type solid)
 		)
 		(uuid "d4943e77-b82c-4b31-b869-1ebef0c1006b")
-	)
-	(wire
-		(pts
-			(xy 67.31 187.96) (xy 81.28 187.96)
-		)
-		(stroke
-			(width 0)
-			(type solid)
-		)
-		(uuid "d4943e77-b82c-4b31-b869-1ebef0c1006c")
 	)
 	(wire
 		(pts
@@ -3928,6 +4169,17 @@
 				)
 			)
 		)
+		(property "LCSC" "C2977589"
+			(at 66.04 50.8 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "8d678796-43d4-427f-808d-7fd8ec169db6")
 		)
@@ -4079,7 +4331,7 @@
 				(justify right)
 			)
 		)
-		(property "Value" "100n"
+		(property "Value" "100nF"
 			(at 64.9858 178.9493 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4090,7 +4342,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
 			(at 67.31 177.8 0)
 			(hide yes)
 			(show_name no)
@@ -4113,6 +4365,17 @@
 			)
 		)
 		(property "Description" "Unpolarized capacitor, small symbol"
+			(at 67.31 177.8 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C14663"
 			(at 67.31 177.8 0)
 			(hide yes)
 			(show_name no)
@@ -4171,7 +4434,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
 			(at 93.98 170.18 0)
 			(hide yes)
 			(show_name no)
@@ -4194,6 +4457,17 @@
 			)
 		)
 		(property "Description" "Resistor, small symbol"
+			(at 93.98 170.18 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C23018"
 			(at 93.98 170.18 0)
 			(hide yes)
 			(show_name no)
@@ -4240,7 +4514,7 @@
 				)
 			)
 		)
-		(property "Value" "ID_WP"
+		(property "Value" "WP write enable"
 			(at 96.52 177.546 0)
 			(hide yes)
 			(show_name no)
@@ -4251,7 +4525,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Jumper:SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm"
 			(at 96.52 180.34 0)
 			(hide yes)
 			(show_name no)
@@ -4332,7 +4606,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
 			(at 101.6 170.18 0)
 			(hide yes)
 			(show_name no)
@@ -4355,6 +4629,17 @@
 			)
 		)
 		(property "Description" "Resistor, small symbol"
+			(at 101.6 170.18 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C23018"
 			(at 101.6 170.18 0)
 			(hide yes)
 			(show_name no)
@@ -4478,8 +4763,8 @@
 				)
 			)
 		)
-		(property "Value" "CAT24C256"
-			(at 87.63 184.5245 0)
+		(property "Value" "AT24C32D-SSHM-T"
+			(at 81.28 197 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -4488,7 +4773,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm"
 			(at 81.28 177.8 0)
 			(hide yes)
 			(show_name no)
@@ -4499,7 +4784,7 @@
 				)
 			)
 		)
-		(property "Datasheet" "https://www.onsemi.cn/PowerSolutions/document/CAT24C256-D.PDF"
+		(property "Datasheet" "https://ww1.microchip.com/downloads/en/DeviceDoc/AT24C32D-AT24C64D-Data-Sheet-DS20006035A.pdf"
 			(at 81.28 177.8 0)
 			(hide yes)
 			(show_name no)
@@ -4511,6 +4796,17 @@
 			)
 		)
 		(property "Description" "256 kb CMOS Serial EEPROM, DIP-8/SOIC-8/TSSOP-8/DFN-8"
+			(at 81.28 177.8 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C60583"
 			(at 81.28 177.8 0)
 			(hide yes)
 			(show_name no)
@@ -4630,8 +4926,8 @@
 		)
 	)
 	(symbol
-		(lib_id "power:+3.3V")
-		(at 101.6 180.34 270)
+		(lib_id "power:GND")
+		(at 101.6 180.34 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -4651,8 +4947,8 @@
 				)
 			)
 		)
-		(property "Value" "+3V3"
-			(at 104.7751 180.7083 90)
+		(property "Value" "GND"
+			(at 101.6 184.15 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -4684,7 +4980,7 @@
 				)
 			)
 		)
-		(property "Description" "Power symbol creates a global label with name \"+3.3V\""
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
 			(at 101.6 180.34 0)
 			(hide yes)
 			(show_name no)
@@ -4916,6 +5212,468 @@
 				)
 			)
 		)
+	)
+	(wire
+		(pts
+			(xy 67.31 187.96)
+			(xy 69.85 187.96)
+		)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(uuid "75f85fab-0aff-5732-8304-218187bcd12b")
+	)
+	(wire
+		(pts
+			(xy 69.85 187.96)
+			(xy 81.28 187.96)
+		)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(uuid "39fd9d9d-e9b7-596c-a4ed-ad526d573445")
+	)
+	(wire
+		(pts
+			(xy 71.12 175.26)
+			(xy 69.85 175.26)
+		)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(uuid "a8af153b-1b96-51ec-b72f-b298dc261339")
+	)
+	(wire
+		(pts
+			(xy 71.12 177.8)
+			(xy 69.85 177.8)
+		)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(uuid "420b1036-efc8-5e0b-b552-c88ad7e97bfd")
+	)
+	(wire
+		(pts
+			(xy 71.12 180.34)
+			(xy 69.85 180.34)
+		)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(uuid "c1348c4c-c3d1-5cba-aaea-a8d8bedbc6dc")
+	)
+	(wire
+		(pts
+			(xy 69.85 175.26)
+			(xy 69.85 177.8)
+		)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(uuid "4cf471b7-8032-55c2-be85-2b2001dbda5e")
+	)
+	(wire
+		(pts
+			(xy 69.85 177.8)
+			(xy 69.85 180.34)
+		)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(uuid "247f2f70-8107-527a-b3c9-3cde1c86f840")
+	)
+	(wire
+		(pts
+			(xy 69.85 180.34)
+			(xy 69.85 187.96)
+		)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(uuid "abf93a8c-93b2-526e-9810-753dba1dbec4")
+	)
+	(junction
+		(at 69.85 177.8)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "8de5b9a4-62c5-5732-ab75-efe96b640163")
+	)
+	(junction
+		(at 69.85 180.34)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "61daf86f-932e-5c3b-8724-35e59a0893f3")
+	)
+	(junction
+		(at 69.85 187.96)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "cb6b4ab7-11a6-5065-8d6f-0a46a5be8ad3")
+	)
+	(wire
+		(pts
+			(xy 92.71 180.34)
+			(xy 92.71 184.15)
+		)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(uuid "e3fb5f49-666e-5599-ab1b-8bca68843b27")
+	)
+	(junction
+		(at 92.71 180.34)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "568b40ba-5354-5b02-a572-f2b4fb071c06")
+	)
+	(label "EE_WP"
+		(at 92.71 184.15 270)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "3da1aa12-ba0d-54b0-acaa-4417dbd69cdd")
+	)
+	(symbol
+		(lib_id "Device:R_Small")
+		(at 124.46 172.72 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "d3a25cde-4c61-5b80-882a-b19ff1b1ead1")
+		(property "Reference" "R24"
+			(at 126.365 171.45 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "1k"
+			(at 126.365 173.99 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
+			(at 124.46 172.72 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 124.46 172.72 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resistor, small symbol"
+			(at 124.46 172.72 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C21190"
+			(at 124.46 172.72 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "7f7c999b-2608-58c6-a7d7-cb3c6ced2495")
+		)
+		(pin "2"
+			(uuid "dffd1713-81d0-5900-bf67-84e9c0e14d8f")
+		)
+		(instances
+			(project "pihat"
+				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55"
+					(reference "R24")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 124.46 170.18)
+			(xy 124.46 167.64)
+		)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(uuid "8746472f-b52f-5577-8390-d23dea60d87a")
+	)
+	(symbol
+		(lib_id "power:+3V3")
+		(at 124.46 167.64 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom no)
+		(on_board no)
+		(in_pos_files no)
+		(dnp no)
+		(uuid "12692c64-8a8f-5ea4-833f-f76a719b5113")
+		(property "Reference" "#PWR101"
+			(at 124.46 167.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+3V3"
+			(at 124.46 163.83 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 124.46 167.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 124.46 167.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+3V3\""
+			(at 124.46 167.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "b682b1fd-c122-54a4-9033-73bdc949ea79")
+		)
+		(instances
+			(project "pihat"
+				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55"
+					(reference "#PWR101")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 124.46 175.26)
+			(xy 124.46 180.34)
+		)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(uuid "5d50c85c-6d9f-5969-8504-4a2972b46eff")
+	)
+	(wire
+		(pts
+			(xy 124.46 180.34)
+			(xy 129.54 180.34)
+		)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(uuid "7da7c428-0935-51b2-92cd-26f3e6cab11a")
+	)
+	(junction
+		(at 124.46 180.34)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "5c3b5fdd-e365-5355-b209-7ab555d51dbf")
+	)
+	(symbol
+		(lib_id "Connector:TestPoint")
+		(at 129.54 180.34 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom no)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "3b1f45c9-32e3-52c1-8073-57268ef254da")
+		(property "Reference" "TP1"
+			(at 131.445 176.53 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "WP"
+			(at 131.445 179.07 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "TestPoint:TestPoint_Pad_D1.5mm"
+			(at 129.54 180.34 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 129.54 180.34 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "test point"
+			(at 129.54 180.34 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "e34c5bde-6935-5abd-a8c5-470abbc644fe")
+		)
+		(instances
+			(project "pihat"
+				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55"
+					(reference "TP1")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(wire
+		(pts
+			(xy 124.46 180.34)
+			(xy 124.46 182.88)
+		)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(uuid "469e3a34-a33f-5a25-a431-d942520c515e")
+	)
+	(label "EE_WP"
+		(at 124.46 182.88 270)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right bottom)
+		)
+		(uuid "efc505fb-216f-55cb-9f93-717e47a265b4")
+	)
+	(text "WP: R24 holds it high = write-protected."
+		(exclude_from_sim no)
+		(at 115.57 190.5 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "64b3f99c-bd5c-52dd-9d2e-49465b6ffc4c")
+	)
+	(text "Close JP2 (or ground TP1) to write the EEPROM."
+		(exclude_from_sim no)
+		(at 115.57 193.04 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "b04582f7-2b44-5200-8cb4-711f668dd1c9")
 	)
 	(sheet_instances
 		(path "/"
