@@ -6,12 +6,12 @@ from sexp import Q, find, find_all, parse
 
 STOCK = "/Applications/KiCad/KiCad.app/Contents/SharedSupport/symbols"
 _cache = {}
+PROJECT_LIBS = {}   # name -> callable returning {symbol_name: sexp}; registered by each board's build script
 
 
 def _lib(name):
-    if name == "pihat":                       # project library, generated in code
-        from projlib import symbols
-        return symbols()
+    if name in PROJECT_LIBS:                  # project library, generated in code
+        return PROJECT_LIBS[name]()
     if name not in _cache:
         path = os.path.join(STOCK, name + ".kicad_sym")
         _cache[name] = {s[1]: s for s in find_all(parse(open(path).read()), "symbol")}

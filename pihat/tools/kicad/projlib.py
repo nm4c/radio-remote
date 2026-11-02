@@ -10,6 +10,8 @@ Pin data comes from the datasheets:
 import os
 import uuid
 
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "..", "..", "..", "kicadgen"))
 from sexp import Q, dump
 
 NS = uuid.UUID("0b6c5f1e-8f0a-4a3e-9c51-7d2e4b3a1f60")

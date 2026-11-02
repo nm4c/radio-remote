@@ -10,7 +10,7 @@ from kicadlib import load_symbol, pins, place
 from sexp import Q, dump, find, find_all
 
 FONT = ["effects", ["font", ["size", 1.27, 1.27]]]
-PROJECT = "pihat"
+PROJECT = "pihat"   # set by the board build script (schbuild.PROJECT = ...)
 
 
 NS = uuid.UUID("6f1c2a4e-3d5b-4c8a-9e7f-2b1d0c9a8e7d")   # fixed namespace: stable UUIDs across rebuilds

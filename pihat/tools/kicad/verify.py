@@ -7,6 +7,8 @@ nets like GND/+5V that belong to other sheets are ignored).
 import os
 import sys
 
+import os as _os, sys as _sys
+_sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "..", "..", "..", "kicadgen"))
 from sexp import find, find_all, parse
 
 HERE = os.path.dirname(os.path.abspath(__file__))
