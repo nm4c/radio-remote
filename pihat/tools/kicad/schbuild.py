@@ -13,8 +13,12 @@ FONT = ["effects", ["font", ["size", 1.27, 1.27]]]
 PROJECT = "pihat"
 
 
-def U():
-    return Q(str(uuid.uuid4()))
+NS = uuid.UUID("6f1c2a4e-3d5b-4c8a-9e7f-2b1d0c9a8e7d")   # fixed namespace: stable UUIDs across rebuilds
+
+
+def U(key=None):
+    """Deterministic UUID from a key, so regenerating a sheet keeps schematic-to-PCB links intact."""
+    return Q(str(uuid.uuid5(NS, key)) if key else str(uuid.uuid4()))
 
 
 def _fx(x):
@@ -37,20 +41,28 @@ class Sheet:
         self.title = title
         self.path = path            # instance path, e.g. "/<root-uuid>/<sheet-uuid>"
         self.page = page
-        self.uuid = file_uuid or U()
+        self.uuid = file_uuid or U(f"sheet/{title}")
+        self._seq = {}
         self.libs = {}
         self.items = []
         self.pinpos = {}            # "REF.pin" -> (x, y)
         self.pwr_n = 0
         self.wires = []
 
+    def _k(self, *parts):
+        """Key for an item; repeats of the same key get a running suffix."""
+        base = "/".join([self.title] + [str(p) for p in parts])
+        n = self._seq.get(base, 0)
+        self._seq[base] = n + 1
+        return f"{base}#{n}"
+
     # ------------------------------------------------------------ symbols
     def symbol(self, lib_id, ref, value, at, rot=0, mirror=None, footprint="", lcsc="",
-               datasheet="", conn=None, ref_at=None, val_at=None, fields_dir="right", dnp=False, in_bom=True):
+               datasheet="", conn=None, ref_at=None, val_at=None, fields_dir="right", dnp=False, in_bom=True, unit=1, ref_just=None, val_just=None):
         if lib_id not in self.libs:
             self.libs[lib_id] = load_symbol(lib_id)
         sym = self.libs[lib_id]
-        pdefs = pins(sym)
+        pdefs = pins(sym, unit)
         x, y = at
         desc = next((str(p[2]) for p in find_all(sym, "property") if p[1] == "Description"), "")
         if not footprint:
@@ -73,20 +85,21 @@ class Sheet:
         node = ["symbol", ["lib_id", Q(lib_id)], ["at", _fx(x), _fx(y), rot]]
         if mirror:
             node.append(["mirror", mirror])
-        node += [["unit", 1], ["body_style", 1], ["exclude_from_sim", "no"],
+        node += [["unit", unit], ["body_style", 1], ["exclude_from_sim", "no"],
                  ["in_bom", "yes" if in_bom and not is_pwr else "no"], ["on_board", "no" if is_pwr else "yes"],
-                 ["in_pos_files", "no" if is_pwr else "yes"], ["dnp", "yes" if dnp else "no"], ["uuid", U()]]
+                 ["in_pos_files", "no" if is_pwr else "yes"], ["dnp", "yes" if dnp else "no"],
+                 ["uuid", U(self._k("sym", ref, unit))]]
         fa = 90 if rot % 180 == 90 else 0
-        node.append(prop("Reference", ref, ref_at, hide=is_pwr, justify=j, angle=fa))
-        node.append(prop("Value", value, val_at, justify=j, angle=fa))
+        node.append(prop("Reference", ref, ref_at, hide=is_pwr, justify=ref_just or j, angle=fa))
+        node.append(prop("Value", value, val_at, justify=val_just or j, angle=fa))
         node.append(prop("Footprint", footprint, (x, y), hide=True))
         node.append(prop("Datasheet", datasheet, (x, y), hide=True))
         node.append(prop("Description", desc, (x, y), hide=True))
         if lcsc:
             node.append(prop("LCSC", lcsc, (x, y), hide=True))
         for num in pdefs:
-            node.append(["pin", Q(num), ["uuid", U()]])
-        node.append(["instances", ["project", Q(PROJECT), ["path", Q(self.path), ["reference", Q(ref)], ["unit", 1]]]])
+            node.append(["pin", Q(num), ["uuid", U(self._k("pin", ref, unit, num))]])
+        node.append(["instances", ["project", Q(PROJECT), ["path", Q(self.path), ["reference", Q(ref)], ["unit", unit]]]])
         self.items.append(node)
         ends = {}
         for num, pd in pdefs.items():
@@ -106,8 +119,8 @@ class Sheet:
     def power(self, net, at, body_dir=None):
         """Power symbol whose pin sits at 'at'. body_dir: where the symbol body points (default: GND down, rails up)."""
         self.pwr_n += 1
-        lib = "power:" + net
-        default = "down" if net.startswith("GND") else "up"
+        lib = "power:GND" if net in ("RGND",) else "power:" + net
+        default = "down" if net.endswith("GND") else "up"
         bd = body_dir or default
         order = ["down", "right", "up", "left"] if default == "down" else ["up", "left", "down", "right"]
         rot = order.index(bd) * 90
@@ -123,7 +136,7 @@ class Sheet:
         (px, py), (ux, uy) = end
         kind = c[0]
         if kind == "nc":
-            self.items.append(["no_connect", ["at", _fx(px), _fx(py)], ["uuid", U()]])
+            self.items.append(["no_connect", ["at", _fx(px), _fx(py)], ["uuid", U(self._k("nc", px, py))]])
             return
         if kind == "pwr":
             s = c[2] if len(c) > 2 else 0
@@ -131,7 +144,14 @@ class Sheet:
             if s:
                 self.wire((px, py), (tx, ty))
             body = {(0, -1): "up", (0, 1): "down", (-1, 0): "left", (1, 0): "right"}[(ux, uy)]
-            self.power(c[1], (tx, ty), body_dir=body if not s or c[1].startswith("GND") is False else body)
+            self.power(c[1], (tx, ty), body_dir=body)
+            return
+        if kind == "glabel":
+            s_ = c[2] if len(c) > 2 else stub
+            tx, ty = px + ux * s_, py + uy * s_
+            if s_:
+                self.wire((px, py), (tx, ty))
+            self.label(c[1], (tx, ty), (ux, uy), glob=True)
             return
         if kind == "label":
             s = c[2] if len(c) > 2 else stub
@@ -146,11 +166,11 @@ class Sheet:
     def wire(self, *pts):
         for a, b in zip(pts, pts[1:]):
             self.items.append(["wire", ["pts", ["xy", _fx(a[0]), _fx(a[1])], ["xy", _fx(b[0]), _fx(b[1])]],
-                               ["stroke", ["width", 0], ["type", "solid"]], ["uuid", U()]])
+                               ["stroke", ["width", 0], ["type", "solid"]], ["uuid", U(self._k("w", a, b))]])
             self.wires.append((a, b))
 
     def junction(self, at):
-        self.items.append(["junction", ["at", _fx(at[0]), _fx(at[1])], ["diameter", 0], ["color", 0, 0, 0, 0], ["uuid", U()]])
+        self.items.append(["junction", ["at", _fx(at[0]), _fx(at[1])], ["diameter", 0], ["color", 0, 0, 0, 0], ["uuid", U(self._k("j", at))]])
 
     def label(self, name, at, direction=(1, 0), glob=False):
         ang, just = {(1, 0): (0, "left bottom"), (-1, 0): (180, "right bottom"),
@@ -160,16 +180,20 @@ class Sheet:
             gj = {0: "left", 180: "right", 90: "left", 270: "right"}[ang]
             self.items.append(["global_label", Q(name), ["shape", "bidirectional"], ["at", _fx(at[0]), _fx(at[1]), ang],
                                ["fields_autoplaced", "yes"],
-                               ["effects", ["font", ["size", 1.27, 1.27]], ["justify", gj]], ["uuid", U()]])
+                               ["effects", ["font", ["size", 1.27, 1.27]], ["justify", gj]], ["uuid", U(self._k("gl", name, at))]])
         else:
-            self.items.append(["label", Q(name), ["at", _fx(at[0]), _fx(at[1]), ang], eff, ["uuid", U()]])
+            self.items.append(["label", Q(name), ["at", _fx(at[0]), _fx(at[1]), ang], eff, ["uuid", U(self._k("l", name, at))]])
+
+    def dashed(self, a, b):
+        self.items.append(["polyline", ["pts", ["xy", _fx(a[0]), _fx(a[1])], ["xy", _fx(b[0]), _fx(b[1])]],
+                           ["stroke", ["width", 0], ["type", "dash"]], ["uuid", U(self._k("pl", a, b))]])
 
     def text(self, s, at, size=1.27, bold=False):
         font = ["font", ["size", size, size]]
         if bold:
             font.append(["bold", "yes"])
         self.items.append(["text", Q(s), ["exclude_from_sim", "no"], ["at", _fx(at[0]), _fx(at[1]), 0],
-                           ["effects", font, ["justify", "left", "bottom"]], ["uuid", U()]])
+                           ["effects", font, ["justify", "left", "bottom"]], ["uuid", U(self._k("t", s))]])
 
     def p(self, refpin):
         return self.pinpos[refpin]

@@ -40,15 +40,14 @@ def load_symbol(lib_id):
     return sym
 
 
-def pins(sym):
-    """{pin_number: (x, y, angle, name)} in library coordinates (Y up), unit 1 / shared units."""
+def pins(sym, unit=1):
+    """{pin_number: (x, y, angle, name)} in library coordinates (Y up) for one unit plus shared unit 0."""
     out = {}
-    for unit in find_all(sym, "symbol"):
-        uname = unit[1]
-        suffix = uname.rsplit("_", 2)
-        if len(suffix) == 3 and suffix[1] not in ("0", "1"):
-            continue  # skip units other than 1 (and shared unit 0)
-        for p in find_all(unit, "pin"):
+    for u in find_all(sym, "symbol"):
+        parts = str(u[1]).rsplit("_", 2)
+        if len(parts) == 3 and parts[1] not in ("0", str(unit)):
+            continue
+        for p in find_all(u, "pin"):
             at = find(p, "at")
             num = find(p, "number")[1]
             nm = find(p, "name")[1]

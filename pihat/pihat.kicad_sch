@@ -3332,13 +3332,15 @@
 		)
 		(uuid "3911220d-b117-4874-8479-50c0285caa70")
 	)
-	(label "GPIO23"
-		(at 100.33 45.72 180)
+	(global_label "GPIO23"
+		(shape bidirectional)
+		(at 100.33 45.72 0)
+		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right bottom)
+			(justify left)
 		)
 		(uuid "45550f58-81b3-4113-a98b-8910341c00d8")
 	)
@@ -3352,13 +3354,15 @@
 		)
 		(uuid "5069ddbc-357e-4355-aaa5-a8f551963b7a")
 	)
-	(label "GPIO27"
-		(at 31.75 43.18 0)
+	(global_label "GPIO27"
+		(shape bidirectional)
+		(at 31.75 43.18 180)
+		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify left bottom)
+			(justify right)
 		)
 		(uuid "591fa762-d154-4cf7-8db7-a10b610ff12a")
 	)
@@ -3412,13 +3416,15 @@
 		)
 		(uuid "6a63dbe8-50e2-4ffb-a55f-e0df0f695e9b")
 	)
-	(label "GPIO22"
-		(at 31.75 45.72 0)
+	(global_label "GPIO22"
+		(shape bidirectional)
+		(at 31.75 45.72 180)
+		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify left bottom)
+			(justify right)
 		)
 		(uuid "831c710c-4564-4e13-951a-b3746ba43c78")
 	)
@@ -3432,13 +3438,15 @@
 		)
 		(uuid "8fb0631c-564a-4f96-b39b-2f827bb204a3")
 	)
-	(label "GPIO17"
-		(at 31.75 40.64 0)
+	(global_label "GPIO17"
+		(shape bidirectional)
+		(at 31.75 40.64 180)
+		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify left bottom)
+			(justify right)
 		)
 		(uuid "9316d4cc-792f-4eb9-8a8b-1201587737ed")
 	)
@@ -4046,7 +4054,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "0f7872a7-de47-41d5-a21f-9934102d3a5f")
-		(property "Reference" "C1"
+		(property "Reference" "C15"
 			(at 64.9858 176.6506 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4110,7 +4118,7 @@
 		(instances
 			(project "pihat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55"
-					(reference "C1")
+					(reference "C15")
 					(unit 1)
 				)
 			)
@@ -4127,7 +4135,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "23a975f6-1804-488b-95df-72344a03f45b")
-		(property "Reference" "R1"
+		(property "Reference" "R22"
 			(at 95.4786 169.037 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4191,7 +4199,7 @@
 		(instances
 			(project "pihat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55"
-					(reference "R1")
+					(reference "R22")
 					(unit 1)
 				)
 			)
@@ -4208,7 +4216,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "43e66c4c-de75-44f8-8171-19825b035cbb")
-		(property "Reference" "JP1"
+		(property "Reference" "JP2"
 			(at 96.52 183.623 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4271,7 +4279,7 @@
 		(instances
 			(project "pihat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55"
-					(reference "JP1")
+					(reference "JP2")
 					(unit 1)
 				)
 			)
@@ -4288,7 +4296,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "510c400a-2410-46b0-a7fb-1072fc4f848b")
-		(property "Reference" "R2"
+		(property "Reference" "R23"
 			(at 103.0986 169.037 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4352,7 +4360,7 @@
 		(instances
 			(project "pihat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55"
-					(reference "R2")
+					(reference "R23")
 					(unit 1)
 				)
 			)
@@ -4446,7 +4454,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "6d6e5c8e-c0cf-4e61-9c00-723a754d58be")
-		(property "Reference" "U1"
+		(property "Reference" "U6"
 			(at 74.93 170.7958 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4526,7 +4534,7 @@
 		(instances
 			(project "pihat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55"
-					(reference "U1")
+					(reference "U6")
 					(unit 1)
 				)
 			)
@@ -4723,6 +4731,48 @@
 			(project "pihat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55"
 					(page "2")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 210.82 53.34)
+		(size 38.1 12.7)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0.0000)
+		)
+		(uuid "5390a064-7792-48cd-8d19-6d04a44525a9")
+		(property "Sheetname" "Control"
+			(at 210.82 52.6284 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "control.kicad_sch"
+			(at 210.82 66.6234 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "pihat"
+				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55"
+					(page "3")
 				)
 			)
 		)

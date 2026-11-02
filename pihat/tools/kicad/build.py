@@ -11,17 +11,19 @@ import sys
 import uuid
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-PROJ = os.path.abspath(os.path.join(HERE, "..", ".."))
+PROJ = os.environ.get("PIHAT_PROJ") or os.path.abspath(os.path.join(HERE, "..", ".."))
 ROOT = os.path.join(PROJ, "pihat.kicad_sch")
 CLI = "/Applications/KiCad/KiCad.app/Contents/MacOS/kicad-cli"
 OUT = os.path.join(PROJ, "build")
 
 sys.path.insert(0, HERE)
 import sheet_power  # noqa: E402
+import sheet_control  # noqa: E402
 
 # (sheet name, file, builder, box position on the root sheet)
 SHEETS = [
     ("Power", "power.kicad_sch", sheet_power.build, (210.82, 30.48)),
+    ("Control", "control.kicad_sch", sheet_control.build, (210.82, 53.34)),
 ]
 
 
@@ -85,8 +87,48 @@ def ensure_sheet(text, name, fname, at, page):
     return text[:i] + block + text[i:], u
 
 
+# Template parts on the root sheet renamed to the HAT's designators (see docs/schematic).
+ROOT_RENAME = {"U1": "U6", "R1": "R22", "R2": "R23", "C1": "C15", "JP1": "JP2"}
+
+
+def renumber_root(text):
+    """Rename template references once. Safe to re-run: only exact old names are touched."""
+    if '(property "Reference" "U6"' in text:
+        return text
+    for old, new in ROOT_RENAME.items():
+        text = text.replace(f'(property "Reference" "{old}"', f'(property "Reference" "{new}"')
+        text = text.replace(f'(reference "{old}")', f'(reference "{new}")')
+    return text
+
+
+# Header nets the HAT uses: local labels on the template's header become global labels.
+GLOBAL_NETS = {"GPIO17", "GPIO27", "GPIO22", "GPIO23"}
+
+
+def globalize_root(text, names=GLOBAL_NETS):
+    """Turn the root sheet's local labels with these names into global labels (idempotent)."""
+    out, i = [], 0
+    for m in re.finditer(r'\t\(label "([^"]+)"\n\t\t\(at ([\d.]+) ([\d.]+) (\d+)\)', text):
+        if m.group(1) not in names:
+            continue
+        end = text.index("\n\t)\n", m.end()) + 4
+        u = re.search(r'\(uuid "([^"]+)"\)', text[m.start():end]).group(1)
+        # a local label sits over its wire; a global label points away from it, so face the other way
+        ang = (int(m.group(4)) + 180) % 360
+        just = "right" if ang == 180 else "left"
+        block = (f'\t(global_label "{m.group(1)}"\n\t\t(shape bidirectional)\n'
+                 f'\t\t(at {m.group(2)} {m.group(3)} {ang})\n\t\t(fields_autoplaced yes)\n'
+                 f'\t\t(effects\n\t\t\t(font\n\t\t\t\t(size 1.27 1.27)\n\t\t\t)\n\t\t\t(justify {just})\n\t\t)\n'
+                 f'\t\t(uuid "{u}")\n\t)\n')
+        out.append(text[i:m.start()])
+        out.append(block)
+        i = end
+    out.append(text[i:])
+    return "".join(out)
+
+
 def build():
-    text = open(ROOT).read()
+    text = globalize_root(renumber_root(open(ROOT).read()))
     ru = root_uuid(text)
     for page, (name, fname, fn, at) in enumerate(SHEETS, start=2):
         text, su = ensure_sheet(text, name, fname, at, page)
