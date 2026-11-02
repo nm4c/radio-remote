@@ -7,3 +7,10 @@ state.json
 __pycache__/
 *.pyc
 .DS_Store
+
+# KiCad temporary files
+*.lck
+*.kicad_prl
+pihat/.history/
+*-backups/
+fp-info-cache

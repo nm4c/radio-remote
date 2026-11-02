@@ -51,6 +51,7 @@ Set `audio.backend: sounddevice` to use your laptop's own mic and speakers as a 
 ## Install on the Pi
 
 1. Build the interface: see **[docs/HARDWARE.md](docs/HARDWARE.md)**. It has generic wiring plus IC-F621 notes.
+   Or use the **[Radio Remote HAT](pihat/)**, a Pi HAT with the interface, sound card and power supply on one board.
 2. Copy this folder to the Pi and run:
    ```bash
    sudo ./deploy/install.sh
@@ -116,7 +117,8 @@ WebSocket at `/ws`. The first message must be
 server/   main.py (web + WebSocket + safety watchdog), radio.py (GPIO), audio.py (sound card, resampling)
 web/      index.html, app.js, worklet.js (AudioWorklet capture/playback), style.css
 deploy/   install.sh, systemd unit
-docs/     HARDWARE.md (wiring)
+docs/     HARDWARE.md (hand-wired interface)
+pihat/    Pi HAT: KiCad project, schematic reference, JLC BoM
 ```
 
 ## Ideas for later
