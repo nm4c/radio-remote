@@ -8,8 +8,12 @@
 //   {control:"emergency", action:"activate"}    Guarded button held for its full time
 //   {control:"volume_knob", action:"change", value:42}  Absolute value, 0 to 100
 //   {control:"channel_knob", action:"step", delta:1}    One detent, + is clockwise
-const radioHead = (() => {
-  const svg = document.querySelector("#radio svg");
+//
+// Works with any SVG built by assets/control-head/ (the desk control head or the handheld):
+// press targets carry data-control, knobs carry data-knob, screen text has display-* ids.
+// createRadioHead(svg) wires one SVG and returns its API. A page whose SVG is already in place
+// when this script runs also gets a ready-made instance as `radioHead`.
+function createRadioHead(svg) {
   const listeners = new Set();
   const emit = event => listeners.forEach(fn => fn(event));
 
@@ -65,18 +69,27 @@ const radioHead = (() => {
 
   // ---------- Knobs ----------
   const setRotation = (knob, degrees) => {
-    const { cx, cy } = knob.dataset;
-    knob.querySelectorAll(".rotor").forEach(r => r.setAttribute("transform", `rotate(${degrees} ${cx} ${cy})`));
+    const { cx, cy, view } = knob.dataset;
+    let transform = `rotate(${degrees} ${cx} ${cy})`;
+    if (view === "side") {
+      // Knob seen side-on (handheld top knobs): turning it slides the grip ridges sideways by
+      // the distance its surface moves. The ridge pattern repeats every data-period units.
+      const period = +knob.dataset.period;
+      const travel = degrees * Math.PI * +knob.dataset.r / 180;
+      transform = `translate(${((travel % period) + period) % period} 0)`;
+    }
+    knob.querySelectorAll(".rotor").forEach(r => r.setAttribute("transform", transform));
   };
 
   // Volume: fixed end stops, like the real pot.
   const volumeKnob = svg.querySelector('[data-knob="volume_knob"]');
+  const volumeSweep = +(volumeKnob.dataset.sweep || 270); // degrees from 0 to 100
   let volume = 0;
   const setVolume = (next, notify = true) => {
     const clamped = Math.round(Math.min(100, Math.max(0, next)));
     if (clamped === volume) return;
     volume = clamped;
-    setRotation(volumeKnob, volume * 2.7); // 0 to 100 maps to 270 degrees.
+    setRotation(volumeKnob, volume * volumeSweep / 100); // 0 to 100 maps to the knob's sweep.
     volumeKnob.setAttribute("aria-valuenow", volume);
     if (notify) emit({ control: "volume_knob", action: "change", value: volume });
   };
@@ -91,11 +104,14 @@ const radioHead = (() => {
   };
 
   // Shared drag handling. onTurn receives the signed degrees moved since last event.
+  // Top-view knobs follow the pointer's angle around the centre. Side-on knobs (data-view="side")
+  // are rolled: a swipe right or up turns them clockwise by the distance moved over the surface.
   const bindKnob = (knob, label, onTurn, onNudge) => {
     knob.setAttribute("role", "slider");
     knob.setAttribute("tabindex", "0");
     knob.setAttribute("aria-label", label);
     const centre = { x: +knob.dataset.cx, y: +knob.dataset.cy };
+    const side = knob.dataset.view === "side";
     const angleAt = e => {
       const p = toCanvas(e);
       return Math.atan2(p.y - centre.y, p.x - centre.x) * 180 / Math.PI;
@@ -103,10 +119,17 @@ const radioHead = (() => {
     let last = null;
     knob.addEventListener("pointerdown", e => {
       knob.setPointerCapture(e.pointerId);
-      last = angleAt(e);
+      last = side ? toCanvas(e) : angleAt(e);
     });
     knob.addEventListener("pointermove", e => {
       if (last === null) return;
+      if (side) {
+        const p = toCanvas(e);
+        const moved = (p.x - last.x) - (p.y - last.y); // right and up both count as clockwise
+        last = p;
+        onTurn(moved / (Math.PI * +knob.dataset.r) * 180);
+        return;
+      }
       const now = angleAt(e);
       let delta = now - last;
       // Unwraps the jump where atan2 flips between +180 and -180.
@@ -132,7 +155,7 @@ const radioHead = (() => {
   // Keeps fractional drag movement, so slow turns still register.
   let volumeRemainder = 0;
   bindKnob(volumeKnob, "volume", degrees => {
-    volumeRemainder += degrees / 2.7;
+    volumeRemainder += degrees * 100 / volumeSweep;
     const whole = Math.trunc(volumeRemainder);
     if (whole) { volumeRemainder -= whole; setVolume(volume + whole); }
   }, direction => setVolume(volume + direction * 2));
@@ -183,4 +206,6 @@ const radioHead = (() => {
     // Syncs the knob from the radio without echoing an event back.
     setVolume: value => setVolume(value, false),
   };
-})();
+}
+
+const radioHead = document.querySelector("#radio svg") ? createRadioHead(document.querySelector("#radio svg")) : null;

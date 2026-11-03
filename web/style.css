@@ -73,9 +73,11 @@ button.danger { color: var(--tx); }
 
 .head { max-width: 720px; margin: 0 auto; display: grid; gap: 18px; padding-bottom: 32px; }
 
-/* Control head: web/control-head/control-head.svg, inserted by app.js (loadHead).
-   Colours inside the artwork come from the generator; these rules only add interaction states. */
+/* Control head: web/control-head/control-head.svg (desk) or handheld.svg (phones), inserted by
+   app.js (mountHead). Colours inside the artwork come from the generators in assets/control-head/;
+   these rules size it and add interaction states. */
 .radio-head:empty { aspect-ratio: 1600 / 460; } /* hold its space while the SVG loads */
+@media (max-width: 600px) { .radio-head:empty { aspect-ratio: 560 / 1192; max-height: 62vh; } }
 .radio-head svg {
   display: block; width: 100%; height: auto;
   touch-action: none; /* knob drags must not scroll the page */
@@ -84,12 +86,15 @@ button.danger { color: var(--tx); }
 .radio-head [data-control], .radio-head [data-knob] { cursor: pointer; outline: none; }
 .radio-head [data-control].pressed { fill: rgba(255, 255, 255, .22); }
 .radio-head [data-control]:focus-visible { stroke: var(--accent); stroke-width: 4; }
-.radio-head [data-knob]:focus-visible > circle:first-child { stroke: var(--accent); stroke-width: 4; }
+.radio-head [data-knob]:focus-visible .focus-ring { stroke: var(--accent); stroke-width: 4; }
+/* The handheld is tall: cap its height so the PTT button below it stays on a phone's screen. */
+.radio-head svg[data-template="handheld"] { width: auto; max-width: 100%; max-height: 62vh; margin: 0 auto; }
 /* Transmitting from this device: red status text and a red glow around the head. */
 .radio-head.tx #display-status { fill: var(--tx); }
 .radio-head.tx svg { filter: drop-shadow(0 0 10px rgba(229, 72, 77, .6)); }
 /* Channel picked with the knob but not on the radio yet: amber until the radio confirms it. */
 .radio-head.picking #display-zone, .radio-head.picking #display-channel { fill: var(--lcd-fg); }
+.radio-head.picking [data-template="handheld"] :is(#display-zone, #display-channel) { fill: #b35c00; } /* on white */
 
 .ptt {
   min-height: 164px; border-radius: 22px; border: 2px solid #5a1d20;

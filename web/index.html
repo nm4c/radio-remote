@@ -43,9 +43,9 @@
   <!-- Radio head -->
   <main id="head" class="head" hidden>
     <button id="audioHint" class="banner" hidden>Audio paused. Tap here to resume.</button>
-    <!-- Control head. app.js (loadHead) inserts /static/control-head/control-head.svg here, then
-         loads radio_config.js and control_head.js. Its screen shows the channel, frequency, TX/BUSY
-         state and signal; its knobs change channel and speaker volume. -->
+    <!-- Control head. app.js (loadHead) loads radio_config.js and control_head.js, then inserts
+         /static/control-head/control-head.svg here, or handheld.svg on phones. Its screen shows
+         the channel, frequency, TX/BUSY state and signal; its knobs change channel and volume. -->
     <div id="radio" class="radio-head" aria-label="Radio control head"></div>
 
     <!-- The head has no PTT of its own (on the real radio it's on the microphone). -->

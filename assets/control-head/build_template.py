@@ -6,7 +6,8 @@ Run it after changing anything here or in web/control-head/control_head.js:
 
 Outputs for the web app, written to web/control-head/ (served as /static/control-head/):
   control-head.svg              The live head: artwork, empty screen text and press targets.
-                                app.js inserts it into the page, then loads control_head.js.
+                                app.js shows it on wide screens; build_handheld.py makes the
+                                portrait handheld used on phones.
   radio_config.js               RADIO_CONFIG (detent, long press, hold-to-activate times) for
                                 control_head.js, from the same constants as layout.json.
 
@@ -87,14 +88,6 @@ LONG_PRESS_MS = 600              # Ordinary buttons also report a long press.
 HOLD_TO_ACTIVATE = {"emergency": 1500, "power": 1500}  # Guards against stray clicks.
 KNOB_LAYER_SIZE = 200            # Knob layer size in base-canvas units.
 
-# Compact view for narrow (phone) screens: crop to the bezel, channel knob and D-pad, so the
-# screen text is about 40% larger than in the full-width head. The left end (power, volume
-# knob, mic socket) and the emergency button fall outside it. Stored on the app SVG as
-# data-compact-viewbox; app.js switches to it.
-COMPACT_X0 = BEZEL["x"] - 5
-COMPACT_X1 = max(DPAD[0] + DPAD[2], CONTROLS["channel_knob"][0] + CONTROLS["channel_knob"][2]) + 6
-COMPACT_VIEWBOX = (COMPACT_X0, 0, COMPACT_X1 - COMPACT_X0, H)
-
 
 # ---------------------------------------------------------------------------
 # Small drawing helpers. Each returns an SVG fragment as a string.
@@ -131,7 +124,7 @@ def knob(cx, cy, r, pointer=False, name=""):
     """Rotary knob. Only the .rotor parts turn, so the dome lighting stays fixed."""
     parts = [
         f'<g id="{name}" data-knob="{name}" data-cx="{cx}" data-cy="{cy}">',
-        circle(cx, cy, r + 5, "#090a0b"),
+        circle(cx, cy, r + 5, "#090a0b", 'class="focus-ring"'),  # outlined when focused
         circle(cx, cy, r, "url(#knobBase)"),
         '<g class="rotor">',
         # Dashes create the segmented bright ring seen on the real knobs.
@@ -444,11 +437,7 @@ def live_svg():
 
     Used by the web app (web/control-head/control-head.svg) and the test page.
     """
-    compact = " ".join(str(v) for v in COMPACT_VIEWBOX)
-    return document(
-        faceplate("#000") + live_screen() + hit_layer(),
-        attrs=f' data-compact-viewbox="{compact}"',
-    )
+    return document(faceplate("#000") + live_screen() + hit_layer(), attrs=' data-template="desk"')
 
 
 def radio_config():
@@ -468,25 +457,35 @@ def radio_config_js():
     )
 
 
-def interactive_page():
-    """Single self-contained page: live SVG, control script and test log."""
-    svg = live_svg()
+DESK_SAMPLE = {
+    "zone": "Zone 1", "channel": "CHANNEL 01", "detail": "Talkgroup 1001", "status": "RX", "signal": 4,
+    "softkeys": ["Call", "RSSI", "Zone", "Chan", "Scan"],
+}
+
+
+def interactive_page(svg=None, title="Control Head", max_width=1100, sample=DESK_SAMPLE):
+    """Single self-contained page: live SVG, control script and test log.
+
+    build_handheld.py calls this with its own SVG, width and sample screen.
+    """
+    svg = svg or live_svg()
+    sample_js = json.dumps(sample)
     # Inlined so this page stays a single file. The app loads the same text from radio_config.js.
     config = radio_config_js()
     script = CONTROL_JS.read_text()
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Control Head</title>
+<title>{title}</title>
 <style>
   body {{ margin: 0; padding: 16px; background: #111214; color: #d8dadd; font: 14px/1.4 system-ui, sans-serif; }}
-  #radio {{ max-width: 1100px; margin: auto; }}
+  #radio {{ max-width: {max_width}px; margin: auto; }}
   #radio svg {{ display: block; width: 100%; height: auto; touch-action: none; user-select: none; }}
   [data-control], [data-knob] {{ cursor: pointer; outline: none; }}
   [data-control].pressed {{ fill: rgba(255, 255, 255, .22); }}
   [data-control]:focus-visible {{ stroke: #6aa8ff; stroke-width: 4; }}
-  [data-knob]:focus-visible > circle:first-child {{ stroke: #6aa8ff; stroke-width: 4; }}
-  #log {{ max-width: 1100px; margin: 16px auto 0; height: 180px; overflow: auto; padding: 8px;
+  [data-knob]:focus-visible .focus-ring {{ stroke: #6aa8ff; stroke-width: 4; }}
+  #log {{ max-width: {max_width}px; margin: 16px auto 0; height: 180px; overflow: auto; padding: 8px;
          background: #000; font: 13px/1.5 ui-monospace, monospace; white-space: pre-wrap; }}
 </style></head><body>
 <div id="radio">{svg}</div>
@@ -494,10 +493,7 @@ def interactive_page():
 <script>
 {config}{script}
 // Demo wiring. Replace this block with calls to your radio backend.
-radioHead.setDisplay({{
-  zone: "Zone 1", channel: "CHANNEL 01", detail: "Talkgroup 1001", status: "RX", signal: 4,
-  softkeys: ["Call", "RSSI", "Zone", "Chan", "Scan"],
-}});
+radioHead.setDisplay({sample_js});
 const log = document.getElementById("log");
 radioHead.on(e => {{
   log.textContent = JSON.stringify(e) + "\\n" + log.textContent;

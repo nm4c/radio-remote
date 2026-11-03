@@ -1,0 +1,175 @@
+{
+  "base_canvas": {
+    "w": 560,
+    "h": 1192
+  },
+  "scale_note": "Multiply every value by rendered_width / 560.",
+  "screen": {
+    "bezel": {
+      "x": 124,
+      "y": 372,
+      "w": 312,
+      "h": 412
+    },
+    "screen": {
+      "x": 136,
+      "y": 384,
+      "w": 288,
+      "h": 388
+    }
+  },
+  "text_zones": {
+    "status_bar": {
+      "x": 146,
+      "y": 384,
+      "w": 268,
+      "h": 38,
+      "align": "space-between",
+      "suggested_font_px": 22
+    },
+    "line_1_zone": {
+      "x": 152,
+      "y": 456,
+      "w": 256,
+      "h": 42,
+      "align": "left",
+      "suggested_font_px": 30
+    },
+    "line_2_channel": {
+      "x": 152,
+      "y": 504,
+      "w": 256,
+      "h": 60,
+      "align": "left",
+      "suggested_font_px": 42
+    },
+    "line_3_detail": {
+      "x": 146,
+      "y": 642,
+      "w": 268,
+      "h": 62,
+      "align": "center",
+      "suggested_font_px": 26
+    }
+  },
+  "softkey_labels": [
+    {
+      "x": 136.0,
+      "y": 716,
+      "w": 94.0,
+      "h": 56
+    },
+    {
+      "x": 233.0,
+      "y": 716,
+      "w": 94.0,
+      "h": 56
+    },
+    {
+      "x": 330.0,
+      "y": 716,
+      "w": 94.0,
+      "h": 56
+    }
+  ],
+  "hit_areas": {
+    "softkey_1": {
+      "x": 137.0,
+      "y": 817.0,
+      "w": 90,
+      "h": 50
+    },
+    "softkey_2": {
+      "x": 235.0,
+      "y": 817.0,
+      "w": 90,
+      "h": 50
+    },
+    "softkey_3": {
+      "x": 333.0,
+      "y": 817.0,
+      "w": 90,
+      "h": 50
+    },
+    "home": {
+      "x": 96.0,
+      "y": 895.0,
+      "w": 122.7,
+      "h": 62
+    },
+    "dpad_up": {
+      "x": 218.7,
+      "y": 895.0,
+      "w": 122.7,
+      "h": 62
+    },
+    "menu": {
+      "x": 341.3,
+      "y": 895.0,
+      "w": 122.7,
+      "h": 62
+    },
+    "dpad_left": {
+      "x": 96.0,
+      "y": 975.0,
+      "w": 184.0,
+      "h": 62
+    },
+    "dpad_right": {
+      "x": 280.0,
+      "y": 975.0,
+      "w": 184.0,
+      "h": 62
+    },
+    "p1": {
+      "x": 96.0,
+      "y": 1055.0,
+      "w": 122.7,
+      "h": 62
+    },
+    "dpad_down": {
+      "x": 218.7,
+      "y": 1055.0,
+      "w": 122.7,
+      "h": 62
+    },
+    "p2": {
+      "x": 341.3,
+      "y": 1055.0,
+      "w": 122.7,
+      "h": 62
+    },
+    "volume_knob": {
+      "x": 94.0,
+      "y": 118,
+      "w": 92,
+      "h": 148
+    },
+    "channel_knob": {
+      "x": 228.0,
+      "y": 40,
+      "w": 104,
+      "h": 226
+    }
+  },
+  "behaviour": {
+    "volume_knob": {
+      "type": "absolute",
+      "min": 0,
+      "max": 100,
+      "sweep_degrees": 300,
+      "view": "side"
+    },
+    "channel_knob": {
+      "type": "detent",
+      "degrees_per_step": 15,
+      "view": "side"
+    },
+    "side_view_note": "Side-on knobs turn by swiping across them: right or up is clockwise, and moving pi * width / 2 units turns 180 degrees. Their ridges slide sideways, repeating every 12 units.",
+    "hold_to_activate_ms": {
+      "emergency": 1500,
+      "power": 1500
+    },
+    "long_press_ms": 600
+  }
+}

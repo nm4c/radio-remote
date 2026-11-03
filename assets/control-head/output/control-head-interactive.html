@@ -9,11 +9,11 @@
   [data-control], [data-knob] { cursor: pointer; outline: none; }
   [data-control].pressed { fill: rgba(255, 255, 255, .22); }
   [data-control]:focus-visible { stroke: #6aa8ff; stroke-width: 4; }
-  [data-knob]:focus-visible > circle:first-child { stroke: #6aa8ff; stroke-width: 4; }
+  [data-knob]:focus-visible .focus-ring { stroke: #6aa8ff; stroke-width: 4; }
   #log { max-width: 1100px; margin: 16px auto 0; height: 180px; overflow: auto; padding: 8px;
          background: #000; font: 13px/1.5 ui-monospace, monospace; white-space: pre-wrap; }
 </style></head><body>
-<div id="radio"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 460" width="1600" height="460" data-compact-viewbox="415 0 1025 460">
+<div id="radio"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 460" width="1600" height="460" data-template="desk">
 <defs>
   <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
     <stop offset="0" stop-color="#2d2f32"/><stop offset=".12" stop-color="#202224"/>
@@ -50,7 +50,7 @@
 <rect x="132" y="132" width="54" height="16" rx="8" fill="#111214" stroke="#34363a" stroke-width="2"/>
 <rect x="132" y="162" width="54" height="16" rx="8" fill="#111214" stroke="#34363a" stroke-width="2"/>
 <rect x="132" y="192" width="54" height="16" rx="8" fill="#111214" stroke="#34363a" stroke-width="2"/>
-<g id="volume_knob" data-knob="volume_knob" data-cx="287" data-cy="117"><circle cx="287" cy="117" r="100" fill="#090a0b" /><circle cx="287" cy="117" r="95" fill="url(#knobBase)" /><g class="rotor"><circle cx="287" cy="117" r="92" fill="none" stroke="#c9ccd0" stroke-width="5" stroke-dasharray="72 12 96 14"/><circle cx="287" cy="117" r="82" fill="none" stroke="#050606" stroke-width="12" stroke-dasharray="7 9"/></g><circle cx="287" cy="117" r="73" fill="url(#knobDome)" stroke="#2d2f32" stroke-width="2"/><g class="rotor"><line x1="239" y1="165" x2="267" y2="137" stroke="#d8dadd" stroke-width="13" stroke-linecap="round"/></g></g>
+<g id="volume_knob" data-knob="volume_knob" data-cx="287" data-cy="117"><circle cx="287" cy="117" r="100" fill="#090a0b" class="focus-ring"/><circle cx="287" cy="117" r="95" fill="url(#knobBase)" /><g class="rotor"><circle cx="287" cy="117" r="92" fill="none" stroke="#c9ccd0" stroke-width="5" stroke-dasharray="72 12 96 14"/><circle cx="287" cy="117" r="82" fill="none" stroke="#050606" stroke-width="12" stroke-dasharray="7 9"/></g><circle cx="287" cy="117" r="73" fill="url(#knobDome)" stroke="#2d2f32" stroke-width="2"/><g class="rotor"><line x1="239" y1="165" x2="267" y2="137" stroke="#d8dadd" stroke-width="13" stroke-linecap="round"/></g></g>
 <circle cx="78" cy="230" r="24" fill="#0c0d0e" /><circle cx="78" cy="230" r="20" fill="url(#metal)" /><circle cx="78" cy="230" r="8" fill="#26282a" /><circle cx="78" cy="230" r="3" fill="#6b6e71" />
 <circle cx="142" cy="344" r="100" fill="#17181a" /><circle cx="142" cy="344" r="88" fill="#050606" stroke="#2c2e31" stroke-width="3"/><circle cx="142" cy="344" r="52" fill="#17181a" stroke="#000" stroke-width="3"/><circle cx="142" cy="344" r="4" fill="#050606" /><circle cx="160.0" cy="344.0" r="4" fill="#050606" /><circle cx="147.6" cy="361.1" r="4" fill="#050606" /><circle cx="127.4" cy="354.6" r="4" fill="#050606" /><circle cx="127.4" cy="333.4" r="4" fill="#050606" /><circle cx="147.6" cy="326.9" r="4" fill="#050606" /><circle cx="178.0" cy="344.0" r="4" fill="#050606" /><circle cx="171.1" cy="365.2" r="4" fill="#050606" /><circle cx="153.1" cy="378.2" r="4" fill="#050606" /><circle cx="130.9" cy="378.2" r="4" fill="#050606" /><circle cx="112.9" cy="365.2" r="4" fill="#050606" /><circle cx="106.0" cy="344.0" r="4" fill="#050606" /><circle cx="112.9" cy="322.8" r="4" fill="#050606" /><circle cx="130.9" cy="309.8" r="4" fill="#050606" /><circle cx="153.1" cy="309.8" r="4" fill="#050606" /><circle cx="171.1" cy="322.8" r="4" fill="#050606" />
 <rect x="260" y="234" width="110" height="62" rx="31" fill="url(#button)" stroke="#3a3c3f" stroke-width="2"/>
@@ -69,7 +69,7 @@
 <rect x="731.0" y="357.0" width="138" height="70" rx="12" fill="#08090a" /><rect x="735.0" y="361.0" width="130" height="62" rx="9" fill="url(#button)" stroke="#3a3c3f" stroke-width="2"/><rect x="774" y="386" width="52" height="12" rx="6" fill="#b9bcc0" />
 <rect x="889.0" y="357.0" width="138" height="70" rx="12" fill="#08090a" /><rect x="893.0" y="361.0" width="130" height="62" rx="9" fill="url(#button)" stroke="#3a3c3f" stroke-width="2"/><rect x="932" y="386" width="52" height="12" rx="6" fill="#b9bcc0" />
 <rect x="1047.0" y="357.0" width="138" height="70" rx="12" fill="#08090a" /><rect x="1051.0" y="361.0" width="130" height="62" rx="9" fill="url(#button)" stroke="#3a3c3f" stroke-width="2"/><rect x="1090" y="386" width="52" height="12" rx="6" fill="#b9bcc0" />
-<g id="channel_knob" data-knob="channel_knob" data-cx="1310" data-cy="119"><circle cx="1310" cy="119" r="100" fill="#090a0b" /><circle cx="1310" cy="119" r="95" fill="url(#knobBase)" /><g class="rotor"><circle cx="1310" cy="119" r="92" fill="none" stroke="#c9ccd0" stroke-width="5" stroke-dasharray="72 12 96 14"/><circle cx="1310" cy="119" r="82" fill="none" stroke="#050606" stroke-width="12" stroke-dasharray="7 9"/></g><circle cx="1310" cy="119" r="73" fill="url(#knobDome)" stroke="#2d2f32" stroke-width="2"/></g>
+<g id="channel_knob" data-knob="channel_knob" data-cx="1310" data-cy="119"><circle cx="1310" cy="119" r="100" fill="#090a0b" class="focus-ring"/><circle cx="1310" cy="119" r="95" fill="url(#knobBase)" /><g class="rotor"><circle cx="1310" cy="119" r="92" fill="none" stroke="#c9ccd0" stroke-width="5" stroke-dasharray="72 12 96 14"/><circle cx="1310" cy="119" r="82" fill="none" stroke="#050606" stroke-width="12" stroke-dasharray="7 9"/></g><circle cx="1310" cy="119" r="73" fill="url(#knobDome)" stroke="#2d2f32" stroke-width="2"/></g>
 <circle cx="1512" cy="89" r="70" fill="#0b0c0d" stroke="#2a2c2f" stroke-width="2"/>
 <circle cx="1512" cy="89" r="42" fill="url(#orange)" />
 <circle cx="1482" cy="189" r="13" fill="#2d5fc4" stroke="#0d1b3a" stroke-width="3"/>
@@ -96,8 +96,12 @@ const RADIO_CONFIG = Object.freeze({"detent": 15, "longPressMs": 600, "holdMs": 
 //   {control:"emergency", action:"activate"}    Guarded button held for its full time
 //   {control:"volume_knob", action:"change", value:42}  Absolute value, 0 to 100
 //   {control:"channel_knob", action:"step", delta:1}    One detent, + is clockwise
-const radioHead = (() => {
-  const svg = document.querySelector("#radio svg");
+//
+// Works with any SVG built by assets/control-head/ (the desk control head or the handheld):
+// press targets carry data-control, knobs carry data-knob, screen text has display-* ids.
+// createRadioHead(svg) wires one SVG and returns its API. A page whose SVG is already in place
+// when this script runs also gets a ready-made instance as `radioHead`.
+function createRadioHead(svg) {
   const listeners = new Set();
   const emit = event => listeners.forEach(fn => fn(event));
 
@@ -153,18 +157,27 @@ const radioHead = (() => {
 
   // ---------- Knobs ----------
   const setRotation = (knob, degrees) => {
-    const { cx, cy } = knob.dataset;
-    knob.querySelectorAll(".rotor").forEach(r => r.setAttribute("transform", `rotate(${degrees} ${cx} ${cy})`));
+    const { cx, cy, view } = knob.dataset;
+    let transform = `rotate(${degrees} ${cx} ${cy})`;
+    if (view === "side") {
+      // Knob seen side-on (handheld top knobs): turning it slides the grip ridges sideways by
+      // the distance its surface moves. The ridge pattern repeats every data-period units.
+      const period = +knob.dataset.period;
+      const travel = degrees * Math.PI * +knob.dataset.r / 180;
+      transform = `translate(${((travel % period) + period) % period} 0)`;
+    }
+    knob.querySelectorAll(".rotor").forEach(r => r.setAttribute("transform", transform));
   };
 
   // Volume: fixed end stops, like the real pot.
   const volumeKnob = svg.querySelector('[data-knob="volume_knob"]');
+  const volumeSweep = +(volumeKnob.dataset.sweep || 270); // degrees from 0 to 100
   let volume = 0;
   const setVolume = (next, notify = true) => {
     const clamped = Math.round(Math.min(100, Math.max(0, next)));
     if (clamped === volume) return;
     volume = clamped;
-    setRotation(volumeKnob, volume * 2.7); // 0 to 100 maps to 270 degrees.
+    setRotation(volumeKnob, volume * volumeSweep / 100); // 0 to 100 maps to the knob's sweep.
     volumeKnob.setAttribute("aria-valuenow", volume);
     if (notify) emit({ control: "volume_knob", action: "change", value: volume });
   };
@@ -179,11 +192,14 @@ const radioHead = (() => {
   };
 
   // Shared drag handling. onTurn receives the signed degrees moved since last event.
+  // Top-view knobs follow the pointer's angle around the centre. Side-on knobs (data-view="side")
+  // are rolled: a swipe right or up turns them clockwise by the distance moved over the surface.
   const bindKnob = (knob, label, onTurn, onNudge) => {
     knob.setAttribute("role", "slider");
     knob.setAttribute("tabindex", "0");
     knob.setAttribute("aria-label", label);
     const centre = { x: +knob.dataset.cx, y: +knob.dataset.cy };
+    const side = knob.dataset.view === "side";
     const angleAt = e => {
       const p = toCanvas(e);
       return Math.atan2(p.y - centre.y, p.x - centre.x) * 180 / Math.PI;
@@ -191,10 +207,17 @@ const radioHead = (() => {
     let last = null;
     knob.addEventListener("pointerdown", e => {
       knob.setPointerCapture(e.pointerId);
-      last = angleAt(e);
+      last = side ? toCanvas(e) : angleAt(e);
     });
     knob.addEventListener("pointermove", e => {
       if (last === null) return;
+      if (side) {
+        const p = toCanvas(e);
+        const moved = (p.x - last.x) - (p.y - last.y); // right and up both count as clockwise
+        last = p;
+        onTurn(moved / (Math.PI * +knob.dataset.r) * 180);
+        return;
+      }
       const now = angleAt(e);
       let delta = now - last;
       // Unwraps the jump where atan2 flips between +180 and -180.
@@ -220,7 +243,7 @@ const radioHead = (() => {
   // Keeps fractional drag movement, so slow turns still register.
   let volumeRemainder = 0;
   bindKnob(volumeKnob, "volume", degrees => {
-    volumeRemainder += degrees / 2.7;
+    volumeRemainder += degrees * 100 / volumeSweep;
     const whole = Math.trunc(volumeRemainder);
     if (whole) { volumeRemainder -= whole; setVolume(volume + whole); }
   }, direction => setVolume(volume + direction * 2));
@@ -271,13 +294,12 @@ const radioHead = (() => {
     // Syncs the knob from the radio without echoing an event back.
     setVolume: value => setVolume(value, false),
   };
-})();
+}
+
+const radioHead = document.querySelector("#radio svg") ? createRadioHead(document.querySelector("#radio svg")) : null;
 
 // Demo wiring. Replace this block with calls to your radio backend.
-radioHead.setDisplay({
-  zone: "Zone 1", channel: "CHANNEL 01", detail: "Talkgroup 1001", status: "RX", signal: 4,
-  softkeys: ["Call", "RSSI", "Zone", "Chan", "Scan"],
-});
+radioHead.setDisplay({"zone": "Zone 1", "channel": "CHANNEL 01", "detail": "Talkgroup 1001", "status": "RX", "signal": 4, "softkeys": ["Call", "RSSI", "Zone", "Chan", "Scan"]});
 const log = document.getElementById("log");
 radioHead.on(e => {
   log.textContent = JSON.stringify(e) + "\n" + log.textContent;
