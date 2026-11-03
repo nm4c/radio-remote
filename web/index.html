@@ -43,38 +43,16 @@
   <!-- Radio head -->
   <main id="head" class="head" hidden>
     <button id="audioHint" class="banner" hidden>Audio paused. Tap here to resume.</button>
-    <div class="lcd" id="lcd">
-      <div class="lcd-flags">
-        <span class="flag" id="flagBusy">BUSY</span>
-        <span class="flag tx" id="flagTx">TX</span>
-        <span class="flag" id="flagChg">CHG</span>
-        <span class="flag" id="flagLow" hidden>LOW</span>
-        <span class="lcd-timer" id="txTimer"></span>
-      </div>
-      <div class="lcd-main">
-        <div class="lcd-ch"><small>CH</small><span id="chNum">--</span></div>
-        <div class="lcd-name" id="chName">—</div>
-      </div>
-      <div class="lcd-freq" id="lcdFreq" hidden></div>
-      <div class="meter" aria-label="Receive audio level"><div class="meter-fill" id="rxMeter"></div></div>
-      <div class="rssi" id="rssiRow" hidden>
-        <span class="rssi-label">SIG</span>
-        <div class="meter" aria-label="Signal strength"><div class="meter-fill" id="rssiMeter"></div></div>
-        <span class="rssi-val" id="rssiVal">--</span>
-      </div>
-      <div class="lcd-foot" id="lcdFoot">&nbsp;</div>
-    </div>
+    <!-- Control head. app.js (loadHead) inserts /static/control-head/control-head.svg here, then
+         loads radio_config.js and control_head.js. Its screen shows the channel, frequency, TX/BUSY
+         state and signal; its knobs change channel and speaker volume. -->
+    <div id="radio" class="radio-head" aria-label="Radio control head"></div>
 
-    <div class="controls">
-      <div class="chan-buttons">
-        <button id="chUp" class="chbtn" aria-label="Channel up">▲</button>
-        <button id="chDown" class="chbtn" aria-label="Channel down">▼</button>
-      </div>
-      <button id="ptt" class="ptt" aria-label="Push to talk">
-        <span class="ptt-label" id="pttLabel">PTT</span>
-        <span class="ptt-sub">hold · or hold Space</span>
-      </button>
-    </div>
+    <!-- The head has no PTT of its own (on the real radio it's on the microphone). -->
+    <button id="ptt" class="ptt" aria-label="Push to talk">
+      <span class="ptt-label" id="pttLabel">PTT</span>
+      <span class="ptt-sub">hold · or hold Space</span>
+    </button>
 
     <div class="channels" id="channelGrid" aria-label="Channels"></div>
 
@@ -104,7 +82,7 @@
       </p>
     </div>
 
-    <details class="settings">
+    <details class="settings" id="settings">
       <summary>Settings</summary>
       <div class="settings-body">
         <div class="sync" id="syncBlock">

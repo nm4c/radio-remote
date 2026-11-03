@@ -6,9 +6,7 @@
   --line: #2f363e;
   --text: #e6e9ec;
   --muted: #8b949e;
-  --lcd-bg: #1d2412;
   --lcd-fg: #ffb547;
-  --lcd-dim: #4d3a1a;
   --tx: #e5484d;
   --busy: #3dd68c;
   --accent: #4c9aff;
@@ -75,40 +73,24 @@ button.danger { color: var(--tx); }
 
 .head { max-width: 720px; margin: 0 auto; display: grid; gap: 18px; padding-bottom: 32px; }
 
-/* LCD */
-.lcd {
-  background: linear-gradient(180deg, #232c15, var(--lcd-bg));
-  border: 3px solid #0a0c0e; border-radius: 14px; padding: 14px 18px;
-  box-shadow: inset 0 0 24px rgba(0,0,0,.6);
-  color: var(--lcd-fg);
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+/* Control head: web/control-head/control-head.svg, inserted by app.js (loadHead).
+   Colours inside the artwork come from the generator; these rules only add interaction states. */
+.radio-head:empty { aspect-ratio: 1600 / 460; } /* hold its space while the SVG loads */
+.radio-head svg {
+  display: block; width: 100%; height: auto;
+  touch-action: none; /* knob drags must not scroll the page */
+  user-select: none; -webkit-user-select: none;
 }
-.lcd.tx { box-shadow: inset 0 0 24px rgba(0,0,0,.6), 0 0 0 2px var(--tx); }
-.lcd-flags { display: flex; gap: 10px; align-items: center; font-size: 13px; min-height: 20px; }
-.flag { color: var(--lcd-dim); font-weight: 700; padding: 0 4px; border-radius: 3px; }
-.flag.on { color: #1a1a1a; background: var(--lcd-fg); }
-.flag.tx.on { background: var(--tx); color: #fff; }
-.lcd-timer { margin-left: auto; }
-.lcd-main { display: flex; align-items: baseline; gap: 18px; margin: 4px 0 10px; flex-wrap: wrap; }
-.lcd-ch { font-size: 64px; font-weight: 700; line-height: 1; text-shadow: 0 0 12px rgba(255,181,71,.35); }
-.lcd-ch small { font-size: 16px; margin-right: 6px; opacity: .7; }
-.lcd-name { font-size: 22px; text-transform: uppercase; letter-spacing: .06em; overflow-wrap: anywhere; }
-.lcd-foot { font-size: 12px; opacity: .8; margin-top: 6px; min-height: 1.2em; }
-.lcd-freq { font-size: 18px; letter-spacing: .04em; margin: -4px 0 8px; font-variant-numeric: tabular-nums; white-space: pre-wrap; }
-.rssi { display: grid; grid-template-columns: auto 1fr 4.5em; gap: 8px; align-items: center; margin-top: 6px; font-size: 12px; }
-.rssi-label { opacity: .7; }
-.rssi-val { text-align: right; font-variant-numeric: tabular-nums; }
-.meter { height: 10px; background: var(--lcd-dim); border-radius: 2px; overflow: hidden; }
-.meter-fill {
-  height: 100%; width: 0%;
-  background: repeating-linear-gradient(90deg, var(--lcd-fg) 0 6px, transparent 6px 8px);
-  transition: width .15s linear;
-}
+.radio-head [data-control], .radio-head [data-knob] { cursor: pointer; outline: none; }
+.radio-head [data-control].pressed { fill: rgba(255, 255, 255, .22); }
+.radio-head [data-control]:focus-visible { stroke: var(--accent); stroke-width: 4; }
+.radio-head [data-knob]:focus-visible > circle:first-child { stroke: var(--accent); stroke-width: 4; }
+/* Transmitting from this device: red status text and a red glow around the head. */
+.radio-head.tx #display-status { fill: var(--tx); }
+.radio-head.tx svg { filter: drop-shadow(0 0 10px rgba(229, 72, 77, .6)); }
+/* Channel picked with the knob but not on the radio yet: amber until the radio confirms it. */
+.radio-head.picking #display-zone, .radio-head.picking #display-channel { fill: var(--lcd-fg); }
 
-/* Controls */
-.controls { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: stretch; }
-.chan-buttons { display: grid; gap: 12px; }
-.chbtn { width: 84px; font-size: 26px; min-height: 76px; }
 .ptt {
   min-height: 164px; border-radius: 22px; border: 2px solid #5a1d20;
   background: radial-gradient(circle at 50% 35%, #3a2224, #22171a);
@@ -159,11 +141,7 @@ button.danger { color: var(--tx); }
 .toast.error { border-left-color: var(--tx); }
 
 @media (max-width: 480px) {
-  .controls { grid-template-columns: 1fr; }
-  .chan-buttons { grid-template-columns: 1fr 1fr; }
-  .chbtn { width: auto; min-height: 56px; }
   .ptt { min-height: 140px; }
-  .lcd-ch { font-size: 52px; }
   .sliders label { grid-template-columns: 1fr; }
   .tune { grid-template-columns: 1fr 1fr; }
   .tune label:first-child { grid-column: 1 / -1; }
