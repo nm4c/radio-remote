@@ -1,0 +1,215 @@
+{
+  "base_canvas": {
+    "w": 1600,
+    "h": 460
+  },
+  "scale_note": "Multiply every value by rendered_width / 1600.",
+  "screen": {
+    "full_lcd": {
+      "x": 435,
+      "y": 64,
+      "w": 732,
+      "h": 250
+    },
+    "main_window": {
+      "x": 435,
+      "y": 64,
+      "w": 732,
+      "h": 200
+    }
+  },
+  "text_zones": {
+    "status_bar": {
+      "x": 447,
+      "y": 68,
+      "w": 708,
+      "h": 40,
+      "align": "space-between",
+      "suggested_font_px": 24
+    },
+    "line_1_zone": {
+      "x": 447,
+      "y": 110,
+      "w": 708,
+      "h": 40,
+      "align": "center",
+      "suggested_font_px": 32
+    },
+    "line_2_channel": {
+      "x": 447,
+      "y": 150,
+      "w": 708,
+      "h": 68,
+      "align": "center",
+      "suggested_font_px": 58
+    },
+    "line_3_detail": {
+      "x": 447,
+      "y": 220,
+      "w": 708,
+      "h": 40,
+      "align": "center",
+      "suggested_font_px": 30
+    }
+  },
+  "softkey_labels": [
+    {
+      "x": 435.0,
+      "y": 266,
+      "w": 144.0,
+      "h": 48
+    },
+    {
+      "x": 582.0,
+      "y": 266,
+      "w": 144.0,
+      "h": 48
+    },
+    {
+      "x": 729.0,
+      "y": 266,
+      "w": 144.0,
+      "h": 48
+    },
+    {
+      "x": 876.0,
+      "y": 266,
+      "w": 144.0,
+      "h": 48
+    },
+    {
+      "x": 1023.0,
+      "y": 266,
+      "w": 144.0,
+      "h": 48
+    }
+  ],
+  "hit_areas": {
+    "power": {
+      "cx": 87,
+      "cy": 85,
+      "r": 42
+    },
+    "volume_knob": {
+      "cx": 287,
+      "cy": 117,
+      "r": 95
+    },
+    "channel_knob": {
+      "cx": 1310,
+      "cy": 119,
+      "r": 95
+    },
+    "emergency": {
+      "cx": 1512,
+      "cy": 89,
+      "r": 42
+    },
+    "brightness": {
+      "x": 260,
+      "y": 234,
+      "w": 110,
+      "h": 62
+    },
+    "programmable_p": {
+      "cx": 330,
+      "cy": 371,
+      "r": 40
+    },
+    "home": {
+      "cx": 1512,
+      "cy": 375,
+      "r": 42
+    },
+    "dpad_up": {
+      "x": 1312,
+      "y": 237,
+      "w": 61,
+      "h": 61
+    },
+    "dpad_down": {
+      "x": 1312,
+      "y": 360,
+      "w": 61,
+      "h": 61
+    },
+    "dpad_left": {
+      "x": 1250,
+      "y": 299,
+      "w": 61,
+      "h": 61
+    },
+    "dpad_right": {
+      "x": 1373,
+      "y": 299,
+      "w": 61,
+      "h": 61
+    },
+    "softkey_1": {
+      "x": 418,
+      "y": 361,
+      "w": 130,
+      "h": 62
+    },
+    "softkey_2": {
+      "x": 575,
+      "y": 361,
+      "w": 130,
+      "h": 62
+    },
+    "softkey_3": {
+      "x": 735,
+      "y": 361,
+      "w": 130,
+      "h": 62
+    },
+    "softkey_4": {
+      "x": 893,
+      "y": 361,
+      "w": 130,
+      "h": 62
+    },
+    "softkey_5": {
+      "x": 1051,
+      "y": 361,
+      "w": 130,
+      "h": 62
+    }
+  },
+  "behaviour": {
+    "volume_knob": {
+      "type": "absolute",
+      "min": 0,
+      "max": 100,
+      "sweep_degrees": 270,
+      "zero_angle_note": "Artwork is drawn at value 0; rotate clockwise by value * 2.7."
+    },
+    "channel_knob": {
+      "type": "detent",
+      "degrees_per_step": 15
+    },
+    "hold_to_activate_ms": {
+      "emergency": 1500,
+      "power": 1500
+    },
+    "long_press_ms": 600
+  },
+  "knob_layers": {
+    "volume_knob": {
+      "file": "knob-volume@2x.png",
+      "centre": {
+        "x": 287,
+        "y": 117
+      },
+      "size": 200
+    },
+    "channel_knob": {
+      "file": "knob-channel@2x.png",
+      "centre": {
+        "x": 1310,
+        "y": 119
+      },
+      "size": 200
+    }
+  }
+}

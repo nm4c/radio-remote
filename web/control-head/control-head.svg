@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 460" width="1600" height="460" data-compact-viewbox="415 0 1025 460">
+<defs>
+  <linearGradient id="body" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#2d2f32"/><stop offset=".12" stop-color="#202224"/>
+    <stop offset=".9" stop-color="#191a1c"/><stop offset="1" stop-color="#0d0e0f"/>
+  </linearGradient>
+  <linearGradient id="button" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#303235"/><stop offset="1" stop-color="#141517"/>
+  </linearGradient>
+  <linearGradient id="softcell" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#6c6e71"/><stop offset="1" stop-color="#55575a"/>
+  </linearGradient>
+  <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#b6b8bb"/><stop offset="1" stop-color="#5a5c5f"/>
+  </linearGradient>
+  <radialGradient id="knobBase" cx=".5" cy=".4" r=".7">
+    <stop offset="0" stop-color="#34363a"/><stop offset="1" stop-color="#101113"/>
+  </radialGradient>
+  <radialGradient id="knobDome" cx=".42" cy=".32" r=".8">
+    <stop offset="0" stop-color="#37393c"/><stop offset="1" stop-color="#17181a"/>
+  </radialGradient>
+  <radialGradient id="orange" cx=".42" cy=".35" r=".75">
+    <stop offset="0" stop-color="#f26a2a"/><stop offset="1" stop-color="#c63f0c"/>
+  </radialGradient>
+  <!-- White keeps the artwork. Black punches the transparent screen window. -->
+  <mask id="screenHole" maskUnits="userSpaceOnUse" x="0" y="0" width="1600" height="460">
+    <rect width="1600" height="460" fill="#fff"/>
+    <rect x="435" y="64" width="732" height="200" fill="#000"/>
+  </mask>
+</defs>
+<rect x="5" y="2" width="1590" height="457" rx="36" fill="url(#body)" stroke="#050606" stroke-width="3"/>
+<rect x="258" y="22" width="1195" height="420" rx="14" fill="#1b1c1e" stroke="#111214" stroke-width="3"/>
+<path d="M150 18V124M1450 22V440" stroke="#0b0c0d" stroke-width="3"/>
+<circle cx="87" cy="85" r="46" fill="#0a0b0c" /><circle cx="87" cy="85" r="42" fill="url(#button)" stroke="#3a3c3f" stroke-width="2"/><path d="M72 73A21 21 0 1 0 102 73" fill="none" stroke="#27b34b" stroke-width="6" stroke-linecap="round"/><line x1="87" y1="60" x2="87" y2="85" stroke="#27b34b" stroke-width="6" stroke-linecap="round"/><circle cx="87" cy="85" r="39" fill="none" stroke="#1c6b34" stroke-width="3"/>
+<rect x="132" y="132" width="54" height="16" rx="8" fill="#111214" stroke="#34363a" stroke-width="2"/>
+<rect x="132" y="162" width="54" height="16" rx="8" fill="#111214" stroke="#34363a" stroke-width="2"/>
+<rect x="132" y="192" width="54" height="16" rx="8" fill="#111214" stroke="#34363a" stroke-width="2"/>
+<g id="volume_knob" data-knob="volume_knob" data-cx="287" data-cy="117"><circle cx="287" cy="117" r="100" fill="#090a0b" /><circle cx="287" cy="117" r="95" fill="url(#knobBase)" /><g class="rotor"><circle cx="287" cy="117" r="92" fill="none" stroke="#c9ccd0" stroke-width="5" stroke-dasharray="72 12 96 14"/><circle cx="287" cy="117" r="82" fill="none" stroke="#050606" stroke-width="12" stroke-dasharray="7 9"/></g><circle cx="287" cy="117" r="73" fill="url(#knobDome)" stroke="#2d2f32" stroke-width="2"/><g class="rotor"><line x1="239" y1="165" x2="267" y2="137" stroke="#d8dadd" stroke-width="13" stroke-linecap="round"/></g></g>
+<circle cx="78" cy="230" r="24" fill="#0c0d0e" /><circle cx="78" cy="230" r="20" fill="url(#metal)" /><circle cx="78" cy="230" r="8" fill="#26282a" /><circle cx="78" cy="230" r="3" fill="#6b6e71" />
+<circle cx="142" cy="344" r="100" fill="#17181a" /><circle cx="142" cy="344" r="88" fill="#050606" stroke="#2c2e31" stroke-width="3"/><circle cx="142" cy="344" r="52" fill="#17181a" stroke="#000" stroke-width="3"/><circle cx="142" cy="344" r="4" fill="#050606" /><circle cx="160.0" cy="344.0" r="4" fill="#050606" /><circle cx="147.6" cy="361.1" r="4" fill="#050606" /><circle cx="127.4" cy="354.6" r="4" fill="#050606" /><circle cx="127.4" cy="333.4" r="4" fill="#050606" /><circle cx="147.6" cy="326.9" r="4" fill="#050606" /><circle cx="178.0" cy="344.0" r="4" fill="#050606" /><circle cx="171.1" cy="365.2" r="4" fill="#050606" /><circle cx="153.1" cy="378.2" r="4" fill="#050606" /><circle cx="130.9" cy="378.2" r="4" fill="#050606" /><circle cx="112.9" cy="365.2" r="4" fill="#050606" /><circle cx="106.0" cy="344.0" r="4" fill="#050606" /><circle cx="112.9" cy="322.8" r="4" fill="#050606" /><circle cx="130.9" cy="309.8" r="4" fill="#050606" /><circle cx="153.1" cy="309.8" r="4" fill="#050606" /><circle cx="171.1" cy="322.8" r="4" fill="#050606" />
+<rect x="260" y="234" width="110" height="62" rx="31" fill="url(#button)" stroke="#3a3c3f" stroke-width="2"/>
+<circle cx="315" cy="265" r="7" fill="#b9bcc0" />
+<g stroke="#b9bcc0" stroke-width="3" stroke-linecap="round"><line x1="315" y1="254" x2="315" y2="247" transform="rotate(0 315 265)"/><line x1="315" y1="254" x2="315" y2="247" transform="rotate(45 315 265)"/><line x1="315" y1="254" x2="315" y2="247" transform="rotate(90 315 265)"/><line x1="315" y1="254" x2="315" y2="247" transform="rotate(135 315 265)"/><line x1="315" y1="254" x2="315" y2="247" transform="rotate(180 315 265)"/><line x1="315" y1="254" x2="315" y2="247" transform="rotate(225 315 265)"/><line x1="315" y1="254" x2="315" y2="247" transform="rotate(270 315 265)"/><line x1="315" y1="254" x2="315" y2="247" transform="rotate(315 315 265)"/></g>
+<circle cx="330" cy="371" r="44" fill="#0a0b0c" /><circle cx="330" cy="371" r="40" fill="url(#button)" stroke="#3a3c3f" stroke-width="2"/><path d="M319 390V352H333A11 11 0 0 1 333 374H319" fill="none" stroke="#b9bcc0" stroke-width="7" stroke-linejoin="round"/>
+<rect x="420" y="40" width="755" height="281" rx="6" fill="#0a0b0c" stroke="#2c2e31" stroke-width="2"/>
+<rect id="main-screen" x="435" y="64" width="732" height="200" fill="#000"/>
+<rect x="435.0" y="266" width="144.0" height="48" fill="url(#softcell)"/>
+<rect x="582.0" y="266" width="144.0" height="48" fill="url(#softcell)"/>
+<rect x="729.0" y="266" width="144.0" height="48" fill="url(#softcell)"/>
+<rect x="876.0" y="266" width="144.0" height="48" fill="url(#softcell)"/>
+<rect x="1023.0" y="266" width="144.0" height="48" fill="url(#softcell)"/>
+<rect x="414.0" y="357.0" width="138" height="70" rx="12" fill="#08090a" /><rect x="418.0" y="361.0" width="130" height="62" rx="9" fill="url(#button)" stroke="#3a3c3f" stroke-width="2"/><rect x="457" y="386" width="52" height="12" rx="6" fill="#b9bcc0" />
+<rect x="571.0" y="357.0" width="138" height="70" rx="12" fill="#08090a" /><rect x="575.0" y="361.0" width="130" height="62" rx="9" fill="url(#button)" stroke="#3a3c3f" stroke-width="2"/><rect x="614" y="386" width="52" height="12" rx="6" fill="#b9bcc0" />
+<rect x="731.0" y="357.0" width="138" height="70" rx="12" fill="#08090a" /><rect x="735.0" y="361.0" width="130" height="62" rx="9" fill="url(#button)" stroke="#3a3c3f" stroke-width="2"/><rect x="774" y="386" width="52" height="12" rx="6" fill="#b9bcc0" />
+<rect x="889.0" y="357.0" width="138" height="70" rx="12" fill="#08090a" /><rect x="893.0" y="361.0" width="130" height="62" rx="9" fill="url(#button)" stroke="#3a3c3f" stroke-width="2"/><rect x="932" y="386" width="52" height="12" rx="6" fill="#b9bcc0" />
+<rect x="1047.0" y="357.0" width="138" height="70" rx="12" fill="#08090a" /><rect x="1051.0" y="361.0" width="130" height="62" rx="9" fill="url(#button)" stroke="#3a3c3f" stroke-width="2"/><rect x="1090" y="386" width="52" height="12" rx="6" fill="#b9bcc0" />
+<g id="channel_knob" data-knob="channel_knob" data-cx="1310" data-cy="119"><circle cx="1310" cy="119" r="100" fill="#090a0b" /><circle cx="1310" cy="119" r="95" fill="url(#knobBase)" /><g class="rotor"><circle cx="1310" cy="119" r="92" fill="none" stroke="#c9ccd0" stroke-width="5" stroke-dasharray="72 12 96 14"/><circle cx="1310" cy="119" r="82" fill="none" stroke="#050606" stroke-width="12" stroke-dasharray="7 9"/></g><circle cx="1310" cy="119" r="73" fill="url(#knobDome)" stroke="#2d2f32" stroke-width="2"/></g>
+<circle cx="1512" cy="89" r="70" fill="#0b0c0d" stroke="#2a2c2f" stroke-width="2"/>
+<circle cx="1512" cy="89" r="42" fill="url(#orange)" />
+<circle cx="1482" cy="189" r="13" fill="#2d5fc4" stroke="#0d1b3a" stroke-width="3"/>
+<circle cx="1522" cy="230" r="24" fill="#0c0d0e" /><circle cx="1522" cy="230" r="20" fill="url(#metal)" /><circle cx="1522" cy="230" r="8" fill="#26282a" /><circle cx="1522" cy="230" r="3" fill="#6b6e71" />
+<circle cx="1342" cy="329" r="97" fill="#08090a" /><circle cx="1342" cy="329" r="92" fill="url(#button)" stroke="#3a3c3f" stroke-width="2"/><path d="M1279.44 266.44L1404.56 391.56M1404.56 266.44L1279.44 391.56" stroke="#050606" stroke-width="9"/><rect x="1338" y="253" width="8" height="30" rx="4" fill="#b9bcc0" /><rect x="1338" y="375" width="8" height="30" rx="4" fill="#b9bcc0" /><rect x="1266" y="325" width="30" height="8" rx="4" fill="#b9bcc0" /><rect x="1388" y="325" width="30" height="8" rx="4" fill="#b9bcc0" />
+<circle cx="1512" cy="375" r="46" fill="#0a0b0c" /><circle cx="1512" cy="375" r="42" fill="url(#button)" stroke="#3a3c3f" stroke-width="2"/><path d="M1494 374L1512 358L1530 374M1500 373V391H1508V380H1516V391H1524V373" fill="none" stroke="#d8c33a" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><g id="screen-layer" pointer-events="none"><rect class="signal-bar" x="456" y="88" width="6" height="6" fill="#3ddc62"/><rect class="signal-bar" x="465" y="82" width="6" height="12" fill="#3ddc62"/><rect class="signal-bar" x="474" y="76" width="6" height="18" fill="#3ddc62"/><rect class="signal-bar" x="483" y="70" width="6" height="24" fill="#3ddc62"/><text id="display-status" x="1149" y="97" text-anchor="end" fill="#3ddc62" font-size="24" font-weight="700" font-family="Liberation Sans, Arial, Helvetica, sans-serif"></text><text id="display-zone" data-max-width="708" x="801.0" y="141" text-anchor="middle" fill="#e8e8e8" font-size="32" font-family="Liberation Sans, Arial, Helvetica, sans-serif"></text><text id="display-channel" data-max-width="708" x="801.0" y="205" text-anchor="middle" fill="#fff" font-size="58" font-weight="700" font-family="Liberation Sans, Arial, Helvetica, sans-serif"></text><text id="display-detail" data-max-width="708" x="801.0" y="251" text-anchor="middle" fill="#e8e8e8" font-size="30" font-family="Liberation Sans, Arial, Helvetica, sans-serif"></text><text id="display-softkey-1" data-max-width="134.0" x="507.0" y="299" text-anchor="middle" fill="#f2f2f2" font-size="27" font-weight="700" font-family="Liberation Sans, Arial, Helvetica, sans-serif"></text><text id="display-softkey-2" data-max-width="134.0" x="654.0" y="299" text-anchor="middle" fill="#f2f2f2" font-size="27" font-weight="700" font-family="Liberation Sans, Arial, Helvetica, sans-serif"></text><text id="display-softkey-3" data-max-width="134.0" x="801.0" y="299" text-anchor="middle" fill="#f2f2f2" font-size="27" font-weight="700" font-family="Liberation Sans, Arial, Helvetica, sans-serif"></text><text id="display-softkey-4" data-max-width="134.0" x="948.0" y="299" text-anchor="middle" fill="#f2f2f2" font-size="27" font-weight="700" font-family="Liberation Sans, Arial, Helvetica, sans-serif"></text><text id="display-softkey-5" data-max-width="134.0" x="1095.0" y="299" text-anchor="middle" fill="#f2f2f2" font-size="27" font-weight="700" font-family="Liberation Sans, Arial, Helvetica, sans-serif"></text></g><g id="hit-layer"><circle cx="87" cy="85" r="42" fill="transparent" data-control="power"/><circle cx="1512" cy="89" r="42" fill="transparent" data-control="emergency"/><rect x="260" y="234" width="110" height="62" rx="31" fill="transparent" data-control="brightness"/><circle cx="330" cy="371" r="40" fill="transparent" data-control="programmable_p"/><circle cx="1512" cy="375" r="42" fill="transparent" data-control="home"/><rect x="418.0" y="361.0" width="130" height="62" rx="9" fill="transparent" data-control="softkey_1"/><rect x="575.0" y="361.0" width="130" height="62" rx="9" fill="transparent" data-control="softkey_2"/><rect x="735.0" y="361.0" width="130" height="62" rx="9" fill="transparent" data-control="softkey_3"/><rect x="893.0" y="361.0" width="130" height="62" rx="9" fill="transparent" data-control="softkey_4"/><rect x="1051.0" y="361.0" width="130" height="62" rx="9" fill="transparent" data-control="softkey_5"/><path d="M1342 329L1407.1 263.9A92 92 0 0 1 1407.1 394.1Z" fill="transparent" data-control="dpad_right"/><path d="M1342 329L1407.1 394.1A92 92 0 0 1 1276.9 394.1Z" fill="transparent" data-control="dpad_down"/><path d="M1342 329L1276.9 394.1A92 92 0 0 1 1276.9 263.9Z" fill="transparent" data-control="dpad_left"/><path d="M1342 329L1276.9 263.9A92 92 0 0 1 1407.1 263.9Z" fill="transparent" data-control="dpad_up"/></g>
+</svg>
