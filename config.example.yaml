@@ -81,6 +81,18 @@ audio:
   tx_prebuffer_ms: 80  # jitter buffer before TX audio starts playing to the radio
   busy_threshold_dbfs: -45  # RX level considered "signal present" if no busy_pin
 
+webrtc:
+  # Audio over WebRTC (Opus over UDP) for the lowest, steadiest latency. Browsers that can't connect
+  # fall back to audio over the WebSocket automatically. Control (PTT, channels) always uses the WebSocket.
+  enabled: true
+  # Not needed on a LAN or Tailscale (direct connection). Over the open internet behind NAT, add a STUN server:
+  #   ice_servers: ["stun:stun.l.google.com:19302"]
+  ice_servers: []
+  rx_jitter_packets: 4   # mic audio buffer on the Pi, in 20 ms packets (2, 4, 8 or 16). Smaller = lower delay
+  release_ms: 120        # after PTT release, keep taking audio this long for packets still in flight
+  tx_prebuffer_ms: 40    # radio-side buffer while a WebRTC operator transmits (audio.tx_prebuffer_ms is the fallback's)
+  tx_max_ms: 200         # if more than this piles up, the oldest audio is dropped to catch up
+
 # ---- SA818S HAT (radio.type: sa818) ---------------------------------------------------------
 # On the HAT: PTT = GPIO17 (gpio.ptt_pin, active_high true), busy = the module's AudioON on GPIO23,
 # so set gpio.busy_pin: 23 and busy_pull_up: true. gpio.up_pin/down_pin aren't used.

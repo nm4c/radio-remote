@@ -14,6 +14,7 @@ from aiohttp import WSMsgType, web
 
 from .audio import create_audio
 from .config import load
+from . import rtc
 from .radio import RadioError, create_radio
 
 log = logging.getLogger("server")
@@ -33,6 +34,8 @@ class Client:
         self.last_hold = 0.0
         self.queue = asyncio.Queue()
         self.audio_queued = 0
+        self.rtc = None  # RtcPeer once the browser has set up WebRTC audio
+        self.tx_open = False  # accepting this operator's WebRTC mic audio (PTT held, or just released)
         self.sender = asyncio.create_task(self._send_loop())
 
     def send_json(self, obj):
@@ -65,6 +68,8 @@ class RemoteHead:
         self.audio = create_audio(cfg, self._on_rx_audio)
         self._tasks = set()
         self._ptt_gen = 0
+        self.rtc_ok = rtc.setup(cfg)
+        log.info("audio to browsers: %s", "WebRTC (WebSocket fallback)" if self.rtc_ok else "WebSocket")
 
     # ---- helpers -------------------------------------------------------
 
@@ -120,9 +125,52 @@ class RemoteHead:
 
     def _broadcast_audio(self, pcm):
         owner = self.radio.ptt_owner
+        silence = None
         for c in self.clients:
-            if c.authed and c.id != owner:
+            if not c.authed:
+                continue
+            if c.rtc and c.rtc.ready:
+                # keep the stream running for the transmitting operator, but silent
+                if c.id == owner:
+                    silence = silence or bytes(len(pcm))
+                c.rtc.feed(silence if c.id == owner else pcm)
+            elif c.id != owner:
                 c.send_audio(pcm)
+
+    # ---- WebRTC ----------------------------------------------------------
+
+    async def _rtc_offer(self, c, sdp):
+        if c.rtc:
+            await c.rtc.close()
+            c.rtc = None
+        peer = rtc.RtcPeer(self.cfg, lambda pcm: self._rtc_tx(c, pcm), lambda st: self._rtc_state(c, st))
+        c.rtc = peer
+        try:
+            answer = await peer.answer(sdp)
+        except Exception as e:  # bad SDP, no common codec...
+            log.warning("WebRTC set-up for %s failed: %s", c.name, e)
+            c.rtc = None
+            await peer.close()
+            c.send_json({"type": "rtc_failed", "text": str(e)})
+            return
+        if c.rtc is peer:
+            c.send_json({"type": "rtc_answer", "sdp": answer})
+
+    def _rtc_tx(self, c, pcm):
+        # The browser sends packets all the time (silence when PTT is up): only take them while keyed.
+        if c.tx_open and self.radio.ptt_owner == c.id:
+            self.audio.push_tx(pcm)
+
+    def _rtc_state(self, c, state):
+        if state == "connected":
+            log.info("%s: audio over WebRTC", c.name)
+        elif state in ("failed", "closed") and c.rtc and not c.rtc.ready:
+            log.info("%s: WebRTC %s, audio over WebSocket", c.name, state)
+
+    async def _rtc_close(self, c):
+        peer, c.rtc = c.rtc, None
+        if peer:
+            await peer.close()
 
     # ---- WebSocket -------------------------------------------------------
 
@@ -146,13 +194,14 @@ class RemoteHead:
                 "max_tx_seconds": self.cfg["ptt"]["max_tx_seconds"],
                 "hold_interval_ms": max(100, self.cfg["ptt"]["hold_timeout_ms"] // 5),
                 "wire_rate": self.cfg["audio"]["wire_rate"],
+                "webrtc": self.rtc_ok,
                 "frame_samples": self.cfg["audio"]["wire_rate"] * self.cfg["audio"]["frame_ms"] // 1000,
             })
             self.broadcast_state()
 
             async for msg in ws:
                 if msg.type == WSMsgType.BINARY:
-                    if self.radio.ptt_owner == c.id:
+                    if self.radio.ptt_owner == c.id and not (c.rtc and c.rtc.ready):
                         self.audio.push_tx(msg.data)
                 elif msg.type == WSMsgType.TEXT:
                     self._handle(c, msg.data)
@@ -164,6 +213,8 @@ class RemoteHead:
                 self.radio.unkey("operator disconnected")
                 self.audio.clear_tx()
             c.sender.cancel()
+            if c.rtc:
+                self._spawn(self._rtc_close(c))
             if c.authed:
                 log.info("%s disconnected", c.name)
                 self.broadcast_state()
@@ -198,6 +249,12 @@ class RemoteHead:
         except (ValueError, AttributeError):
             return
 
+        if kind == "rtc_offer" and self.rtc_ok and isinstance(m.get("sdp"), str):
+            self._spawn(self._rtc_offer(c, m["sdp"]))
+            return
+        if kind == "rtc_close":
+            self._spawn(self._rtc_close(c))
+            return
         if kind == "ptt_hold":
             c.last_hold = time.monotonic()
         elif kind == "ptt":
@@ -244,6 +301,12 @@ class RemoteHead:
             c.send_json({"type": "notice", "level": "warn", "code": "ptt_denied", "text": str(e)})
             return
         self._ptt_gen += 1
+        c.tx_open = True
+        if c.rtc and c.rtc.ready:
+            w = self.cfg["webrtc"]
+            self.audio.set_tx_buffer(w["tx_prebuffer_ms"], w["tx_max_ms"])
+        else:
+            self.audio.set_tx_buffer(self.cfg["audio"]["tx_prebuffer_ms"], 600)
         self.audio.drain(False)
         c.last_hold = time.monotonic()
 
@@ -251,6 +314,13 @@ class RemoteHead:
         if self.radio.ptt_owner != c.id:
             return
         gen = self._ptt_gen
+        if c.rtc and c.rtc.ready:
+            # WebRTC audio travels separately from this message: let the last packets arrive.
+            c.last_hold = time.monotonic()
+            await asyncio.sleep(self.cfg["webrtc"]["release_ms"] / 1000)
+            if gen != self._ptt_gen or self.radio.ptt_owner != c.id:
+                return
+            c.tx_open = False  # anything after this is the silence a browser sends between overs
         # Let audio already received finish playing before dropping PTT.
         self.audio.drain(True)
         deadline = time.monotonic() + self.cfg["ptt"]["tail_ms"] / 1000
@@ -309,6 +379,9 @@ class RemoteHead:
 
     async def on_shutdown(self, app):
         self.radio.unkey("shutdown")
+        for c in list(self.clients):
+            if c.rtc:
+                await self._rtc_close(c)
         for c in list(self.clients):
             await c.ws.close(code=1001, message=b"server shutdown")
 

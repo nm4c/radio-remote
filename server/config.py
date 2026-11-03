@@ -68,6 +68,14 @@ DEFAULTS = {
         "tx_prebuffer_ms": 80,
         "busy_threshold_dbfs": -45,
     },
+    "webrtc": {
+        "enabled": True,
+        "ice_servers": [],
+        "rx_jitter_packets": 4,
+        "release_ms": 120,
+        "tx_prebuffer_ms": 40,
+        "tx_max_ms": 200,
+    },
 }
 
 

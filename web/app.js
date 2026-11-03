@@ -21,6 +21,15 @@ const S = {
   pttWanted: false,
   holdTimer: null,
   txDeadline: null,
+  rtcAvailable: false, // server offers WebRTC audio
+  pc: null,            // RTCPeerConnection
+  rtcUp: false,        // audio is flowing over WebRTC (else WebSocket PCM)
+  txGain: null,        // mic -> gain -> txDest (WebRTC send track)
+  txDest: null,
+  rtcRxGain: null,     // WebRTC receive audio -> gain -> speakers
+  rtcRxEl: null,
+  releaseTimer: null,
+  statsTimer: null,
 };
 
 // ---------- storage (best effort) ----------
@@ -70,6 +79,15 @@ async function setupAudio() {
     rx.connect(ctx.destination);
     rx.port.postMessage({ gain: Number($("#vol").value) });
     S.rxNode = rx;
+    // WebRTC send path: mic -> gain -> MediaStream track (muted until PTT).
+    S.txGain = ctx.createGain();
+    S.txGain.gain.value = Number($("#micGain").value);
+    S.txDest = ctx.createMediaStreamDestination();
+    S.txGain.connect(S.txDest);
+    S.txDest.stream.getAudioTracks()[0].enabled = false;
+    S.rtcRxGain = ctx.createGain();
+    S.rtcRxGain.gain.value = Number($("#vol").value);
+    S.rtcRxGain.connect(ctx.destination);
     await resumed;
   }
   await setupMic();
@@ -109,6 +127,7 @@ async function acquireMic() {
     }
     S.micSource = S.ctx.createMediaStreamSource(mic);
     S.micSource.connect(S.txNode);
+    S.micSource.connect(S.txGain);
     S.micStream = mic;
     S.micOk = true;
   } catch (err) {
@@ -147,9 +166,103 @@ async function keepAwake(on) {
 
 function sendFrame(buf) {
   const ws = S.ws;
-  if (!S.pttWanted || !ws || ws.readyState !== WebSocket.OPEN) return;
+  if (S.rtcUp || !S.pttWanted || !ws || ws.readyState !== WebSocket.OPEN) return;
   if (ws.bufferedAmount > 32000) return; // network is backed up: drop rather than lag
   ws.send(buf);
+}
+
+// ---------- WebRTC audio ----------
+// Opus over UDP: lower and steadier latency than audio over the WebSocket (TCP), which stalls
+// behind every lost packet. The WebSocket keeps carrying control; it also carries audio if
+// WebRTC isn't available or fails to connect.
+
+function iceDone(pc, ms) {
+  if (pc.iceGatheringState === "complete") return Promise.resolve();
+  return new Promise((resolve) => {
+    const t = setTimeout(resolve, ms);
+    pc.addEventListener("icegatheringstatechange", () => {
+      if (pc.iceGatheringState === "complete") { clearTimeout(t); resolve(); }
+    });
+  });
+}
+
+async function rtcStart() {
+  rtcStop();
+  if (!S.rtcAvailable || !S.ctx || !S.txDest) { updateAudioInfo(); return; }
+  const pc = new RTCPeerConnection({ iceServers: [] });
+  S.pc = pc;
+  const tx = pc.addTransceiver(S.txDest.stream.getAudioTracks()[0], { direction: "sendrecv", streams: [S.txDest.stream] });
+  const rx = tx.receiver;
+  // Ask for the smallest receive buffer the network allows.
+  if ("jitterBufferTarget" in rx) rx.jitterBufferTarget = 0;
+  if ("playoutDelayHint" in rx) rx.playoutDelayHint = 0;
+
+  pc.ontrack = (e) => {
+    const stream = e.streams[0] || new MediaStream([e.track]);
+    // Chrome only delivers remote WebRTC audio to Web Audio if a media element also plays it.
+    const el = new Audio();
+    el.muted = true;
+    el.srcObject = stream;
+    el.play().catch(() => {});
+    S.rtcRxEl = el;
+    S.ctx.createMediaStreamSource(stream).connect(S.rtcRxGain);
+  };
+  pc.onconnectionstatechange = () => {
+    if (pc !== S.pc) return;
+    const st = pc.connectionState;
+    if (st === "connected") {
+      S.rtcUp = true;
+      updateAudioInfo();
+    } else if (st === "failed" || st === "closed") {
+      rtcFallback(`connection ${st}`);
+    }
+  };
+  try {
+    await pc.setLocalDescription(await pc.createOffer());
+    await iceDone(pc, 2000);
+    if (pc !== S.pc) return;
+    send({ type: "rtc_offer", sdp: pc.localDescription.sdp });
+  } catch (e) {
+    rtcFallback(e.message);
+  }
+  clearInterval(S.statsTimer);
+  S.statsTimer = setInterval(updateAudioInfo, 2000);
+}
+
+function rtcStop() {
+  clearInterval(S.statsTimer);
+  if (S.pc) { const pc = S.pc; S.pc = null; pc.close(); }
+  if (S.rtcRxEl) { S.rtcRxEl.srcObject = null; S.rtcRxEl = null; }
+  S.rtcUp = false;
+}
+
+function rtcFallback(why) {
+  if (!S.pc) return;
+  console.warn("WebRTC audio unavailable:", why);
+  rtcStop();
+  send({ type: "rtc_close" });
+  toast("Low-latency audio couldn't connect; using the fallback.", "warn");
+  updateAudioInfo();
+}
+
+// Settings → Audio: transport, round trip and receive buffer, from the browser's own stats.
+async function updateAudioInfo() {
+  const el = $("#audioInfo");
+  if (!S.rtcUp || !S.pc) { el.textContent = S.authed ? "WebSocket (fallback)" : "—"; return; }
+  let rtt = null, buf = null;
+  try {
+    const stats = await S.pc.getStats();
+    stats.forEach((r) => {
+      if (r.type === "candidate-pair" && r.nominated && r.currentRoundTripTime != null) rtt = r.currentRoundTripTime * 1000;
+      if (r.type === "inbound-rtp" && r.kind === "audio" && r.jitterBufferEmittedCount) {
+        buf = (r.jitterBufferDelay / r.jitterBufferEmittedCount) * 1000;
+      }
+    });
+  } catch { /* stats unsupported */ }
+  const parts = ["WebRTC"];
+  if (rtt != null) parts.push(`round trip ${Math.round(rtt)} ms`);
+  if (buf != null) parts.push(`buffer ${Math.round(buf)} ms`);
+  el.textContent = parts.join(" · ");
 }
 
 // ---------- WebSocket ----------
@@ -181,6 +294,7 @@ function connect() {
   ws.onclose = () => {
     if (S.ws !== ws) return;
     pttRelease(false);
+    rtcStop();
     S.ws = null;
     if (S.manualClose || !S.authed) {
       setStatus("offline", "Offline");
@@ -219,7 +333,9 @@ function handle(m) {
       $("#radioName").textContent = m.radio_name;
       document.title = `${m.radio_name} · Radio Remote`;
       S.holdIntervalMs = m.hold_interval_ms;
+      S.rtcAvailable = !!m.webrtc && "RTCPeerConnection" in window;
       buildChannels();
+      rtcStart();
       break;
     case "state":
       S.server = m;
@@ -236,6 +352,12 @@ function handle(m) {
         $("#rssiMeter").style.width = `${Math.max(0, Math.min(100, m.rssi - 30))}%`;
         $("#rssiVal").textContent = m.rssi_dbm != null ? `${Math.round(m.rssi_dbm)} dBm` : String(m.rssi);
       }
+      break;
+    case "rtc_answer":
+      if (S.pc) S.pc.setRemoteDescription({ type: "answer", sdp: m.sdp }).catch((e) => rtcFallback(e.message));
+      break;
+    case "rtc_failed":
+      rtcFallback(m.text);
       break;
     case "notice":
       toast(m.text, m.level);
@@ -254,6 +376,9 @@ function pttPress() {
   if (st && st.ptt.active && !st.ptt.mine) { toast(`Radio in use by ${st.ptt.by}`); return; }
   if (st && st.stepping) { toast("Wait for channel change to finish"); return; }
   S.pttWanted = true;
+  clearTimeout(S.releaseTimer);
+  if (S.txDest) S.txDest.stream.getAudioTracks()[0].enabled = true;
+  if (S.rtcRxGain) S.rtcRxGain.gain.value = 0;
   S.rxNode.port.postMessage({ flush: true });
   S.txNode.port.postMessage({ active: true });
   send({ type: "ptt", on: true });
@@ -266,6 +391,12 @@ function pttRelease(notify = true) {
   S.pttWanted = false;
   clearInterval(S.holdTimer);
   if (S.txNode) S.txNode.port.postMessage({ active: false });
+  // Keep sending a moment longer so the last syllable leaves the phone; the server waits for it.
+  clearTimeout(S.releaseTimer);
+  S.releaseTimer = setTimeout(() => {
+    if (!S.pttWanted && S.txDest) S.txDest.stream.getAudioTracks()[0].enabled = false;
+    if (!S.pttWanted && S.rtcRxGain) S.rtcRxGain.gain.value = Number($("#vol").value);
+  }, 60);
   if (notify) send({ type: "ptt", on: false });
   render();
 }
@@ -416,8 +547,16 @@ function init() {
     const tx = $("#tuneTx").value.trim();
     send({ type: "channel", action: "tune", freq, tx_freq: tx ? parseFloat(tx) : null, tone: $("#tuneTone").value.trim() || null });
   });
-  $("#vol").addEventListener("input", (e) => S.rxNode && S.rxNode.port.postMessage({ gain: Number(e.target.value) }));
-  $("#micGain").addEventListener("input", (e) => S.txNode && S.txNode.port.postMessage({ gain: Number(e.target.value) }));
+  $("#vol").addEventListener("input", (e) => {
+    const g = Number(e.target.value);
+    if (S.rxNode) S.rxNode.port.postMessage({ gain: g });
+    if (S.rtcRxGain && !S.pttWanted) S.rtcRxGain.gain.value = g;
+  });
+  $("#micGain").addEventListener("input", (e) => {
+    const g = Number(e.target.value);
+    if (S.txNode) S.txNode.port.postMessage({ gain: g });
+    if (S.txGain) S.txGain.gain.value = g;
+  });
   $("#logout").addEventListener("click", () => {
     S.manualClose = true;
     S.authed = false;

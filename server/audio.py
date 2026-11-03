@@ -91,6 +91,11 @@ class _TxBuffer:
         self.started = False
         self.draining = False
 
+    def set_size(self, prebuffer_ms, max_ms):
+        with self.lock:
+            self.prebuffer = int(self.rate * prebuffer_ms / 1000)
+            self.max = int(self.rate * max_ms / 1000)
+
     def push(self, x):
         with self.lock:
             self.buf = np.concatenate([self.buf, x])
@@ -189,6 +194,9 @@ class SoundDeviceAudio:
     def drain(self, on=True):
         self.tx.draining = on
 
+    def set_tx_buffer(self, prebuffer_ms, max_ms):
+        self.tx.set_size(prebuffer_ms, max_ms)
+
     def tx_buffered_ms(self):
         return self.tx.buffered_ms()
 
@@ -247,6 +255,9 @@ class MockAudio:
 
     def drain(self, on=True):
         self.tx.draining = on
+
+    def set_tx_buffer(self, prebuffer_ms, max_ms):
+        self.tx.set_size(prebuffer_ms, max_ms)
 
     def tx_buffered_ms(self):
         return self.tx.buffered_ms()

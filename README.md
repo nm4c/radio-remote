@@ -20,15 +20,18 @@ There are two hardware modes, set with `radio.type` in `config.yaml`:
  Browser (phone / PC)                     Raspberry Pi                      Radio  
 ┌───────────────────┐   WebSocket    ┌──────────────────────┐  GPIO+opto  ┌──────────┐
 │ PTT / CH▲▼ / list │◄──────────────►│ server (Python)      │────────────►│ PTT UP DN│
-│ mic ─► 16k PCM    │  JSON control  │  - PTT safety timers │  USB audio  │ MIC in   │
-│ speaker ◄─ 16k PCM│  + binary audio│  - channel tracking  │◄───────────►│ SPK out  │
+│ mic ─► Opus       │  JSON control  │  - PTT safety timers │  USB audio  │ MIC in   │
+│ speaker ◄─ Opus   │◄══════════════►│  - channel tracking  │◄───────────►│ SPK out  │
+│                   │ WebRTC (UDP)   │                      │             │          │
 └───────────────────┘                └──────────────────────┘             └──────────┘
 ```
 
 ## Features
 
 - Hold-to-talk button (mouse, touch or **Space** key). Mic audio streams to the radio.
-- Receive audio with a jitter buffer, an RX level meter and a BUSY indicator.
+- Low-latency audio over WebRTC (Opus over UDP), with automatic fallback to audio over the WebSocket.
+  Settings shows the round trip and receive buffer.
+- Receive audio with an RX level meter and a BUSY indicator.
 - Channel ▲/▼ and jump-to-channel. The Pi presses UP/DOWN the right number of times.
 - Channel names are set in config.
 - With the SA818S HAT: frequencies, repeater offsets and CTCSS/DCS per channel, a VFO for any
@@ -47,7 +50,7 @@ There are two hardware modes, set with `radio.type` in `config.yaml`:
 ```bash
 cd radio-remote
 python3 -m venv .venv && source .venv/bin/activate
-pip install aiohttp numpy pyyaml sounddevice pyserial
+pip install -r requirements.txt
 cp config.example.yaml config.yaml
 #  in config.yaml set: gpio.backend: mock, audio.backend: mock, password: something
 python -m server -c config.yaml
@@ -121,13 +124,16 @@ WebSocket at `/ws`. The first message must be
 | → | `{"type":"channel","action":"tune","freq":439.125,"tx_freq":null,"tone":"91.5"}` (`sa818` only: VFO, channel 0) |
 | → | binary: TX audio, int16 LE mono 16 kHz, 20 ms frames. Ignored unless you hold PTT. |
 | ← | `auth`, `hello` (channel list, timing, `radio_type`, `can_sync`, `can_tune`, `band`), `state` (channel, PTT owner, TOT remaining, `info` = frequency/tones or null, `error`), `meter` (5 Hz, plus `rssi` / `rssi_dbm` on `sa818`), `notice` |
-| ← | binary: RX audio, same format |
+| ← | binary: RX audio, same format (not sent once WebRTC audio is connected) |
+| → | `{"type":"rtc_offer","sdp":"…"}` complete SDP (non-trickle): one sendrecv Opus audio track, your mic out, radio in |
+| ← | `{"type":"rtc_answer","sdp":"…"}` or `{"type":"rtc_failed","text":"…"}` |
+| → | `{"type":"rtc_close"}` give up on WebRTC and go back to WebSocket audio |
 
 ## Layout
 
 ```
 server/   main.py (web + WebSocket + safety watchdog), radio.py (PTT, channels, button radio),
-          sa818.py (SA818S module over UART), audio.py (sound card, resampling)
+          sa818.py (SA818S module over UART), rtc.py (WebRTC audio), audio.py (sound card, resampling)
 web/      index.html, app.js, worklet.js (AudioWorklet capture/playback), style.css
 deploy/   install.sh, systemd unit
 docs/     HARDWARE.md (hand-wired interface)
