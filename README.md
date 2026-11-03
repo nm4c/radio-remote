@@ -34,6 +34,8 @@ There are two hardware modes, set with `radio.type` in `config.yaml`:
 - Receive audio with an RX level meter and a BUSY indicator.
 - Channel ▲/▼ and jump-to-channel. The Pi presses UP/DOWN the right number of times.
 - Channel names are set in config.
+- A radio-style control head: a desk head on wide screens and a portrait handheld on phones.
+  See [Control head](#control-head).
 - With the SA818S HAT: frequencies, repeater offsets and CTCSS/DCS per channel, a VFO for any
   frequency in the band, and an RSSI bar on the display.
 - Several operators can listen at once. Only one can transmit, and the others see who's on air.
@@ -60,6 +62,37 @@ Open <http://localhost:8080>. `localhost` counts as secure, so the mic works.
 You'll hear a test tone burst every 10 s, and PTT/channel presses show in the server log.
 Set `radio.type: sa818` to try the SA818S mode: the mock module answers commands and reports a wandering RSSI.
 Set `audio.backend: sounddevice` to use your laptop's own mic and speakers as a pretend radio.
+
+## Control head
+
+The top of the page is drawn as a radio. Wider screens get a desk control head and phones
+(600 px and narrower) get a handheld. Both show the channel, name, frequency, TX with the
+time-out countdown, BUSY, RSSI and signal bars.
+
+| Control | Does |
+|---|---|
+| Channel knob (right on the desk head, the tall one on the handheld) | Picks a channel. The channel shows straight away in amber and is sent once you stop turning. |
+| D-pad up / down | One channel up or down |
+| Volume knob | Speaker volume, the same as the slider |
+| Soft keys | Chans (channel list), Tune (SA818) or Sync (button radios), Setup (Settings) |
+| Menu (handheld) | Settings |
+| Power (desk), held 1.5 s | Disconnect |
+| Emergency (desk), held 1.5 s | Shows a notice only. It is not connected to anything that transmits. |
+
+Knobs turn by dragging or with the mouse wheel. The handheld's top knobs roll with a swipe
+across them. A focused knob also takes the arrow keys. PTT stays a separate button (or Space),
+because neither head has one on its face.
+
+The artwork is generated. Change `assets/control-head/build_template.py` (desk) or
+`build_handheld.py` (handheld), then run them; they need `rsvg-convert` for the PNGs:
+
+```bash
+python3 assets/control-head/build_template.py && python3 assets/control-head/build_handheld.py
+```
+
+They write the app's SVGs and `radio_config.js` to `web/control-head/`, and PNG layers,
+layout JSON and standalone test pages to `assets/control-head/output/`. The input handling,
+`web/control-head/control_head.js`, is hand-written and shared by both templates.
 
 ## Install on the Pi
 
@@ -134,7 +167,9 @@ WebSocket at `/ws`. The first message must be
 ```
 server/   main.py (web + WebSocket + safety watchdog), radio.py (PTT, channels, button radio),
           sa818.py (SA818S module over UART), rtc.py (WebRTC audio), audio.py (sound card, resampling)
-web/      index.html, app.js, worklet.js (AudioWorklet capture/playback), style.css
+web/      index.html, app.js, worklet.js (AudioWorklet capture/playback), style.css,
+          control-head/ (control head SVGs and their input handling, control_head.js)
+assets/control-head/  generators for the control head artwork, plus PNGs and layout JSON
 deploy/   install.sh, systemd unit
 docs/     HARDWARE.md (hand-wired interface)
 pihat/       Pi HAT for an external radio: KiCad project, schematic reference, JLC BoM
@@ -144,7 +179,6 @@ kicadgen/    shared KiCad schematic generator used by both HATs
 
 ## Ideas for later
 
-- Opus compression for low-bandwidth (4G) links
 - Pluggable control backends (CI-V / CAT serial) for radios that can report channel and RSSI
 - Per-user accounts and audit log of who transmitted when
 - VOX-style recording of RX traffic
@@ -156,7 +190,7 @@ but anything you distribute that's based on it must be shared under the same ter
 
 | Part | Licence | File |
 |---|---|---|
-| Software: `server/`, `web/`, `deploy/`, `kicadgen/`, `pihat/tools/`, `sa818s-hat/tools/`, `pihat/docs/schematic/*.py` | GNU GPL v3.0 or later | [`LICENSE`](LICENSE) |
+| Software: `server/`, `web/`, `assets/control-head/`, `deploy/`, `kicadgen/`, `pihat/tools/`, `sa818s-hat/tools/`, `pihat/docs/schematic/*.py` | GNU GPL v3.0 or later | [`LICENSE`](LICENSE) |
 | Hardware: the KiCad projects in `pihat/` and `sa818s-hat/` (schematics, PCB, symbols, footprints), `pihat/docs/` | CERN-OHL-S v2 | [`pihat/LICENSE`](pihat/LICENSE), [`sa818s-hat/LICENSE`](sa818s-hat/LICENSE) |
 | Documentation: this README and `docs/` | CC BY-SA 4.0 | [`docs/LICENSE`](docs/LICENSE) |
 
