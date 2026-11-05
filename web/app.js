@@ -35,6 +35,9 @@ const S = {
   meter: null,         // last "meter" message (RX level, busy, RSSI)
   pending: null,       // channel picked on the head but not yet confirmed: {n, sent, timer}
   lastHeadNotice: 0,   // throttles "can't change channel" toasts while the knob turns
+  selcall: null,       // selcall settings from the server (null = selcall off)
+  selcallLog: [],      // recent calls, oldest first, as sent by the server
+  selcallShown: null,  // a call shown on the head's bottom line: {text, until}
 };
 
 // ---------- storage (best effort) ----------
@@ -283,10 +286,11 @@ async function updateAudioInfo() {
 //   volume_knob   change    speaker volume, kept in step with the Speaker volume slider
 //   power         activate  disconnect (desk only; only after the hold in RADIO_CONFIG.holdMs)
 //   emergency     activate  desk only. Shows a notice and is not wired to anything that transmits.
+//   P (desk), P1 (handheld)  press   send the selcall number from the Selcall panel
 //   menu          press     open Settings (handheld)
-//   soft keys     press     Chans (channel list), Tune (SA818) or Sync (button radios), Setup
-//                           (Settings). On the desk head they sit on keys 1, 2 and 5.
-//   P/P1/P2, home, brightness, D-pad left/right and the other soft keys: not assigned yet.
+//   soft keys     press     Chans (channel list), Tune (SA818) or Sync (button radios), Call
+//                           (Selcall panel, desk only), Setup (Settings). Desk keys 1, 2, 3, 5.
+//   P2, home, brightness, D-pad left/right and the desk's soft key 4: not assigned yet.
 
 const HEAD_DIR = "/static/control-head";
 const CHANNEL_SETTLE_MS = 400; // knob idle time before the picked channel is sent
@@ -334,6 +338,7 @@ async function mountHead() {
   S.head = head;
   S.headSoftkeyCount = svg.querySelectorAll('[id^="display-softkey-"]').length;
   S.headShown = {}; // new, empty screen: redraw everything
+  updateSelcallHint();
   head.setVolume(Number($("#vol").value) * VOLUME_KNOB_UNITY);
   head.on((e) => { if (S.head === head) onHeadEvent(e); });
   updateHead();
@@ -345,7 +350,8 @@ function headSoftkeys() {
   const setup = { label: "Setup", run: openSettings };
   const second = S.radio.canTune ? { label: "Tune", run: showTune }
     : S.radio.canSync ? { label: "Sync", run: showSync } : null;
-  return S.headSoftkeyCount >= 5 ? [chans, second, null, null, setup] : [chans, second, setup];
+  const call = S.selcall ? { label: "Call", run: showSelcall } : null;
+  return S.headSoftkeyCount >= 5 ? [chans, second, call, null, setup] : [chans, second, setup];
 }
 
 function openSettings() {
@@ -375,6 +381,8 @@ function onHeadEvent(e) {
       toast("Emergency isn't set up on this remote.");
       break;
     case "menu:press": openSettings(); break;
+    case "programmable_p:press": // desk head
+    case "p1:press": sendSelcall(); break; // handheld
     default: {
       const key = /^softkey_(\d)$/.exec(e.control);
       if (key && e.action === "press") {
@@ -471,9 +479,12 @@ function updateHead() {
 
   // Bottom line: problems first, then who is transmitting, then the frequency.
   let detail;
+  const call = S.selcallShown && performance.now() < S.selcallShown.until ? S.selcallShown.text : null;
   if (st.error) detail = st.error;
+  else if (st.selcall_tx) detail = `Sending selcall ${st.selcall_tx}`;
   else if (p.active && !p.mine) detail = `TX by ${p.by}`;
   else if (st.stepping) detail = "Changing channel…";
+  else if (call) detail = call;
   else if (picking != null) detail = pickedInfo && pickedInfo.freq ? pickedInfo.freq : "";
   else detail = freqText(st.info);
 
@@ -503,6 +514,112 @@ function setSpeakerVolume(gain, from) {
   if (from !== "head" && S.head) S.head.setVolume(gain * VOLUME_KNOB_UNITY);
   if (S.rxNode) S.rxNode.port.postMessage({ gain });
   if (S.rtcRxGain && !S.pttWanted) S.rtcRxGain.gain.value = gain; // stays muted while transmitting
+}
+
+// ---------- selcall ----------
+// Sequential tone calls. The number is typed (or picked from a preset) in the Selcall panel and
+// sent with the head's P key (P1 on the handheld). The server keys the radio, plays the tones and
+// unkeys; it also decodes calls heard on the channel. Both kinds arrive as "selcall" messages.
+
+const SELCALL_SHOW_MS = 10000; // how long a call stays on the head's bottom line
+
+function setupSelcall(sc) {
+  S.selcall = sc || null;
+  $("#selcallPanel").hidden = !sc;
+  if (!sc) return;
+  $("#selcallDigits").maxLength = sc.max_digits;
+  $("#selcallStd").textContent = sc.my_id ? `${sc.standard} · this radio ${sc.my_id}` : sc.standard;
+  const presets = $("#selcallPresets");
+  presets.replaceChildren(...sc.presets.map((p) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    const num = document.createElement("b");
+    num.textContent = p.digits;
+    b.append(p.name, num);
+    b.addEventListener("click", () => { $("#selcallDigits").value = p.digits; });
+    return b;
+  }));
+  S.selcallLog = sc.log.slice();
+  renderSelcallLog();
+  updateSelcallHint();
+}
+
+// Which head key sends depends on the template showing.
+function updateSelcallHint() {
+  $("#selcallHint").textContent = S.headSoftkeyCount === 3
+    ? "Press P1 on the radio to send." : "Press P on the radio to send.";
+}
+
+function showSelcall() {
+  $("#selcallPanel").scrollIntoView({ behavior: "smooth", block: "center" });
+  $("#selcallDigits").focus({ preventScroll: true });
+}
+
+function sendSelcall() {
+  if (!S.selcall || !S.authed) return;
+  const digits = $("#selcallDigits").value.trim();
+  if (!new RegExp(`^\\d{1,${S.selcall.max_digits}}$`).test(digits)) {
+    toast(`Enter a selcall number (1–${S.selcall.max_digits} digits) first`);
+    showSelcall();
+    return;
+  }
+  const st = S.server;
+  if (st && st.ptt.active) { toast(st.selcall_tx ? "A selcall is already being sent" : "Radio is transmitting"); return; }
+  send({ type: "selcall", digits });
+}
+
+function onSelcall(ev) {
+  S.selcallLog.push(ev);
+  if (S.selcallLog.length > 20) S.selcallLog.shift();
+  renderSelcallLog();
+  if (ev.dir === "rx") {
+    S.selcallShown = { text: ev.to_me ? `Call for this radio ${ev.digits}` : `Selcall ${ev.digits}`,
+      until: performance.now() + SELCALL_SHOW_MS };
+    toast(ev.to_me ? `Selcall for this radio (${ev.digits})` : `Selcall heard: ${ev.digits}`, ev.to_me ? "error" : "warn");
+    if (ev.to_me) chime();
+  } else {
+    S.selcallShown = { text: `Sent selcall ${ev.digits}`, until: performance.now() + SELCALL_SHOW_MS / 2 };
+  }
+  updateHead();
+}
+
+function renderSelcallLog() {
+  const list = $("#selcallLog");
+  list.replaceChildren(...S.selcallLog.slice().reverse().map((ev) => {
+    const li = document.createElement("li");
+    li.classList.toggle("me", !!ev.to_me);
+    li.title = "Use this number";
+    const dir = document.createElement("span");
+    dir.className = "dir";
+    dir.textContent = ev.dir === "tx" ? "SENT" : "HEARD";
+    const num = document.createElement("span");
+    num.className = "num";
+    num.textContent = ev.digits + (ev.to_me ? " (this radio)" : ev.by ? ` · ${ev.by}` : "");
+    const when = document.createElement("span");
+    when.className = "when";
+    when.textContent = new Date(ev.t * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    li.append(dir, num, when);
+    li.addEventListener("click", () => { $("#selcallDigits").value = ev.digits; });
+    return li;
+  }));
+}
+
+// Two short beeps through the page's audio, so a call for this radio is noticed.
+function chime() {
+  const ctx = S.ctx;
+  if (!ctx || ctx.state !== "running") return;
+  const t = ctx.currentTime;
+  [0, 0.18].forEach((dt, i) => {
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.frequency.value = i ? 1320 : 880;
+    g.gain.setValueAtTime(0, t + dt);
+    g.gain.linearRampToValueAtTime(0.2, t + dt + 0.01);
+    g.gain.linearRampToValueAtTime(0, t + dt + 0.14);
+    osc.connect(g).connect(ctx.destination);
+    osc.start(t + dt);
+    osc.stop(t + dt + 0.15);
+  });
 }
 
 // ---------- WebSocket ----------
@@ -575,6 +692,7 @@ function handle(m) {
       document.title = `${m.radio_name} · Radio Remote`;
       S.holdIntervalMs = m.hold_interval_ms;
       S.rtcAvailable = !!m.webrtc && "RTCPeerConnection" in window;
+      setupSelcall(m.selcall);
       buildChannels();
       rtcStart();
       break;
@@ -589,6 +707,9 @@ function handle(m) {
     case "meter":
       S.meter = m; // shown on the head: signal bars, BUSY and RSSI in dBm
       updateHead();
+      break;
+    case "selcall":
+      onSelcall(m);
       break;
     case "rtc_answer":
       if (S.pc) S.pc.setRemoteDescription({ type: "answer", sdp: m.sdp }).catch((e) => rtcFallback(e.message));
@@ -721,7 +842,7 @@ function render() {
   btn.classList.toggle("live", p.mine);
   btn.classList.toggle("pending", S.pttWanted && !p.mine);
   btn.classList.toggle("locked", otherTx || !S.micOk);
-  $("#pttLabel").textContent = p.mine ? "ON AIR" : otherTx ? "IN USE" : "PTT";
+  $("#pttLabel").textContent = p.mine ? (st.selcall_tx ? "SELCALL" : "ON AIR") : otherTx ? "IN USE" : "PTT";
 
   $("#tuneForm").querySelector("button").disabled = busyRadio;
   for (const b of $("#channelGrid").children) {
@@ -776,6 +897,11 @@ function init() {
     if (S.txGain) S.txGain.gain.value = g;
   });
   $("#logout").addEventListener("click", disconnect);
+  // Selcall number: digits only (phones may offer other characters on the numeric keypad).
+  $("#selcallDigits").addEventListener("input", (e) => {
+    const clean = e.target.value.replace(/\D/g, "");
+    if (clean !== e.target.value) e.target.value = clean;
+  });
 
   bindPtt();
   setInterval(updateHead, 250); // counts down the TX timeout on the head's screen

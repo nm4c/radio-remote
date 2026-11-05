@@ -70,6 +70,20 @@
       <p class="tune-hint" id="tuneHint"></p>
     </form>
 
+    <!-- Selcall: type or pick the number here; P on the desk head (P1 on the handheld) sends it. -->
+    <section class="selcall" id="selcallPanel" hidden aria-labelledby="selcallTitle">
+      <div class="selcall-top">
+        <h2 id="selcallTitle">Selcall</h2>
+        <span class="selcall-std" id="selcallStd"></span>
+      </div>
+      <label>Number to call
+        <input id="selcallDigits" inputmode="numeric" maxlength="20" autocomplete="off" placeholder="12345">
+      </label>
+      <p class="selcall-hint" id="selcallHint">Press P on the radio to send.</p>
+      <div class="selcall-presets" id="selcallPresets"></div>
+      <ol class="selcall-log" id="selcallLog" aria-label="Recent selcalls"></ol>
+    </section>
+
     <div class="sliders">
       <label>Speaker volume <input id="vol" type="range" min="0" max="2" step="0.05" value="1"></label>
       <label>Mic gain <input id="micGain" type="range" min="0" max="3" step="0.05" value="1"></label>
