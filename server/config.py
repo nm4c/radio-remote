@@ -73,6 +73,7 @@ DEFAULTS = {
     "selcall": {
         "enabled": True,
         "standard": "ccir",       # ccir, zvei1 or eea (see server/selcall.py)
+        "tone_ms": None,          # tone length; null = the standard's (ccir 100, zvei1 70, eea 40)
         "my_id": None,            # this station's selcall; incoming calls to it are flagged
         "tx_delay_ms": 300,       # keyed silence before the tones while the transmitter comes up
         "level": 0.3,             # tone amplitude 0-1, before audio.tx_gain
@@ -157,6 +158,9 @@ def _check_selcall(sc):
         sc["presets"] = presets
     except ValueError as e:
         raise SystemExit(f"config: {e}")
+    lo, hi = selcall.TONE_MS_RANGE
+    if sc["tone_ms"] is not None and not lo <= int(sc["tone_ms"]) <= hi:
+        raise SystemExit(f"config: selcall.tone_ms must be {lo}-{hi}, or null for the standard's own")
     if not 0 < float(sc["level"]) <= 1:
         raise SystemExit("config: selcall.level must be between 0 and 1")
     if not 0 <= int(sc["tx_delay_ms"]) <= 3000:

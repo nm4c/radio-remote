@@ -81,7 +81,7 @@ class RemoteHead:
         self.selcall_rx = None
         if self.sc["enabled"] and self.sc["decode"]:
             self.selcall_rx = selcall.Decoder(self.sc["standard"], int(cfg["audio"]["wire_rate"]),
-                                              int(self.sc["decode_min_digits"]))
+                                              int(self.sc["decode_min_digits"]), tone_ms=self.sc["tone_ms"])
 
     # ---- helpers -------------------------------------------------------
 
@@ -217,6 +217,7 @@ class RemoteHead:
                 "frame_samples": self.cfg["audio"]["wire_rate"] * self.cfg["audio"]["frame_ms"] // 1000,
                 "selcall": {
                     "standard": self.sc["standard"],
+                    "tone_ms": self.sc["tone_ms"] or selcall.STANDARDS[self.sc["standard"]]["tone_ms"],
                     "max_digits": selcall.MAX_DIGITS,
                     "my_id": self.sc["my_id"],
                     "presets": self.sc["presets"],
@@ -386,7 +387,7 @@ class RemoteHead:
         if self.radio.ptt_owner is not None:
             return refuse("Can't send a selcall while the radio is transmitting")
         rate = int(self.cfg["audio"]["wire_rate"])
-        tones = selcall.encode(digits, self.sc["standard"], rate, float(self.sc["level"]))
+        tones = selcall.encode(digits, self.sc["standard"], rate, float(self.sc["level"]), self.sc["tone_ms"])
         lead = np.zeros(int(rate * int(self.sc["tx_delay_ms"]) / 1000), np.float32)
         tail = np.zeros(int(rate * 0.05), np.float32)
         samples = np.concatenate([lead, tones, tail])
@@ -398,7 +399,8 @@ class RemoteHead:
         self._ptt_gen += 1
         gen = self._ptt_gen
         self.selcall_tx = digits
-        log.info("%s sending selcall %s (%s)", c.name, digits, self.sc["standard"])
+        log.info("%s sending selcall %s (%s, %s ms tones)", c.name, digits, self.sc["standard"],
+                 self.sc["tone_ms"] or selcall.STANDARDS[self.sc["standard"]]["tone_ms"])
         self.broadcast_state()
         total_ms = len(samples) * 1000 / rate
         try:

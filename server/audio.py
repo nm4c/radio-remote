@@ -232,7 +232,7 @@ class MockAudio:
         sc = cfg.get("selcall") or {}
         if sc.get("enabled"):
             from .selcall import encode  # local import: selcall is optional for the real backend
-            self._selcall = encode(sc.get("my_id") or "12345", sc["standard"], self.rate, 0.25)
+            self._selcall = encode(sc.get("my_id") or "12345", sc["standard"], self.rate, 0.25, sc.get("tone_ms"))
 
     def start(self):
         self._thread = threading.Thread(target=self._run, daemon=True)

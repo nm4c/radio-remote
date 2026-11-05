@@ -4,10 +4,12 @@ Each digit is a burst of one audio tone; the tones follow each other with no gap
 to the one before it is sent as the repeat tone ("E") instead, so every tone differs from its
 neighbour and the receiver can tell "11" from one long "1".
 
-Standards (tone length, frequencies in Hz for 0-9 and the repeat tone):
+Standards (default tone length, frequencies in Hz for 0-9 and the repeat tone):
   ccir   100 ms  the common analogue selcall in Australia and Europe
   zvei1   70 ms
   eea     40 ms  CCIR frequencies, shorter tones
+Many systems run a standard's frequencies at a different tone length (CCIR at 50 or 70 ms, say);
+pass tone_ms to override the default.
 """
 
 import math
@@ -15,6 +17,7 @@ import math
 import numpy as np
 
 MAX_DIGITS = 20
+TONE_MS_RANGE = (30, 200)  # shortest the decoder can follow, longest any system uses
 
 _CCIR = [1981, 1124, 1197, 1275, 1358, 1446, 1540, 1640, 1747, 1860]
 STANDARDS = {
@@ -45,17 +48,18 @@ def _freq(std, sym):
     return std["repeat"] if sym == REPEAT else std["digits"][int(sym)]
 
 
-def duration_ms(digits, standard):
-    return len(digits) * STANDARDS[standard]["tone_ms"]
+def duration_ms(digits, standard, tone_ms=None):
+    return len(digits) * (tone_ms or STANDARDS[standard]["tone_ms"])
 
 
-def encode(digits, standard, rate, level):
-    """Tone sequence as float32 samples at `rate`, peak amplitude `level` (0-1).
+def encode(digits, standard, rate, level, tone_ms=None):
+    """Tone sequence as float32 samples at `rate`, peak amplitude `level` (0-1). tone_ms
+    overrides the standard's tone length.
 
     The phase runs on from tone to tone (no clicks between digits), with 3 ms fades at the ends.
     """
     std = STANDARDS[standard]
-    n = int(rate * std["tone_ms"] / 1000)
+    n = int(rate * (tone_ms or std["tone_ms"]) / 1000)
     freqs = np.repeat([_freq(std, s) for s in symbols(check_digits(digits))], n).astype(np.float64)
     phase = 2 * np.pi * np.cumsum(freqs) / rate
     y = np.sin(phase) * level
@@ -88,7 +92,7 @@ class Decoder:
     TOLERANCE = 0.03  # largest frequency error accepted, as a fraction of the tone
     MIN_RMS = 0.003   # about -50 dBFS: quieter frames are treated as silence
 
-    def __init__(self, standard, rate, min_digits=3, on_call=None):
+    def __init__(self, standard, rate, min_digits=3, on_call=None, tone_ms=None):
         std = STANDARDS[standard]
         self.rate = rate
         self.n = int(rate * self.WINDOW_MS / 1000)
@@ -104,8 +108,11 @@ class Decoder:
             self.tones.append((f, sym, min(self.TOLERANCE * f, 0.45 * min(gaps))))
         self.lo = int((tones[0][0] * (1 - self.TOLERANCE) - 50) / self.bin_hz)
         self.hi = int((tones[-1][0] * (1 + self.TOLERANCE) + 50) / self.bin_hz) + 1
-        tone_frames = std["tone_ms"] / self.HOP_MS
-        self.min_run = max(2, math.ceil((std["tone_ms"] - self.WINDOW_MS) / self.HOP_MS * 0.5))
+        # Timing follows the expected tone length. Longer tones still decode (a digit only has to
+        # last long enough), so a decoder set for 50 ms also hears 100 ms calls.
+        tone = tone_ms or std["tone_ms"]
+        tone_frames = tone / self.HOP_MS
+        self.min_run = max(2, math.ceil((tone - self.WINDOW_MS) / self.HOP_MS * 0.5))
         self.short_gap = 3                              # frames between tones while they cross over
         self.end_gap = math.ceil(1.5 * tone_frames)     # silence that ends a sequence
         self.min_digits = min_digits

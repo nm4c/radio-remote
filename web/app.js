@@ -528,7 +528,8 @@ function setupSelcall(sc) {
   $("#selcallPanel").hidden = !sc;
   if (!sc) return;
   $("#selcallDigits").maxLength = sc.max_digits;
-  $("#selcallStd").textContent = sc.my_id ? `${sc.standard} · this radio ${sc.my_id}` : sc.standard;
+  const std = `${sc.standard} ${sc.tone_ms} ms`;
+  $("#selcallStd").textContent = sc.my_id ? `${std} · this radio ${sc.my_id}` : std;
   const presets = $("#selcallPresets");
   presets.replaceChildren(...sc.presets.map((p) => {
     const b = document.createElement("button");

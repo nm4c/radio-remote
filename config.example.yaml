@@ -86,6 +86,7 @@ selcall:
   # then press P on the desk head or P1 on the handheld to send it. Received calls show on the head.
   enabled: true
   standard: ccir       # ccir (100 ms tones), zvei1 (70 ms) or eea (40 ms)
+  tone_ms: null        # tone length in ms (30-200); null = the standard's. E.g. 50 for CCIR at 50 ms
   # This station's own selcall. Calls to it are highlighted. Write numbers in quotes so
   # leading zeros are kept ("01234"; unquoted 01234 would be read as a different number).
   my_id: null

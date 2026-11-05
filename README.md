@@ -101,7 +101,9 @@ layout JSON and standalone test pages to `assets/control-head/output/`. The inpu
 ## Selcall
 
 Sequential tone calls of 1 to 20 digits, in the CCIR (100 ms tones), ZVEI-1 (70 ms) or EEA (40 ms)
-standard (`selcall.standard`). A digit that repeats the one before it is sent as the repeat tone.
+standard (`selcall.standard`). Set `selcall.tone_ms` to run the standard's frequencies at another
+tone length, such as CCIR at 50 ms. The decoder still hears calls with longer tones than that.
+A digit that repeats the one before it is sent as the repeat tone.
 
 - **Sending:** type the number in the Selcall panel, or tap a preset or an earlier call, then
   press **P** on the desk head (**P1** on the handheld). The Pi keys the radio, waits
