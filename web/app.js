@@ -286,11 +286,13 @@ async function updateAudioInfo() {
 //   volume_knob   change    speaker volume, kept in step with the Speaker volume slider
 //   power         activate  disconnect (desk only; only after the hold in RADIO_CONFIG.holdMs)
 //   emergency     activate  desk only. Shows a notice and is not wired to anything that transmits.
-//   P (desk), P1 (handheld)  press   send the selcall number from the Selcall panel
 //   menu          press     open Settings (handheld)
-//   soft keys     press     Chans (channel list), Tune (SA818) or Sync (button radios), Call
-//                           (Selcall panel, desk only), Setup (Settings). Desk keys 1, 2, 3, 5.
-//   P2, home, brightness, D-pad left/right and the desk's soft key 4: not assigned yet.
+//   soft keys     press     Call (send the selcall number; with none entered, open the Selcall
+//                           panel), Chans (channel list), Tune (SA818) or Sync (button radios),
+//                           Setup (Settings). Desk keys 1, 2, 3, 5 are Chans, Tune/Sync, Call,
+//                           Setup. The handheld's three are Call, Tune/Sync, Setup; it shows
+//                           Chans instead of Call if selcall is off.
+//   P, P1, P2, home, brightness, D-pad left/right and the desk's soft key 4: not assigned yet.
 
 const HEAD_DIR = "/static/control-head";
 const CHANNEL_SETTLE_MS = 400; // knob idle time before the picked channel is sent
@@ -338,7 +340,6 @@ async function mountHead() {
   S.head = head;
   S.headSoftkeyCount = svg.querySelectorAll('[id^="display-softkey-"]').length;
   S.headShown = {}; // new, empty screen: redraw everything
-  updateSelcallHint();
   head.setVolume(Number($("#vol").value) * VOLUME_KNOB_UNITY);
   head.on((e) => { if (S.head === head) onHeadEvent(e); });
   updateHead();
@@ -350,8 +351,8 @@ function headSoftkeys() {
   const setup = { label: "Setup", run: openSettings };
   const second = S.radio.canTune ? { label: "Tune", run: showTune }
     : S.radio.canSync ? { label: "Sync", run: showSync } : null;
-  const call = S.selcall ? { label: "Call", run: showSelcall } : null;
-  return S.headSoftkeyCount >= 5 ? [chans, second, call, null, setup] : [chans, second, setup];
+  const call = S.selcall ? { label: "Call", run: sendSelcall } : null;
+  return S.headSoftkeyCount >= 5 ? [chans, second, call, null, setup] : [call || chans, second, setup];
 }
 
 function openSettings() {
@@ -381,13 +382,13 @@ function onHeadEvent(e) {
       toast("Emergency isn't set up on this remote.");
       break;
     case "menu:press": openSettings(); break;
-    case "programmable_p:press": // desk head
-    case "p1:press": sendSelcall(); break; // handheld
     default: {
       const key = /^softkey_(\d)$/.exec(e.control);
       if (key && e.action === "press") {
         const k = headSoftkeys()[Number(key[1]) - 1];
-        if (k) k.run();
+        // Run just after the press: the browser focuses the pressed key as part of the same press,
+        // which would take focus straight back from a field the action focuses (Tune, Call).
+        if (k) setTimeout(k.run, 0);
       }
     }
   }
@@ -518,7 +519,7 @@ function setSpeakerVolume(gain, from) {
 
 // ---------- selcall ----------
 // Sequential tone calls. The number is typed (or picked from a preset) in the Selcall panel and
-// sent with the head's P key (P1 on the handheld). The server keys the radio, plays the tones and
+// sent with the head's Call soft key. The server keys the radio, plays the tones and
 // unkeys; it also decodes calls heard on the channel. Both kinds arrive as "selcall" messages.
 
 const SELCALL_SHOW_MS = 10000; // how long a call stays on the head's bottom line
@@ -542,13 +543,6 @@ function setupSelcall(sc) {
   }));
   S.selcallLog = sc.log.slice();
   renderSelcallLog();
-  updateSelcallHint();
-}
-
-// Which head key sends depends on the template showing.
-function updateSelcallHint() {
-  $("#selcallHint").textContent = S.headSoftkeyCount === 3
-    ? "Press P1 on the radio to send." : "Press P on the radio to send.";
 }
 
 function showSelcall() {

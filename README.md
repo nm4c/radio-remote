@@ -77,8 +77,7 @@ time-out countdown, BUSY, RSSI and signal bars.
 | Channel knob (right on the desk head, the tall one on the handheld) | Picks a channel. The channel shows straight away in amber and is sent once you stop turning. |
 | D-pad up / down | One channel up or down |
 | Volume knob | Speaker volume, the same as the slider |
-| Soft keys | Chans (channel list), Tune (SA818) or Sync (button radios), Call (Selcall panel, desk only), Setup (Settings) |
-| P (desk), P1 (handheld) | Send the selcall number from the Selcall panel |
+| Soft keys | Call (send the selcall number, or open the Selcall panel if none is entered), Chans (channel list, desk only), Tune (SA818) or Sync (button radios), Setup (Settings) |
 | Menu (handheld) | Settings |
 | Power (desk), held 1.5 s | Disconnect |
 | Emergency (desk), held 1.5 s | Shows a notice only. It is not connected to anything that transmits. |
@@ -106,7 +105,7 @@ tone length, such as CCIR at 50 ms. The decoder still hears calls with longer to
 A digit that repeats the one before it is sent as the repeat tone.
 
 - **Sending:** type the number in the Selcall panel, or tap a preset or an earlier call, then
-  press **P** on the desk head (**P1** on the handheld). The Pi keys the radio, waits
+  press the **Call** soft key. The Pi keys the radio, waits
   `tx_delay_ms` for the transmitter to come up, plays the tones into the mic line and unkeys.
   PTT is locked out while a call goes out, and a call can't start while anyone transmits.
 - **Receiving:** the Pi watches the received audio for selcalls. Calls show on the head's bottom
