@@ -5,6 +5,8 @@ from pathlib import Path
 
 import yaml
 
+from . import selcall
+
 DEFAULTS = {
     "radio": {
         "name": "Radio",
@@ -68,6 +70,16 @@ DEFAULTS = {
         "tx_prebuffer_ms": 80,
         "busy_threshold_dbfs": -45,
     },
+    "selcall": {
+        "enabled": True,
+        "standard": "ccir",       # ccir, zvei1 or eea (see server/selcall.py)
+        "my_id": None,            # this station's selcall; incoming calls to it are flagged
+        "tx_delay_ms": 300,       # keyed silence before the tones while the transmitter comes up
+        "level": 0.3,             # tone amplitude 0-1, before audio.tx_gain
+        "decode": True,           # watch received audio for selcalls
+        "decode_min_digits": 3,   # shorter sequences are ignored (guards against chance matches)
+        "presets": [],            # quick-dial list: [{name: Base, digits: "12345"}]
+    },
     "webrtc": {
         "enabled": True,
         "ice_servers": [],
@@ -110,9 +122,44 @@ def load(path):
         if clash:
             raise SystemExit(f"config: GPIO {sorted(clash)} used twice (gpio vs sa818 pins)")
 
+    _check_selcall(cfg["selcall"])
+
     # Resolve the state file relative to the config file.
     state = Path(cfg["server"]["state_file"])
     if not state.is_absolute():
         state = path.resolve().parent / state
     cfg["server"]["state_file"] = str(state)
     return cfg
+
+
+def _quoted(value, what):
+    # Unquoted YAML numbers lose leading zeros, and PyYAML reads 0-prefixed ones as octal
+    # (01234 -> 668), so selcall numbers must be written as strings.
+    if not isinstance(value, str):
+        raise ValueError(f'{what} must be in quotes, e.g. "01234", so leading zeros are kept')
+    return value
+
+
+def _check_selcall(sc):
+    """Validate the selcall section in place."""
+    if sc["standard"] not in selcall.STANDARDS:
+        raise SystemExit(f"config: selcall.standard must be one of {', '.join(selcall.STANDARDS)}")
+    try:
+        if sc["my_id"] is not None:
+            sc["my_id"] = selcall.check_digits(_quoted(sc["my_id"], "selcall.my_id"), "selcall.my_id")
+        presets = []
+        for i, p in enumerate(sc["presets"] or [], start=1):
+            if not isinstance(p, dict):
+                raise ValueError(f"selcall.presets entry {i} must have name: and digits:")
+            what = f"selcall.presets entry {i} digits"
+            digits = selcall.check_digits(_quoted(p.get("digits", ""), what), what)
+            presets.append({"name": str(p.get("name") or digits)[:24], "digits": digits})
+        sc["presets"] = presets
+    except ValueError as e:
+        raise SystemExit(f"config: {e}")
+    if not 0 < float(sc["level"]) <= 1:
+        raise SystemExit("config: selcall.level must be between 0 and 1")
+    if not 0 <= int(sc["tx_delay_ms"]) <= 3000:
+        raise SystemExit("config: selcall.tx_delay_ms must be 0-3000")
+    if not 1 <= int(sc["decode_min_digits"]) <= selcall.MAX_DIGITS:
+        raise SystemExit(f"config: selcall.decode_min_digits must be 1-{selcall.MAX_DIGITS}")

@@ -208,7 +208,14 @@ class SoundDeviceAudio:
 # ---- mock (no sound card) ------------------------------------------------------
 
 class MockAudio:
-    """Generates fake RX traffic (a tone burst every ~10 s) and discards TX audio."""
+    """Generates fake RX traffic and discards TX audio.
+
+    Every 10 s: 2.5 s of warbling tone ("someone talking"). Every 30 s, if selcall is on: a
+    received selcall to selcall.my_id (or 12345), so the decoder can be tried without a radio.
+    """
+
+    SELCALL_EVERY_S = 30
+    SELCALL_AT_S = 4  # into each 30 s cycle, clear of the warbling tone
 
     def __init__(self, cfg, on_rx):
         a = cfg["audio"]
@@ -221,11 +228,17 @@ class MockAudio:
         self._stop = threading.Event()
         self._thread = None
         self._rng = np.random.default_rng()
+        self._selcall = None
+        sc = cfg.get("selcall") or {}
+        if sc.get("enabled"):
+            from .selcall import encode  # local import: selcall is optional for the real backend
+            self._selcall = encode(sc.get("my_id") or "12345", sc["standard"], self.rate, 0.25)
 
     def start(self):
         self._thread = threading.Thread(target=self._run, daemon=True)
         self._thread.start()
-        log.info("mock audio started (tone burst every 10 s)")
+        log.info("mock audio started (tone burst every 10 s%s)",
+                 f", selcall every {self.SELCALL_EVERY_S} s" if self._selcall is not None else "")
 
     def stop(self):
         self._stop.set()
@@ -245,6 +258,14 @@ class MockAudio:
             y = self._rng.normal(0, 0.003, self.frame).astype(np.float32)
             if (t[0] % 10) < 2.5:  # "someone talking": warbling tone
                 y += 0.15 * np.sin(2 * np.pi * (600 + 150 * np.sin(2 * np.pi * 3 * t)) * t).astype(np.float32)
+            if self._selcall is not None:
+                # Position of this frame within the selcall, which starts SELCALL_AT_S into each cycle.
+                cycle = self.SELCALL_EVERY_S * self.rate
+                start = idx[0] % cycle - self.SELCALL_AT_S * self.rate
+                if 0 <= start + self.frame and start < len(self._selcall):
+                    part = self._selcall[max(0, start): start + self.frame]
+                    lo = max(0, -start)
+                    y[lo: lo + len(part)] += part
             self.rx_dbfs = _dbfs(y)
             self.on_rx((np.clip(y, -1, 1) * 32767).astype("<i2").tobytes())
             self.tx.pull(self.frame)  # consume TX at real-time rate

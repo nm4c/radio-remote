@@ -81,6 +81,22 @@ audio:
   tx_prebuffer_ms: 80  # jitter buffer before TX audio starts playing to the radio
   busy_threshold_dbfs: -45  # RX level considered "signal present" if no busy_pin
 
+selcall:
+  # Sequential tone calls (1-20 digits). Type the number in the Selcall panel (or pick a preset),
+  # then press P on the desk head or P1 on the handheld to send it. Received calls show on the head.
+  enabled: true
+  standard: ccir       # ccir (100 ms tones), zvei1 (70 ms) or eea (40 ms)
+  # This station's own selcall. Calls to it are highlighted. Write numbers in quotes so
+  # leading zeros are kept ("01234"; unquoted 01234 would be read as a different number).
+  my_id: null
+  tx_delay_ms: 300     # keyed silence before the tones, while the transmitter comes up
+  level: 0.3           # tone amplitude 0-1 (audio.tx_gain is applied on top)
+  decode: true         # watch received audio for selcalls
+  decode_min_digits: 3 # ignore shorter sequences (stops chance matches in speech)
+  presets: []
+  #  - {name: Base, digits: "12345"}
+  #  - {name: All call, digits: "99999"}
+
 webrtc:
   # Audio over WebRTC (Opus over UDP) for the lowest, steadiest latency. Browsers that can't connect
   # fall back to audio over the WebSocket automatically. Control (PTT, channels) always uses the WebSocket.

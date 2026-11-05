@@ -2,6 +2,7 @@
 
 import argparse
 import asyncio
+import collections
 import hmac
 import itertools
 import json
@@ -10,16 +11,18 @@ import ssl
 import time
 from pathlib import Path
 
+import numpy as np
 from aiohttp import WSMsgType, web
 
 from .audio import create_audio
 from .config import load
-from . import rtc
+from . import rtc, selcall
 from .radio import RadioError, create_radio
 
 log = logging.getLogger("server")
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"
 AUDIO_QUEUE_LIMIT = 25  # frames (~0.5 s) before we start dropping RX audio for a slow client
+SELCALL_LOG = 20        # recent selcalls (sent and received) kept for operators who join later
 
 
 class Client:
@@ -70,6 +73,15 @@ class RemoteHead:
         self._ptt_gen = 0
         self.rtc_ok = rtc.setup(cfg)
         log.info("audio to browsers: %s", "WebRTC (WebSocket fallback)" if self.rtc_ok else "WebSocket")
+        # Selcall: digits being sent right now (the radio is keyed for them), recent calls, and the
+        # decoder that watches received audio.
+        self.sc = cfg["selcall"]
+        self.selcall_tx = None
+        self.selcall_log = collections.deque(maxlen=SELCALL_LOG)
+        self.selcall_rx = None
+        if self.sc["enabled"] and self.sc["decode"]:
+            self.selcall_rx = selcall.Decoder(self.sc["standard"], int(cfg["audio"]["wire_rate"]),
+                                              int(self.sc["decode_min_digits"]))
 
     # ---- helpers -------------------------------------------------------
 
@@ -112,6 +124,7 @@ class RemoteHead:
                 "remaining_s": remaining,
             },
             "operators": sorted(x.name for x in self._authed()),
+            "selcall_tx": self.selcall_tx,
         }
 
     def broadcast_state(self):
@@ -125,6 +138,12 @@ class RemoteHead:
 
     def _broadcast_audio(self, pcm):
         owner = self.radio.ptt_owner
+        if self.selcall_rx:
+            if owner is None:
+                for digits in self.selcall_rx.feed(pcm):
+                    self._selcall_event("rx", digits)
+            else:
+                self.selcall_rx.blank()  # our own transmission: drop half sequences, skip their tails
         silence = None
         for c in self.clients:
             if not c.authed:
@@ -196,6 +215,14 @@ class RemoteHead:
                 "wire_rate": self.cfg["audio"]["wire_rate"],
                 "webrtc": self.rtc_ok,
                 "frame_samples": self.cfg["audio"]["wire_rate"] * self.cfg["audio"]["frame_ms"] // 1000,
+                "selcall": {
+                    "standard": self.sc["standard"],
+                    "max_digits": selcall.MAX_DIGITS,
+                    "my_id": self.sc["my_id"],
+                    "presets": self.sc["presets"],
+                    "decode": bool(self.selcall_rx),
+                    "log": list(self.selcall_log),
+                } if self.sc["enabled"] else None,
             })
             self.broadcast_state()
 
@@ -255,6 +282,10 @@ class RemoteHead:
         if kind == "rtc_close":
             self._spawn(self._rtc_close(c))
             return
+        if kind == "selcall":
+            if self.sc["enabled"]:
+                self._spawn(self._selcall_send(c, m.get("digits")))
+            return
         if kind == "ptt_hold":
             c.last_hold = time.monotonic()
         elif kind == "ptt":
@@ -293,6 +324,9 @@ class RemoteHead:
             c.send_json({"type": "notice", "level": "warn", "text": str(e)})
 
     def _ptt_on(self, c):
+        if self.selcall_tx:
+            c.send_json({"type": "notice", "level": "warn", "code": "ptt_denied", "text": "Sending a selcall"})
+            return
         try:
             if self.radio.ptt_owner != c.id:
                 self.audio.clear_tx()
@@ -311,7 +345,7 @@ class RemoteHead:
         c.last_hold = time.monotonic()
 
     async def _ptt_off(self, c):
-        if self.radio.ptt_owner != c.id:
+        if self.radio.ptt_owner != c.id or self.selcall_tx:
             return
         gen = self._ptt_gen
         if c.rtc and c.rtc.ready:
@@ -331,6 +365,75 @@ class RemoteHead:
         if gen == self._ptt_gen and self.radio.ptt_owner == c.id:
             self.radio.unkey()
             self.audio.clear_tx()
+
+    # ---- selcall ----------------------------------------------------------
+
+    async def _selcall_send(self, c, digits):
+        """Key the radio, play the selcall tones into its mic input, then unkey.
+
+        The tones go through the same TX audio path as voice (so audio.tx_gain applies), after
+        tx_delay_ms of keyed silence to let the transmitter come up before the first digit.
+        """
+        def refuse(text):
+            c.send_json({"type": "notice", "level": "warn", "text": text})
+
+        try:
+            digits = selcall.check_digits(digits if isinstance(digits, str) else "")
+        except ValueError as e:
+            return refuse(str(e).capitalize())
+        if self.selcall_tx:
+            return refuse("A selcall is already being sent")
+        if self.radio.ptt_owner is not None:
+            return refuse("Can't send a selcall while the radio is transmitting")
+        rate = int(self.cfg["audio"]["wire_rate"])
+        tones = selcall.encode(digits, self.sc["standard"], rate, float(self.sc["level"]))
+        lead = np.zeros(int(rate * int(self.sc["tx_delay_ms"]) / 1000), np.float32)
+        tail = np.zeros(int(rate * 0.05), np.float32)
+        samples = np.concatenate([lead, tones, tail])
+        try:
+            self.audio.clear_tx()
+            self.radio.key(c.id)
+        except RadioError as e:
+            return refuse(str(e))
+        self._ptt_gen += 1
+        gen = self._ptt_gen
+        self.selcall_tx = digits
+        log.info("%s sending selcall %s (%s)", c.name, digits, self.sc["standard"])
+        self.broadcast_state()
+        total_ms = len(samples) * 1000 / rate
+        try:
+            # The whole call goes in at once: start playing straight away and keep all of it.
+            self.audio.set_tx_buffer(0, total_ms + 1000)
+            self.audio.drain(False)
+            self.audio.push_tx((samples * 32767).astype("<i2").tobytes())
+            self.audio.drain(True)
+            deadline = time.monotonic() + total_ms / 1000 + 2.0
+            while (self.audio.tx_buffered_ms() > 0 and time.monotonic() < deadline
+                   and gen == self._ptt_gen and self.radio.ptt_owner == c.id):
+                c.last_hold = time.monotonic()  # keep the watchdog happy while the tones play
+                await asyncio.sleep(0.02)
+            await asyncio.sleep(0.04)  # let the sound card play out its last block
+            completed = gen == self._ptt_gen and self.radio.ptt_owner == c.id
+        finally:
+            self.selcall_tx = None
+            if gen == self._ptt_gen and self.radio.ptt_owner == c.id:
+                self.radio.unkey()
+                self.audio.clear_tx()
+            self.broadcast_state()
+        if completed:
+            self._selcall_event("tx", digits, by=c.name)
+        else:
+            refuse("Selcall interrupted")
+
+    def _selcall_event(self, direction, digits, by=None):
+        """Record a sent or received selcall and tell every operator."""
+        ev = {"type": "selcall", "dir": direction, "digits": digits, "by": by,
+              "to_me": direction == "rx" and digits == self.sc["my_id"], "t": time.time()}
+        self.selcall_log.append(ev)
+        if direction == "rx":
+            log.info("selcall received: %s%s", digits, " (this station)" if ev["to_me"] else "")
+        for c in self._authed():
+            c.send_json(ev)
 
     # ---- watchdog / meters ----------------------------------------------
 
