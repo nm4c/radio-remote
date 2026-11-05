@@ -36,3 +36,5 @@ echo "  1. sudo nano $DEST/config.yaml      (password, radio.type, sound card, c
 echo "  2. sudo -u radio $DEST/.venv/bin/python -m sounddevice   (list sound cards)"
 echo "  3. sudo systemctl start radio-remote && journalctl -u radio-remote -f"
 echo "  4. sudo tailscale serve --bg 8080   (HTTPS so browsers allow the mic)"
+echo
+echo "To update later: sudo ./deploy/update.sh   (from a git clone of the repo)"

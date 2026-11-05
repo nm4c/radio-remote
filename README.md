@@ -132,6 +132,21 @@ Write selcall numbers in the config in quotes (`my_id: "01234"`), so leading zer
    `/opt/radio-remote/.venv/bin/python -m sounddevice`).
 3. `sudo systemctl start radio-remote` and watch the log with `journalctl -u radio-remote -f`.
 
+### Updating
+
+Keep a git clone on the Pi (`git clone https://github.com/nm4c/radio-remote.git`) and run, from it:
+
+```bash
+sudo ./deploy/update.sh            # git pull, copy the code to /opt/radio-remote, restart
+sudo ./deploy/update.sh --no-pull  # deploy the clone as it is, without pulling
+```
+
+It copies only `server/`, `web/` and `requirements.txt`, so `config.yaml`, `state.json`, `tls/`
+and the Python venv are left alone. It reinstalls Python packages only when `requirements.txt`
+changed, reloads systemd only when the service file changed, and prints the log if the service
+fails to come back up. New config options get their defaults until you add them to `config.yaml`
+(see `config.example.yaml`).
+
 ### Remote access over HTTPS (needed for the microphone)
 
 Browsers only allow microphone access on `https://` or `localhost`. With Tailscale:
