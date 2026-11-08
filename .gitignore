@@ -1,6 +1,7 @@
 # Local config holds the operator password – commit config.example.yaml instead
 config.yaml
 state.json
+clips/
 *.tmp
 
 .venv/

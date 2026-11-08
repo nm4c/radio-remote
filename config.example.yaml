@@ -98,6 +98,16 @@ selcall:
   #  - {name: Base, digits: "12345"}
   #  - {name: All call, digits: "99999"}
 
+clips:
+  # Audio clips: upload them in the Audio clips panel (MP3 or any audio the browser can play),
+  # pick one, then press the Play soft key on the radio to transmit it.
+  enabled: true
+  dir: clips           # where they're kept, relative to this file
+  max_seconds: 60      # longest clip; must finish inside ptt.max_tx_seconds
+  max_files: 50
+  tx_delay_ms: 300     # keyed silence before the clip, while the transmitter comes up
+  level: 0.5           # each clip is played with its peak at this level (audio.tx_gain applies on top)
+
 webrtc:
   # Audio over WebRTC (Opus over UDP) for the lowest, steadiest latency. Browsers that can't connect
   # fall back to audio over the WebSocket automatically. Control (PTT, channels) always uses the WebSocket.

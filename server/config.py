@@ -81,6 +81,14 @@ DEFAULTS = {
         "decode_min_digits": 3,   # shorter sequences are ignored (guards against chance matches)
         "presets": [],            # quick-dial list: [{name: Base, digits: "12345"}]
     },
+    "clips": {
+        "enabled": True,
+        "dir": "clips",           # where uploaded clips are kept (relative to the config file)
+        "max_seconds": 60,        # longest clip accepted; must fit inside ptt.max_tx_seconds
+        "max_files": 50,
+        "tx_delay_ms": 300,       # keyed silence before the clip while the transmitter comes up
+        "level": 0.5,             # every clip is played with its peak at this level, before audio.tx_gain
+    },
     "webrtc": {
         "enabled": True,
         "ice_servers": [],
@@ -124,12 +132,14 @@ def load(path):
             raise SystemExit(f"config: GPIO {sorted(clash)} used twice (gpio vs sa818 pins)")
 
     _check_selcall(cfg["selcall"])
+    _check_clips(cfg["clips"], cfg["ptt"])
 
-    # Resolve the state file relative to the config file.
-    state = Path(cfg["server"]["state_file"])
-    if not state.is_absolute():
-        state = path.resolve().parent / state
-    cfg["server"]["state_file"] = str(state)
+    # Resolve the state file and clip folder relative to the config file.
+    for section, key in (("server", "state_file"), ("clips", "dir")):
+        p = Path(cfg[section][key])
+        if not p.is_absolute():
+            p = path.resolve().parent / p
+        cfg[section][key] = str(p)
     return cfg
 
 
@@ -167,3 +177,20 @@ def _check_selcall(sc):
         raise SystemExit("config: selcall.tx_delay_ms must be 0-3000")
     if not 1 <= int(sc["decode_min_digits"]) <= selcall.MAX_DIGITS:
         raise SystemExit(f"config: selcall.decode_min_digits must be 1-{selcall.MAX_DIGITS}")
+
+
+def _check_clips(cl, ptt):
+    """Validate the clips section in place."""
+    if not cl["enabled"]:
+        return
+    cl["max_seconds"] = float(cl["max_seconds"])
+    room = float(ptt["max_tx_seconds"]) - int(cl["tx_delay_ms"]) / 1000 - 2
+    if not 1 <= cl["max_seconds"] <= room:
+        raise SystemExit(f"config: clips.max_seconds must be 1-{room:g} "
+                         "(clips have to finish inside ptt.max_tx_seconds)")
+    if not 1 <= int(cl["max_files"]) <= 500:
+        raise SystemExit("config: clips.max_files must be 1-500")
+    if not 0 <= int(cl["tx_delay_ms"]) <= 3000:
+        raise SystemExit("config: clips.tx_delay_ms must be 0-3000")
+    if not 0 < float(cl["level"]) <= 1:
+        raise SystemExit("config: clips.level must be between 0 and 1")

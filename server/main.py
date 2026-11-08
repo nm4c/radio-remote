@@ -7,6 +7,7 @@ import hmac
 import itertools
 import json
 import logging
+import secrets
 import ssl
 import time
 from pathlib import Path
@@ -16,7 +17,7 @@ from aiohttp import WSMsgType, web
 
 from .audio import create_audio
 from .config import load
-from . import rtc, selcall
+from . import clips, rtc, selcall
 from .radio import RadioError, create_radio
 
 log = logging.getLogger("server")
@@ -34,6 +35,7 @@ class Client:
         self.remote = remote
         self.name = f"Operator {self.id}"
         self.authed = False
+        self.token = secrets.token_urlsafe(18)  # authorises this operator's clip uploads (HTTP)
         self.last_hold = 0.0
         self.queue = asyncio.Queue()
         self.audio_queued = 0
@@ -82,6 +84,13 @@ class RemoteHead:
         if self.sc["enabled"] and self.sc["decode"]:
             self.selcall_rx = selcall.Decoder(self.sc["standard"], int(cfg["audio"]["wire_rate"]),
                                               int(self.sc["decode_min_digits"]), tone_ms=self.sc["tone_ms"])
+        # Audio clips: the stored clips, and the one on air now ({"id", "name"}, the radio is keyed).
+        self.cl = cfg["clips"]
+        self.clips = None
+        if self.cl["enabled"]:
+            self.clips = clips.ClipStore(self.cl["dir"], int(cfg["audio"]["wire_rate"]),
+                                         self.cl["max_seconds"], int(self.cl["max_files"]))
+        self.clip_tx = None
 
     # ---- helpers -------------------------------------------------------
 
@@ -125,6 +134,7 @@ class RemoteHead:
             },
             "operators": sorted(x.name for x in self._authed()),
             "selcall_tx": self.selcall_tx,
+            "clip_tx": {"id": self.clip_tx["id"], "name": self.clip_tx["name"]} if self.clip_tx else None,
         }
 
     def broadcast_state(self):
@@ -224,6 +234,11 @@ class RemoteHead:
                     "decode": bool(self.selcall_rx),
                     "log": list(self.selcall_log),
                 } if self.sc["enabled"] else None,
+                "clips": {
+                    "max_seconds": self.cl["max_seconds"],
+                    "max_files": int(self.cl["max_files"]),
+                    "list": self.clips.list(),
+                } if self.clips else None,
             })
             self.broadcast_state()
 
@@ -267,7 +282,7 @@ class RemoteHead:
         if name:
             c.name = name
         c.authed = True
-        c.send_json({"type": "auth", "ok": True, "name": c.name})
+        c.send_json({"type": "auth", "ok": True, "name": c.name, "token": c.token})
         return True
 
     def _handle(self, c, text):
@@ -286,6 +301,10 @@ class RemoteHead:
         if kind == "selcall":
             if self.sc["enabled"]:
                 self._spawn(self._selcall_send(c, m.get("digits")))
+            return
+        if kind in ("clip_play", "clip_stop", "clip_delete"):
+            if self.clips:
+                self._clip_message(c, kind, m.get("id"))
             return
         if kind == "ptt_hold":
             c.last_hold = time.monotonic()
@@ -325,8 +344,9 @@ class RemoteHead:
             c.send_json({"type": "notice", "level": "warn", "text": str(e)})
 
     def _ptt_on(self, c):
-        if self.selcall_tx:
-            c.send_json({"type": "notice", "level": "warn", "code": "ptt_denied", "text": "Sending a selcall"})
+        if self.selcall_tx or self.clip_tx:
+            text = "Sending a selcall" if self.selcall_tx else "A clip is playing on air"
+            c.send_json({"type": "notice", "level": "warn", "code": "ptt_denied", "text": text})
             return
         try:
             if self.radio.ptt_owner != c.id:
@@ -346,7 +366,7 @@ class RemoteHead:
         c.last_hold = time.monotonic()
 
     async def _ptt_off(self, c):
-        if self.radio.ptt_owner != c.id or self.selcall_tx:
+        if self.radio.ptt_owner != c.id or self.selcall_tx or self.clip_tx:
             return
         gen = self._ptt_gen
         if c.rtc and c.rtc.ready:
@@ -369,12 +389,55 @@ class RemoteHead:
 
     # ---- selcall ----------------------------------------------------------
 
-    async def _selcall_send(self, c, digits):
-        """Key the radio, play the selcall tones into its mic input, then unkey.
+    async def _transmit(self, c, samples, lead_ms):
+        """Key the radio for operator c, play float32 samples (wire rate) into its mic input after
+        lead_ms of keyed silence, then unkey. Used for selcalls and clips.
 
-        The tones go through the same TX audio path as voice (so audio.tx_gain applies), after
-        tx_delay_ms of keyed silence to let the transmitter come up before the first digit.
+        The caller has checked the radio is free and set selcall_tx or clip_tx, which stops PTT
+        presses meanwhile. Returns True if everything played, False if it was cut short (stopped,
+        the operator left, the watchdog's time limit). Raises RadioError if the radio won't key.
         """
+        rate = int(self.cfg["audio"]["wire_rate"])
+        lead = np.zeros(int(rate * lead_ms / 1000), np.float32)
+        tail = np.zeros(int(rate * 0.05), np.float32)
+        samples = np.concatenate([lead, samples, tail])
+        self.audio.clear_tx()
+        self.radio.key(c.id)
+        self._ptt_gen += 1
+        gen = self._ptt_gen
+        self.broadcast_state()
+        total_ms = len(samples) * 1000 / rate
+        try:
+            # Everything goes in at once: start playing straight away and keep all of it.
+            self.audio.set_tx_buffer(0, total_ms + 1000)
+            self.audio.drain(False)
+            self.audio.push_tx((np.clip(samples, -1, 1) * 32767).astype("<i2").tobytes())
+            self.audio.drain(True)
+            deadline = time.monotonic() + total_ms / 1000 + 2.0
+            while (self.audio.tx_buffered_ms() > 0 and time.monotonic() < deadline
+                   and gen == self._ptt_gen and self.radio.ptt_owner == c.id):
+                c.last_hold = time.monotonic()  # keep the watchdog's keepalive check happy meanwhile
+                await asyncio.sleep(0.02)
+            await asyncio.sleep(0.04)  # let the sound card play out its last block
+            return gen == self._ptt_gen and self.radio.ptt_owner == c.id
+        finally:
+            if gen == self._ptt_gen and self.radio.ptt_owner == c.id:
+                self.radio.unkey()
+                self.audio.clear_tx()
+
+    def _on_air(self):
+        """Why the radio can't start a selcall or clip now, or None if it can."""
+        if self.selcall_tx:
+            return "A selcall is being sent"
+        if self.clip_tx:
+            return "A clip is playing on air"
+        if self.radio.ptt_owner is not None:
+            return "The radio is transmitting"
+        return None
+
+    async def _selcall_send(self, c, digits):
+        """Send a selcall: tx_delay_ms of keyed silence for the transmitter to come up, then the
+        tones, through the same TX audio path as voice (so audio.tx_gain applies)."""
         def refuse(text):
             c.send_json({"type": "notice", "level": "warn", "text": text})
 
@@ -382,45 +445,21 @@ class RemoteHead:
             digits = selcall.check_digits(digits if isinstance(digits, str) else "")
         except ValueError as e:
             return refuse(str(e).capitalize())
-        if self.selcall_tx:
-            return refuse("A selcall is already being sent")
-        if self.radio.ptt_owner is not None:
-            return refuse("Can't send a selcall while the radio is transmitting")
+        busy = self._on_air()
+        if busy:
+            return refuse(f"Can't send a selcall: {busy[0].lower()}{busy[1:]}")
         rate = int(self.cfg["audio"]["wire_rate"])
         tones = selcall.encode(digits, self.sc["standard"], rate, float(self.sc["level"]), self.sc["tone_ms"])
-        lead = np.zeros(int(rate * int(self.sc["tx_delay_ms"]) / 1000), np.float32)
-        tail = np.zeros(int(rate * 0.05), np.float32)
-        samples = np.concatenate([lead, tones, tail])
-        try:
-            self.audio.clear_tx()
-            self.radio.key(c.id)
-        except RadioError as e:
-            return refuse(str(e))
-        self._ptt_gen += 1
-        gen = self._ptt_gen
         self.selcall_tx = digits
         log.info("%s sending selcall %s (%s, %s ms tones)", c.name, digits, self.sc["standard"],
                  self.sc["tone_ms"] or selcall.STANDARDS[self.sc["standard"]]["tone_ms"])
-        self.broadcast_state()
-        total_ms = len(samples) * 1000 / rate
+        completed = False
         try:
-            # The whole call goes in at once: start playing straight away and keep all of it.
-            self.audio.set_tx_buffer(0, total_ms + 1000)
-            self.audio.drain(False)
-            self.audio.push_tx((samples * 32767).astype("<i2").tobytes())
-            self.audio.drain(True)
-            deadline = time.monotonic() + total_ms / 1000 + 2.0
-            while (self.audio.tx_buffered_ms() > 0 and time.monotonic() < deadline
-                   and gen == self._ptt_gen and self.radio.ptt_owner == c.id):
-                c.last_hold = time.monotonic()  # keep the watchdog happy while the tones play
-                await asyncio.sleep(0.02)
-            await asyncio.sleep(0.04)  # let the sound card play out its last block
-            completed = gen == self._ptt_gen and self.radio.ptt_owner == c.id
+            completed = await self._transmit(c, tones, int(self.sc["tx_delay_ms"]))
+        except RadioError as e:
+            return refuse(str(e))
         finally:
             self.selcall_tx = None
-            if gen == self._ptt_gen and self.radio.ptt_owner == c.id:
-                self.radio.unkey()
-                self.audio.clear_tx()
             self.broadcast_state()
         if completed:
             self._selcall_event("tx", digits, by=c.name)
@@ -436,6 +475,83 @@ class RemoteHead:
             log.info("selcall received: %s%s", digits, " (this station)" if ev["to_me"] else "")
         for c in self._authed():
             c.send_json(ev)
+
+    # ---- audio clips ----------------------------------------------------
+
+    def _clips_changed(self):
+        for c in self._authed():
+            c.send_json({"type": "clips", "list": self.clips.list()})
+
+    def _clip_message(self, c, kind, clip_id):
+        def refuse(text):
+            c.send_json({"type": "notice", "level": "warn", "text": text})
+
+        if kind == "clip_stop":
+            # Any operator may stop a clip, like anyone in the room could pull the plug.
+            if self.clip_tx and self.radio.ptt_owner is not None:
+                log.info("%s stopped clip %r", c.name, self.clip_tx["name"])
+                self.clip_tx["stopped_by"] = c.name
+                self._ptt_gen += 1  # ends _transmit's wait; it then leaves the unkeying to us
+                self.radio.unkey()
+                self.audio.clear_tx()
+            return
+        if not isinstance(clip_id, str) or not self.clips.get(clip_id):
+            return refuse("That clip has been deleted")
+        if kind == "clip_delete":
+            if self.clip_tx and self.clip_tx["id"] == clip_id:
+                return refuse("Can't delete a clip while it is playing")
+            clip = self.clips.delete(clip_id)
+            log.info("%s deleted clip %r", c.name, clip["name"])
+            self._clips_changed()
+            return
+        busy = self._on_air()  # clip_play
+        if busy:
+            return refuse(f"Can't play a clip: {busy[0].lower()}{busy[1:]}")
+        clip = self.clips.get(clip_id)
+        self.clip_tx = {"id": clip_id, "name": clip["name"]}  # claim the radio before any await
+        self._spawn(self._clip_play(c, clip))
+
+    async def _clip_play(self, c, clip):
+        job = self.clip_tx
+        try:
+            samples = self.clips.load(clip["id"], float(self.cl["level"]))
+            log.info("%s playing clip %r (%.1f s)", c.name, clip["name"], clip["seconds"])
+            completed = await self._transmit(c, samples, int(self.cl["tx_delay_ms"]))
+        except (OSError, RadioError, EOFError) as e:
+            completed = None
+            c.send_json({"type": "notice", "level": "warn", "text": f"Can't play the clip: {e}"})
+        finally:
+            self.clip_tx = None
+            self.broadcast_state()
+        if completed is False:
+            who = job.get("stopped_by")
+            text = f"Clip stopped by {who}" if who else "Clip interrupted"
+            for o in self._authed():
+                if who or o is c:
+                    o.send_json({"type": "notice", "level": "warn", "text": text})
+
+    async def clip_upload(self, request):
+        """POST /clips?name=...  body: mono 16-bit WAV at the wire rate, as made by the page.
+        Authorised by the X-Radio-Token header (the token each operator gets when they log in)."""
+        token = request.headers.get("X-Radio-Token", "")
+        c = next((x for x in self._authed() if hmac.compare_digest(x.token, token)), None)
+        if c is None:
+            return web.json_response({"error": "Not logged in (reload the page)"}, status=403)
+        if not self.clips:
+            return web.json_response({"error": "Clips are turned off on this radio"}, status=404)
+        if request.content_length and request.content_length > self.clips.max_bytes:
+            return web.json_response({"error": f"Clip is longer than {self.cl['max_seconds']:g} s"}, status=413)
+        try:
+            data = bytearray()
+            while chunk := await request.content.read(64 * 1024):
+                data += chunk
+                if len(data) > self.clips.max_bytes:
+                    raise clips.ClipError(f"Clip is longer than {self.cl['max_seconds']:g} s")
+            clip = self.clips.add(request.query.get("name", ""), bytes(data), c.name)
+        except clips.ClipError as e:
+            return web.json_response({"error": str(e)}, status=400)
+        self._clips_changed()
+        return web.json_response(clip)
 
     # ---- watchdog / meters ----------------------------------------------
 
@@ -510,6 +626,7 @@ def build_app(cfg):
     app = web.Application()
     app.router.add_get("/", _index)
     app.router.add_get("/ws", head.ws_handler)
+    app.router.add_post("/clips", head.clip_upload)
     app.router.add_static("/static", WEB_DIR)
     app.on_startup.append(head.on_startup)
     app.on_shutdown.append(head.on_shutdown)
