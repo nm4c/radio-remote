@@ -1,19 +1,15 @@
 """Voice effects for transmitted voice: Vader, Dalek, Demon and friends.
 
-Each preset is a chain of small streaming effects. Audio arrives in blocks of any length (20 ms
-from the WebSocket, whatever the decoder hands over from WebRTC), so every effect keeps its own
-history and works on whole numpy blocks rather than sample by sample.
-
-Building blocks:
-  PitchShift  delay-line pitch shifter: two read taps sweep through a short buffer at the new
-              speed, each faded out while it jumps back. Cheap, about 25 ms of delay. It shifts
-              pitch and formants together, which is what makes Chipmunk cartoonish.
+Every preset starts with Resynth, which replaces the speaker's voice outright and keeps only what
+is said (see its notes). The rest colour the new voice:
   RingMod     multiplies the voice by a sine: the classic Dalek sound at 30 Hz.
   Comb        feedback or feedforward comb: metal masks, rough echo, reverb tails.
-  Stft        short-time Fourier processing: zero phase gives Robot's monotone buzz, random
-              phase turns voice into a whisper (Ghost, and Female's breathiness).
+  Reverb      a few combs in parallel: a rough room.
   Shape       tanh saturation, for grit.
   Tone        the bass/treble shelves from eq.py.
+
+Audio arrives in blocks of any length (20 ms from the WebSocket, whatever the decoder hands over
+from WebRTC), so every effect keeps its own history and works on whole numpy blocks.
 
 Each preset's output is matched in loudness to its input at start-up (see _calibrate), then
 soft-limited, so switching effects doesn't change the deviation much.
@@ -28,29 +24,133 @@ from .eq import TxEq
 
 # ---- building blocks ---------------------------------------------------------
 
-class PitchShift:
-    def __init__(self, rate, semitones, window_ms=40):
-        self.ratio = 2 ** (semitones / 12)
-        self.win = int(rate * window_ms / 1000)
-        self.min_delay = 2
-        self.hist = np.zeros(self.win + self.min_delay + 2, np.float32)
-        self.n = 0  # samples processed so far: the sweep's clock
+class Resynth:
+    """Source-filter resynthesis: keeps what is said, replaces who says it.
+
+    Every hop (8 ms) it takes the last 32 ms of voice and splits it into
+      - the spectral envelope (cepstral smoothing): the shape of the mouth and throat, which
+        carries the words, and
+      - the pitch and how voiced the sound is (autocorrelation).
+    The envelope is stretched by `warp` along the frequency axis, as if the vocal tract were
+    shorter (> 1: smaller, higher, female, child) or longer (< 1: bigger, deeper), and played
+    through a brand-new synthetic voice source:
+      - a band-limited pulse train at `f0` Hz, following the speaker's intonation only to the
+        power `keep` (0 = monotone, 1 = all of it, relative to the speaker's own average pitch),
+      - an extra pulse train an octave below (`sub`) for growl,
+      - noise for unvoiced sounds (s, f, sh) and, with `breath`, mixed into voiced ones too.
+        f0=None gives noise only: a whisper.
+    Nothing of the original voice source reaches the output, so the speaker's pitch, roughness
+    and timbre are gone; only timing and articulation remain.
+
+    Each frame's output energy is matched to the input frame's. Delay: one frame (32 ms).
+    """
+
+    N = 512          # analysis frame: 32 ms at 16 kHz
+    HOP = 128        # 8 ms
+    LIFTER = 36      # cepstral coefficients kept for the envelope (fewer than the pitch period)
+    F0_RANGE = (65, 400)
+
+    def __init__(self, rate, warp=1.0, f0=None, keep=0.5, sub=0.0, breath=0.0):
+        self.rate, self.f0, self.keep, self.sub, self.breath = rate, f0, keep, sub, breath
+        n = self.N
+        self.win = np.hanning(n).astype(np.float32)
+        self.norm = float(np.sum(self.win ** 2) / self.HOP)
+        # Autocorrelation of the window, to undo its taper in the pitch detector.
+        rw = np.fft.irfft(np.abs(np.fft.rfft(self.win, 2 * n)) ** 2)[:n]
+        self.rw = np.maximum(rw / rw[0], 1e-3)
+        self.lo = int(rate / self.F0_RANGE[1])
+        self.hi = int(rate / self.F0_RANGE[0])
+        self.bins = np.arange(n // 2 + 1)
+        self.warp_at = self.bins / warp  # the new envelope at bin b is the old one at b / warp
+        self.inbuf = np.zeros(n, np.float32)
+        self.exc = np.zeros(n, np.float32)
+        self.acc = np.zeros(n, np.float32)
+        self.ready = np.zeros(0, np.float32)
+        self.pending = 0
+        self.phase = 0.0
+        self.mean_f0 = 130.0           # running average of the speaker's pitch
+        self.f_out = f0 or 100.0
+        self.v = 0.0                   # voicing, 0..1
+        self.rng = np.random.default_rng()
+
+    def _pitch(self, xw):
+        """(f0 in Hz or None, voicing 0..1) of a windowed frame."""
+        if float(np.dot(xw, xw)) < (0.003 ** 2) * self.N * 0.375:  # quieter than about -50 dBFS
+            return None, 0.0
+        r = np.fft.irfft(np.abs(np.fft.rfft(xw, 2 * self.N)) ** 2)[:self.N]
+        r = r / (r[0] * self.rw)
+        k = self.lo + int(np.argmax(r[self.lo:self.hi]))
+        strength = float(r[k])
+        half = k // 2
+        if half >= self.lo and r[half] > 0.85 * strength:  # octave error: take the shorter period
+            k, strength = half, float(r[half])
+        a, b, c = r[k - 1], r[k], r[k + 1]
+        den = a - 2 * b + c
+        period = k + (0.5 * (a - c) / den if den else 0.0)
+        return self.rate / period, float(np.clip((strength - 0.35) / 0.3, 0, 1))
+
+    def _source(self, f_from, f_to, v_from, v_to):
+        """The next HOP samples of the synthetic voice source."""
+        h = self.HOP
+        f = np.linspace(f_from, f_to, h, endpoint=False)
+        phi = self.phase + np.cumsum(2 * np.pi * f / self.rate)
+        self.phase = float(phi[-1] % (4 * np.pi))  # 4 pi keeps the sub-octave continuous too
+
+        def pulses(ph, top):
+            # Sum of cos(k ph) for k = 1..K (a Dirichlet kernel): K equal harmonics up to 7.6 kHz.
+            k = max(1, int(7600 / top))
+            s = np.sin(ph / 2)
+            safe = np.abs(s) > 1e-6
+            d = np.where(safe, np.sin((k + 0.5) * ph) / (2 * np.where(safe, s, 1.0)) - 0.5, float(k))
+            return d / math.sqrt(k / 2)
+
+        top = max(f_from, f_to)
+        voiced = pulses(phi, top)
+        if self.sub:
+            voiced = voiced + self.sub * pulses(phi / 2, top / 2)
+        v = np.linspace(v_from, v_to, h, endpoint=False)
+        noise = self.rng.standard_normal(h)
+        return (v * voiced + (1 - v + self.breath) * noise).astype(np.float32)
+
+    def _frame(self):
+        xw = self.inbuf * self.win
+        f0_in, v = self._pitch(xw) if self.f0 else (None, 0.0)
+        if f0_in:
+            self.mean_f0 += 0.03 * v * (f0_in - self.mean_f0)
+            f_new = self.f0 * (f0_in / self.mean_f0) ** self.keep
+        else:
+            f_new = self.f_out
+        self.exc = np.concatenate([self.exc[self.HOP:], self._source(self.f_out, f_new, self.v, v)])
+        self.f_out, self.v = f_new, v
+
+        # Envelope by cepstral smoothing, then stretched along the frequency axis.
+        X = np.fft.rfft(xw)
+        cep = np.fft.irfft(np.log(np.abs(X) + 1e-6))
+        cep[self.LIFTER:len(cep) - self.LIFTER + 1] = 0
+        env = np.exp(np.fft.rfft(cep).real)
+        env = np.interp(self.warp_at, self.bins, env, right=env[-1] * 0.1)
+
+        Y = np.fft.rfft(self.exc * self.win) * env
+        ey = float(np.sum(np.abs(Y) ** 2))
+        if ey > 0:
+            Y *= math.sqrt(float(np.sum(np.abs(X) ** 2)) / ey)
+        y = np.fft.irfft(Y, self.N).astype(np.float32) * self.win / self.norm
+        self.acc += y
+        self.ready = np.concatenate([self.ready, self.acc[:self.HOP]])
+        self.acc = np.concatenate([self.acc[self.HOP:], np.zeros(self.HOP, np.float32)])
 
     def __call__(self, x):
-        buf = np.concatenate([self.hist, x])
-        h = len(self.hist)
-        i = np.arange(len(x))
-        # Phase of the delay sweep, 0..1. The delay changes by (1 - ratio) samples per sample.
-        phase = ((self.n + i) * (1 - self.ratio) / self.win) % 1.0
-        out = np.zeros(len(x), np.float32)
-        for p in (phase, (phase + 0.5) % 1.0):
-            pos = h + i - (self.min_delay + p * self.win)
-            k = np.floor(pos).astype(int)
-            frac = (pos - k).astype(np.float32)
-            tap = buf[k] * (1 - frac) + buf[k + 1] * frac
-            out += tap * np.sin(np.pi * p).astype(np.float32) ** 2  # silent at the jump
-        self.hist = buf[len(buf) - h:]
-        self.n += len(x)
+        for s in range(0, len(x), self.HOP):
+            c = x[s:s + self.HOP]
+            self.inbuf = np.concatenate([self.inbuf[len(c):], c])
+            self.pending += len(c)
+            if self.pending >= self.HOP:
+                self.pending -= self.HOP
+                self._frame()
+        need = len(x)
+        if len(self.ready) < need:  # still filling the first frame
+            self.ready = np.concatenate([np.zeros(need - len(self.ready), np.float32), self.ready])
+        out, self.ready = self.ready[:need], self.ready[need:]
         return out
 
 
@@ -101,61 +201,6 @@ class Reverb:
         return (1 - self.mix) * x + self.mix * (wet - x)
 
 
-class Stft:
-    """Overlap-add STFT. mode "robot" sets every phase to zero (a buzz at rate/hop Hz);
-    "whisper" randomises the phases (noise shaped like the voice)."""
-
-    def __init__(self, rate, mode, n=512, hop=None, mix=1.0):
-        self.mode, self.n, self.mix = mode, n, mix
-        self.hop = hop or n // 4
-        self.win = np.hanning(n).astype(np.float32)
-        self.inbuf = np.zeros(n, np.float32)    # last n input samples
-        self.pending = 0                        # input samples since the last frame
-        self.acc = np.zeros(n, np.float32)      # overlap-add accumulator
-        self.ready = np.zeros(0, np.float32)    # finished output waiting to go
-        self.rng = np.random.default_rng()
-        # Hann^2 overlap-add gain for this hop, so the output level matches the input.
-        self.norm = np.sum(self.win ** 2) / self.hop
-
-    def _frame(self):
-        spec = np.fft.rfft(self.inbuf * self.win)
-        mag = np.abs(spec)
-        if self.mode == "robot":
-            spec = mag
-        else:
-            spec = mag * np.exp(1j * self.rng.uniform(0, 2 * np.pi, len(mag)))
-        y = np.fft.irfft(spec, self.n).astype(np.float32) * self.win / self.norm
-        self.acc += y
-        self.ready = np.concatenate([self.ready, self.acc[:self.hop]])
-        self.acc = np.concatenate([self.acc[self.hop:], np.zeros(self.hop, np.float32)])
-
-    def __call__(self, x):
-        dry = x
-        for s in range(0, len(x), self.hop):
-            c = x[s:s + self.hop]
-            self.inbuf = np.concatenate([self.inbuf[len(c):], c])
-            self.pending += len(c)
-            if self.pending >= self.hop:
-                self.pending -= self.hop
-                self._frame()
-        # Output runs n samples behind; pad with silence until the first frames are through.
-        need = len(x)
-        if len(self.ready) < need:
-            self.ready = np.concatenate([np.zeros(need - len(self.ready), np.float32), self.ready])
-        wet, self.ready = self.ready[:need], self.ready[need:]
-        if self.mix >= 1:
-            return wet
-        # The dry part is delayed to line up with the wet part.
-        return self.mix * wet + (1 - self.mix) * self._delay(dry)
-
-    def _delay(self, x):
-        if not hasattr(self, "dh"):
-            self.dh = np.zeros(self.n, np.float32)
-        buf = np.concatenate([self.dh, x])
-        self.dh = buf[len(x):]
-        return buf[:len(x)]
-
-
 class Shape:
     def __init__(self, drive):
         self.drive = drive
@@ -173,65 +218,53 @@ class Tone:
         return self.eq(x)
 
 
-class Mix:
-    """Several chains in parallel, summed with weights: [(weight, [effects...]), ...]."""
-
-    def __init__(self, branches):
-        self.branches = branches
-
-    def __call__(self, x):
-        out = np.zeros(len(x), np.float32)
-        for weight, chain in self.branches:
-            y = x
-            for fx in chain:
-                y = fx(y)
-            out += weight * y
-        return out
-
-
 # ---- presets -------------------------------------------------------------------
+# warp: vocal tract size (< 1 bigger, > 1 smaller); f0: the new voice's pitch in Hz;
+# keep: how much of the speaker's intonation survives (0 = monotone).
 
 def _vader(r):
-    return [PitchShift(r, -4), Tone(r, bass_db=8, bass_hz=500, treble_db=-4, treble_hz=3000),
+    return [Resynth(r, warp=0.86, f0=78, keep=0.5, breath=0.04),
+            Tone(r, bass_db=6, bass_hz=500, treble_db=-3, treble_hz=3000),
             Comb(r, 2.3, ff=0.6, mix=0.7), Comb(r, 3.7, fb=0.35, mix=0.5), Shape(1.8)]
 
 
-def _robot(r):
-    return [Stft(r, "robot", n=512, hop=160), Comb(r, 6.25, fb=0.3, mix=0.4), Shape(1.5)]
-
-
-def _chipmunk(r):
-    return [PitchShift(r, 7, window_ms=25), Tone(r, bass_db=-4, bass_hz=400)]
-
-
-def _giant(r):
-    return [PitchShift(r, -9, window_ms=50), Tone(r, bass_db=9, bass_hz=500, treble_db=-5, treble_hz=2500),
-            Reverb(r, size=1.6, decay=0.55, mix=0.25)]
-
-
-def _ghost(r):
-    return [Stft(r, "whisper", n=512), PitchShift(r, 2), Reverb(r, size=1.3, decay=0.7, mix=0.45),
-            Tone(r, bass_db=-6, bass_hz=500, treble_db=3, treble_hz=2000)]
-
-
-def _female(r):
-    # Higher, softer and breathy: up 4 semitones, a little whispered air mixed in, warm top end.
-    return [PitchShift(r, 4, window_ms=30), Stft(r, "whisper", n=512, mix=0.18),
-            Tone(r, bass_db=-5, bass_hz=350, treble_db=2, treble_hz=3000)]
-
-
 def _dalek(r):
-    # A 30 Hz ring modulator, as on the original, with some grit and a boxy top end.
-    return [Tone(r, bass_db=-6, bass_hz=400), RingMod(r, 30), Shape(2.5), Comb(r, 4.0, ff=0.4, mix=0.5)]
+    # A flat, slightly small voice through a 30 Hz ring modulator, as on the original.
+    return [Resynth(r, warp=1.05, f0=95, keep=0.25), Tone(r, bass_db=-6, bass_hz=400),
+            RingMod(r, 30), Shape(2.5), Comb(r, 4.0, ff=0.4, mix=0.5)]
 
 
 def _demon(r):
-    # An octave and a fifth down layered together, growl from a slow ring modulator, distortion.
-    return [Mix([(0.8, [PitchShift(r, -12, window_ms=55)]), (0.5, [PitchShift(r, -7, window_ms=50)]),
-                 (0.15, [])]),
-            RingMod(r, 23, depth=0.35), Shape(2.8),
-            Tone(r, bass_db=10, bass_hz=450, treble_db=-6, treble_hz=2200),
+    # A huge tract, a very low voice with an octave-down growl, breath, distortion and a dark room.
+    return [Resynth(r, warp=0.72, f0=58, keep=0.4, sub=0.8, breath=0.15), RingMod(r, 23, depth=0.35),
+            Shape(2.8), Tone(r, bass_db=8, bass_hz=450, treble_db=-6, treble_hz=2200),
             Reverb(r, size=1.4, decay=0.6, mix=0.3)]
+
+
+def _robot(r):
+    return [Resynth(r, warp=1.0, f0=100, keep=0.0), Comb(r, 6.25, fb=0.3, mix=0.4), Shape(1.5)]
+
+
+def _giant(r):
+    return [Resynth(r, warp=0.78, f0=62, keep=0.5),
+            Tone(r, bass_db=6, bass_hz=500, treble_db=-4, treble_hz=2500),
+            Reverb(r, size=1.6, decay=0.55, mix=0.25)]
+
+
+def _female(r):
+    # A shorter vocal tract and a higher, breathy source, keeping most of the intonation.
+    return [Resynth(r, warp=1.17, f0=205, keep=0.8, breath=0.2),
+            Tone(r, bass_db=-4, bass_hz=350, treble_db=2, treble_hz=3000)]
+
+
+def _chipmunk(r):
+    return [Resynth(r, warp=1.4, f0=330, keep=0.9)]
+
+
+def _ghost(r):
+    # Whisper only: no pitch at all, a slightly smaller tract, and a long tail.
+    return [Resynth(r, warp=1.08, f0=None, breath=1.0), Reverb(r, size=1.3, decay=0.7, mix=0.45),
+            Tone(r, bass_db=-6, bass_hz=500, treble_db=3, treble_hz=2000)]
 
 
 PRESETS = {

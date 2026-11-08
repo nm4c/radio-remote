@@ -171,22 +171,29 @@ handheld) to switch it on or off. The display shows **FX** while it's on, and th
 briefly names the effect. Picking another effect while one is on switches straight to it, even
 mid-transmission. Each operator has their own choice.
 
-| Effect | Made from |
+Every effect rebuilds the voice from scratch rather than just shifting it. The Pi splits your
+speech into *what* is said (the shape of the mouth and throat, which carries the words) and *how*
+your voice sounds (pitch, roughness, timbre), throws the second part away, and plays the first
+through a new synthetic voice. Your own voice doesn't get through; only your timing and
+articulation remain. Each effect then sets the new voice's size, pitch and colour:
+
+| Effect | New voice |
 |---|---|
-| Vader | Pitch down 4 semitones, bass, a short metallic "mask" echo, light saturation |
-| Dalek | 30 Hz ring modulator (as on the original), grit and a boxy top |
-| Demon | An octave and a fifth down layered together, slow growl, distortion, a dark room |
-| Robot | Phase-zeroed STFT: a monotone 100 Hz buzz, plus a metallic comb |
-| Giant | Pitch down 9 semitones, heavy bass, a large room |
-| Female | Pitch up 4 semitones, a little breathy whisper mixed in, softer bass |
-| Chipmunk | Pitch up 7 semitones |
-| Ghost | Whispered (random-phase STFT), slightly raised, with a long reverb |
+| Vader | Bigger tract, 78 Hz, a metallic "mask" echo, light saturation |
+| Dalek | Slightly small, near-monotone 95 Hz, through a 30 Hz ring modulator (as on the original) |
+| Demon | Huge tract, 58 Hz with an octave-down growl, breath, distortion, a dark room |
+| Robot | Monotone 100 Hz with a metallic comb |
+| Giant | Big tract, 62 Hz, heavy bass, a large room |
+| Female | Shorter tract, 205 Hz following your intonation, breathy |
+| Chipmunk | Small tract, 330 Hz |
+| Ghost | Whisper only (no pitch), with a long reverb |
 
 The Pi applies the effect to your live voice only. Clips and selcalls go out unchanged, and the TX
 tone control below still applies after the effect. Each effect is matched to the dry voice's
-loudness and soft-limited, so deviation stays about the same. They add 25-60 ms of delay. The
-pitch shifting is the simple kind, which moves the voice's character with its pitch, so the big
-shifts sound cartoonish, and the strongest effects are harder to understand on a weak signal.
+loudness and soft-limited, so deviation stays about the same. They add about 35 ms of delay.
+Speak clearly: the new voice carries your articulation, and the strongest effects are harder to
+understand on a weak signal. Each preset is a few lines in `server/voicefx.py` (warp = tract
+size, f0 = pitch, keep = how much intonation survives) if you want to tune them.
 Turn the feature off with `voice_fx: enabled: false`.
 
 ## TX tone control
