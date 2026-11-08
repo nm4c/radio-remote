@@ -38,6 +38,8 @@ There are two hardware modes, set with `radio.type` in `config.yaml`:
   the channel. See [Selcall](#selcall).
 - Audio clips: upload MP3s (or any audio the browser can play), pick one, and transmit it with
   the radio's Play key. See [Audio clips](#audio-clips).
+- Recording: the orange button records what the radio hears into 15-minute parts, which join the
+  clip list. See [Recording](#recording).
 - A radio-style control head: a desk head on wide screens and a portrait handheld on phones.
   See [Control head](#control-head).
 - With the SA818S HAT: frequencies, repeater offsets and CTCSS/DCS per channel, a VFO for any
@@ -82,7 +84,7 @@ time-out countdown, BUSY, RSSI and signal bars.
 | Soft keys | Call (send the selcall number, or open the Selcall panel if none is entered), Play (transmit the picked audio clip; it shows Stop while a clip is on air), Chans (channel list, desk only), Tune (SA818) or Sync (button radios; desk only while clips are on), Setup (Settings) |
 | Menu (handheld) | Settings |
 | Power (desk), held 1.5 s | Disconnect |
-| Emergency (desk), held 1.5 s | Shows a notice only. It is not connected to anything that transmits. |
+| Orange button (desk: top right; handheld: on top by the antenna) | Record: starts or stops recording received audio. While recording, any other control except the volume knob also stops it (and does nothing else). See [Recording](#recording). |
 
 Knobs turn by dragging or with the mouse wheel. The handheld's top knobs roll with a swipe
 across them. A focused knob also takes the arrow keys. PTT stays a separate button (or Space),
@@ -137,7 +139,27 @@ message.
   go out alike. Like voice, it then goes through `audio.tx_gain` and the sound card's mixer.
 
 The files are kept in `clips.dir` (`/opt/radio-remote/clips` on an install), as WAV files with
-a `clips.json` list. `update.sh` leaves them alone.
+a `clips.json` list. `update.sh` leaves them alone. **Listen** next to a clip plays it in the
+browser, where you can also save it.
+
+## Recording
+
+Press the orange button on the radio (or **Record** in the Audio clips panel) to record the
+received audio. Press it again to stop. While recording, pressing any other control except the
+volume knob also stops it, and that press does nothing else.
+
+- The display shows **REC**, and the panel shows the time so far and who started it.
+- The Pi records continuously, silence included, in parts of `record.max_minutes` (15). When a
+  part is full it joins the clip list as "Recording 08 Nov 14:05:00" and the next part starts with
+  no gap. Stopping finishes the part in progress.
+- It runs on the Pi, so it carries on with no one connected. It also carries on after a restart,
+  and a part cut short by a power failure is recovered into the list.
+- Storage: about 115 MB an hour. Once recordings pass `record.keep_mb` (2000 MB, about 17
+  hours), the oldest are deleted. Uploaded clips are never deleted automatically. Recording
+  stops, with a notice, if the disk gets down to `record.min_free_mb`.
+- It records the receive audio only (after `audio.rx_gain`), not your own transmissions.
+- A recording can be played on air like any clip if it fits inside `ptt.max_tx_seconds`.
+  Longer ones can't be picked, but you can still listen to and save them.
 
 ## Install on the Pi
 
@@ -216,15 +238,17 @@ WebSocket at `/ws`. The first message must be
 | → | `{"type":"channel","action":"goto"\|"sync","channel":5}` (`sync` only for `buttons`) |
 | → | `{"type":"channel","action":"tune","freq":439.125,"tx_freq":null,"tone":"91.5"}` (`sa818` only: VFO, channel 0) |
 | → | `{"type":"selcall","digits":"12345"}` key the radio and send a selcall (1-20 digits) |
+| → | `{"type":"record","on":true\|false}` start or stop recording received audio |
 | → | `{"type":"clip_play","id":"3f9c1a2b7d4e"}` key the radio and play a stored clip; `{"type":"clip_stop"}` stop the one on air (any operator); `{"type":"clip_delete","id":"…"}` |
 | → | binary: TX audio, int16 LE mono 16 kHz, 20 ms frames. Ignored unless you hold PTT. |
-| ← | `auth`, `hello` (channel list, timing, `radio_type`, `can_sync`, `can_tune`, `band`), `state` (channel, PTT owner, TOT remaining, `info` = frequency/tones or null, `error`), `meter` (5 Hz, plus `rssi` / `rssi_dbm` on `sa818`), `notice`. `hello.selcall` holds the selcall settings and recent calls (null if off); `state.selcall_tx` is the number being sent, or null. `auth.token` authorises clip uploads; `hello.clips` holds the clip limits and `list` (null if off); `state.clip_tx` is `{"id","name"}` of the clip on air, or null |
-| ← | `{"type":"clips","list":[{"id","name","seconds","by","added"}]}` the clip list changed |
+| ← | `auth`, `hello` (channel list, timing, `radio_type`, `can_sync`, `can_tune`, `band`), `state` (channel, PTT owner, TOT remaining, `info` = frequency/tones or null, `error`), `meter` (5 Hz, plus `rssi` / `rssi_dbm` on `sa818`), `notice`. `hello.selcall` holds the selcall settings and recent calls (null if off); `state.selcall_tx` is the number being sent, or null. `auth.token` authorises clip uploads; `hello.clips` holds the clip limits and `list` (null if off); `state.clip_tx` is `{"id","name"}` of the clip on air, or null. `state.recording` is `{"by","seconds"}` while recording, or null |
+| ← | `{"type":"clips","list":[{"id","name","seconds","by","added","kind"}]}` the clip list changed (`kind`: `upload` or `rec`) |
 | ← | `{"type":"selcall","dir":"tx"\|"rx","digits":"12345","by":"name"\|null,"to_me":false,"t":1793869268.1}` a call sent or heard |
 | ← | binary: RX audio, same format (not sent once WebRTC audio is connected) |
 
 Clips are uploaded over HTTP: `POST /clips?name=Net%20opening` with header `X-Radio-Token: <auth.token>`
 and a mono 16-bit WAV body at `wire_rate`. The reply is the new clip's entry, or `{"error":"…"}`.
+`GET /clips/<id>.wav?token=<auth.token>` returns a clip's audio.
 | → | `{"type":"rtc_offer","sdp":"…"}` complete SDP (non-trickle): one sendrecv Opus audio track, your mic out, radio in |
 | ← | `{"type":"rtc_answer","sdp":"…"}` or `{"type":"rtc_failed","text":"…"}` |
 | → | `{"type":"rtc_close"}` give up on WebRTC and go back to WebSocket audio |
@@ -234,7 +258,8 @@ and a mono 16-bit WAV body at `wire_rate`. The reply is the new clip's entry, or
 ```
 server/   main.py (web + WebSocket + safety watchdog), radio.py (PTT, channels, button radio),
           sa818.py (SA818S module over UART), rtc.py (WebRTC audio), audio.py (sound card, resampling),
-          selcall.py (selcall tones: encoder and decoder), clips.py (stored audio clips)
+          selcall.py (selcall tones: encoder and decoder), clips.py (stored audio clips),
+          recorder.py (recording received audio into the clip list)
 web/      index.html, app.js, worklet.js (AudioWorklet capture/playback), style.css,
           control-head/ (control head SVGs and their input handling, control_head.js)
 assets/control-head/  generators for the control head artwork, plus PNGs and layout JSON
@@ -249,7 +274,7 @@ kicadgen/    shared KiCad schematic generator used by both HATs
 
 - Pluggable control backends (CI-V / CAT serial) for radios that can report channel and RSSI
 - Per-user accounts and audit log of who transmitted when
-- VOX-style recording of RX traffic
+- Recording only while the channel is busy (VOX-style), and recording our own transmissions too
 
 ## Licence
 

@@ -85,11 +85,17 @@
     </section>
 
     <!-- Audio clips: upload them here, pick one, and the head's Play soft key transmits it. The
-         page converts each file (MP3 or anything else the browser can play) before uploading. -->
+         page converts each file (MP3 or anything else the browser can play) before uploading.
+         Recordings of received audio (the head's orange button, or Record here) join the list. -->
     <section class="clips" id="clipsPanel" hidden aria-labelledby="clipsTitle">
       <div class="selcall-top">
         <h2 id="clipsTitle">Audio clips</h2>
         <span class="selcall-std" id="clipsInfo"></span>
+      </div>
+      <div class="record-row" id="recordRow" hidden>
+        <span class="record-dot" aria-hidden="true"></span>
+        <span class="record-state" id="recordState" aria-live="polite"></span>
+        <button type="button" id="recordBtn">Record</button>
       </div>
       <ul class="clip-list" id="clipList" aria-label="Clips"></ul>
       <p class="clip-empty" id="clipEmpty">No clips yet. Upload an MP3 to add one.</p>

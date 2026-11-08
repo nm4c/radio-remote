@@ -43,6 +43,7 @@ const S = {
   clipList: [],        // the clips stored on the Pi, shared by every operator
   clipSel: null,       // id of the clip this operator picked for the Play key
   clipBusy: false,     // converting or uploading files
+  recBase: null,       // performance.now() when the current recording started (from state.recording)
 };
 
 // ---------- storage (best effort) ----------
@@ -290,7 +291,9 @@ async function updateAudioInfo() {
 //   dpad_up/down  press     the same, one channel per press
 //   volume_knob   change    speaker volume, kept in step with the Speaker volume slider
 //   power         activate  disconnect (desk only; only after the hold in RADIO_CONFIG.holdMs)
-//   emergency     activate  desk only. Shows a notice and is not wired to anything that transmits.
+//   emergency     press     the orange button: start or stop recording received audio. While a
+//                           recording runs, any other control except the volume knob stops it
+//                           instead of doing its usual job. Recording never transmits.
 //   menu          press     open Settings (handheld)
 //   soft keys     press     Call (send the selcall number; with none entered, open the Selcall
 //                           panel), Play (transmit the clip picked in the Audio clips panel;
@@ -380,16 +383,20 @@ function showSync() {
 }
 
 function onHeadEvent(e) {
+  // Recording: the orange button toggles it, and any other control (bar volume) stops it. That
+  // press only stops the recording, so a stray tap can't also change channel or transmit.
+  if (S.server && S.server.recording && e.control !== "volume_knob" && e.control !== "emergency"
+      && ["press", "step", "activate"].includes(e.action)) {
+    send({ type: "record", on: false });
+    return;
+  }
   switch (`${e.control}:${e.action}`) {
     case "channel_knob:step": headPickChannel(e.delta); break;
     case "dpad_up:press": headPickChannel(1); break;
     case "dpad_down:press": headPickChannel(-1); break;
     case "volume_knob:change": setSpeakerVolume(e.value / VOLUME_KNOB_UNITY, "head"); break;
     case "power:activate": disconnect(); break;
-    case "emergency:activate":
-      // Deliberately inert. Agree what it should do before wiring it to anything that keys the radio.
-      toast("Emergency isn't set up on this remote.");
-      break;
+    case "emergency:press": toggleRecord(); break;
     case "menu:press": openSettings(); break;
     default: {
       const key = /^softkey_(\d)$/.exec(e.control);
@@ -486,6 +493,7 @@ function updateHead() {
   else if (m && m.busy) status.push("BUSY");
   if (m && m.rssi_dbm != null && !p.active) status.push(`${Math.round(m.rssi_dbm)} dBm`);
   if (st.info && st.info.low_power) status.push("LOW");
+  if (st.recording) status.unshift("REC");
 
   // Bottom line: problems first, then who is transmitting, then the frequency.
   let detail;
@@ -516,6 +524,8 @@ function updateHead() {
   const box = $("#radio");
   box.classList.toggle("tx", p.mine);         // my transmission: red status text, red edge
   box.classList.toggle("picking", picking != null); // picked channel not on the radio yet
+  box.classList.toggle("recording", !!st.recording); // REC in red, orange button lit
+  renderRecording();
 }
 
 // Speaker volume is a playback gain from 0 to 2 (1 = as received). The slider and the head's
@@ -640,6 +650,7 @@ function setupClips(cl) {
   $("#clipsPanel").hidden = !cl;
   if (!cl) return;
   $("#clipsInfo").textContent = `up to ${Math.round(cl.max_seconds)} s each`;
+  $("#recordRow").hidden = !cl.record;
   S.clipSel = store.get("clip");
   setClipList(cl.list);
 }
@@ -663,12 +674,16 @@ function renderClips() {
     const li = document.createElement("li");
     li.classList.toggle("on", c.id === S.clipSel);
     li.classList.toggle("playing", c.id === playing);
+    li.classList.toggle("rec", c.kind === "rec");
+    const tooLong = c.seconds > S.clips.max_play_seconds;
     const label = document.createElement("label");
     const pick = document.createElement("input");
     pick.type = "radio";
     pick.name = "clip";
     pick.id = `clip-${c.id}`;
     pick.checked = c.id === S.clipSel;
+    pick.disabled = tooLong; // still there to listen to or save
+    if (tooLong) li.title = `Too long to transmit (over ${Math.round(S.clips.max_play_seconds)} s)`;
     pick.addEventListener("change", () => {
       S.clipSel = c.id;
       store.set("clip", c.id);
@@ -682,6 +697,13 @@ function renderClips() {
     len.className = "clip-len";
     len.textContent = clipLength(c.seconds);
     label.append(pick, name, len);
+    const listen = document.createElement("a");
+    listen.className = "clip-listen";
+    listen.href = `/clips/${c.id}.wav?token=${encodeURIComponent(S.token || "")}`;
+    listen.target = "_blank";
+    listen.rel = "noopener";
+    listen.textContent = "Listen";
+    listen.setAttribute("aria-label", `Listen to ${c.name}`);
     const del = document.createElement("button");
     del.type = "button";
     del.textContent = "Delete";
@@ -690,9 +712,42 @@ function renderClips() {
     del.addEventListener("click", () => {
       if (confirm(`Delete the clip “${c.name}” for everyone?`)) send({ type: "clip_delete", id: c.id });
     });
-    li.append(label, del);
+    li.append(label, listen, del);
     return li;
   }));
+}
+
+// ---------- recording ----------
+// The Pi records received audio while recording is on, in parts of record_minutes, and each
+// finished part joins the clip list. It keeps going with no one connected, and after a restart.
+
+function toggleRecord() {
+  if (!S.clips || !S.clips.record || !S.authed) {
+    toast("Recording isn't set up on this remote.");
+    return;
+  }
+  send({ type: "record", on: !(S.server && S.server.recording) });
+}
+
+function clock(s) {
+  s = Math.floor(s);
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = String(s % 60).padStart(2, "0");
+  return h ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`;
+}
+
+// The record line in the clips panel. Called from updateHead, so it ticks every 250 ms.
+function renderRecording() {
+  if (!S.clips || !S.clips.record) return;
+  const rec = S.server && S.server.recording;
+  const row = $("#recordRow");
+  row.classList.toggle("on", !!rec);
+  $("#recordBtn").textContent = rec ? "Stop recording" : "Record";
+  if (!rec) {
+    $("#recordState").textContent = `Not recording. Press the orange button to record what the radio hears, in ${Number(S.clips.record_minutes.toFixed(1))} minute parts.`;
+    return;
+  }
+  const t = S.recBase != null ? (performance.now() - S.recBase) / 1000 : rec.seconds;
+  $("#recordState").textContent = `Recording ${clock(t)}${rec.by ? ` · started by ${rec.by}` : ""}`;
 }
 
 function showClips() {
@@ -864,6 +919,7 @@ function handle(m) {
       break;
     case "state":
       S.server = m;
+      S.recBase = m.recording ? performance.now() - m.recording.seconds * 1000 : null;
       // A channel picked on the head is confirmed once the radio reports it and has settled.
       if (S.pending && S.pending.sent && m.channel === S.pending.n && !m.stepping) cancelPendingChannel();
       if (m.ptt.mine && m.ptt.remaining_s != null) S.txDeadline = performance.now() + m.ptt.remaining_s * 1000;
@@ -1075,6 +1131,7 @@ function init() {
   });
 
   $("#clipUpload").addEventListener("click", () => $("#clipFile").click());
+  $("#recordBtn").addEventListener("click", toggleRecord);
   $("#clipFile").addEventListener("change", (e) => {
     const files = [...e.target.files];
     e.target.value = ""; // so picking the same file again still fires change
