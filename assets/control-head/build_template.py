@@ -85,7 +85,9 @@ DPAD = (1342, 329, 92)  # Centre x, centre y, radius.
 # Control behaviour, shared by layout.json and the interactive page.
 CHANNEL_DETENT_DEG = 15          # 24 clicks per full turn of the channel knob.
 LONG_PRESS_MS = 600              # Ordinary buttons also report a long press.
-HOLD_TO_ACTIVATE = {"emergency": 1500, "power": 1500}  # Guards against stray clicks.
+# Guards against stray clicks: these buttons only report "activate" after being held this long.
+# The orange "emergency" button isn't guarded: the remote uses it as Record, a plain press.
+HOLD_TO_ACTIVATE = {"power": 1500}
 KNOB_LAYER_SIZE = 200            # Knob layer size in base-canvas units.
 
 

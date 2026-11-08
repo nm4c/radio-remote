@@ -189,7 +189,6 @@
       "degrees_per_step": 15
     },
     "hold_to_activate_ms": {
-      "emergency": 1500,
       "power": 1500
     },
     "long_press_ms": 600

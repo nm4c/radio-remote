@@ -3,4 +3,4 @@
 //   detent       degrees of channel-knob rotation per channel step
 //   longPressMs  hold time before ordinary buttons also report long_press
 //   holdMs       guarded buttons: hold time before they report activate
-const RADIO_CONFIG = Object.freeze({"detent": 15, "longPressMs": 600, "holdMs": {"emergency": 1500, "power": 1500}});
+const RADIO_CONFIG = Object.freeze({"detent": 15, "longPressMs": 600, "holdMs": {"power": 1500}});

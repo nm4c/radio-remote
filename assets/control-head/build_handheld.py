@@ -7,8 +7,9 @@ press targets carry data-control, knobs carry data-knob, screen text has display
 
 Differences from the desk head:
   - Three soft keys instead of five (display-softkey-1..3, softkey_1..3).
-  - Buttons: home, menu, p1, p2 and a D-pad split over three rocker rows. No power or
-    emergency button (on/off is on the volume knob of a real handheld).
+  - Buttons: home, menu, p1, p2 and a D-pad split over three rocker rows, plus the orange
+    "emergency" button on top beside the antenna, as on the desk head (same control name).
+    No power button (on/off is on the volume knob of a real handheld).
   - The two top knobs are seen side-on (data-view="side"). control_head.js rolls them with a
     sideways or vertical swipe and slides their grip ridges instead of rotating the drawing.
 
@@ -51,6 +52,9 @@ KNOBS = {
     "volume_knob": {"cx": 140, "top": 118, "bottom": 266, "w": 92, "sweep": 300},
     "channel_knob": {"cx": 280, "top": 40, "bottom": 266, "w": 104},
 }
+# Orange top button between the channel knob and the antenna, seen side-on like the knobs.
+TOP_BUTTON = {"cx": 362, "top": 220, "bottom": 266, "w": 34}
+TOP_BUTTON_HIT = {"x": 340, "y": 196, "w": 46, "h": 76}  # a little larger than the drawing, for fingers
 COLLAR_H = 26        # wider ring where each knob meets the housing
 RIDGE_PERIOD = 12    # grip ridge spacing; control_head.js slides the ridges within one period
 
@@ -128,6 +132,10 @@ def defs():
     <stop offset="0" stop-color="#000" stop-opacity=".75"/><stop offset=".35" stop-color="#fff" stop-opacity=".16"/>
     <stop offset=".55" stop-color="#fff" stop-opacity=".05"/><stop offset="1" stop-color="#000" stop-opacity=".8"/>
   </linearGradient>
+  <linearGradient id="hh-orange" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#a8360a"/><stop offset=".35" stop-color="#f47a3c"/>
+    <stop offset=".6" stop-color="#e2561c"/><stop offset="1" stop-color="#9a3108"/>
+  </linearGradient>
   <linearGradient id="hh-antenna" x1="0" y1="0" x2="1" y2="0">
     <stop offset="0" stop-color="#0b0c0d"/><stop offset=".4" stop-color="#2b2d30"/><stop offset="1" stop-color="#0b0c0d"/>
   </linearGradient>
@@ -156,6 +164,17 @@ def side_knob(name, k):
         # Flat top face catching the light.
         f'<ellipse cx="{cx}" cy="{top + 7}" rx="{r - 8}" ry="5" fill="#3a3c40"/>',
         "</g>",
+    ])
+
+
+def top_button():
+    """The orange top button, side-on: a short orange cap on a dark collar."""
+    b = TOP_BUTTON
+    cx, top, bottom, w = b["cx"], b["top"], b["bottom"], b["w"]
+    return "".join([
+        rrect(cx - w / 2 - 6, bottom - 16, w + 12, 24, 5, "#141517", 'stroke="#2c2e31" stroke-width="2"'),
+        rrect(cx - w / 2, top, w, bottom - 14 - top, 9, "url(#hh-orange)", 'stroke="#5e1f05" stroke-width="2"'),
+        f'<ellipse cx="{cx}" cy="{top + 5}" rx="{w / 2 - 6}" ry="3" fill="#ff9d6a" opacity=".7"/>',
     ])
 
 
@@ -200,6 +219,7 @@ def faceplate():
     parts = [
         rrect(a["x"], a["y"], a["w"], a["h"], a["w"] / 2, "url(#hh-antenna)", 'stroke="#050606" stroke-width="2"'),
         *[side_knob(name, k) for name, k in KNOBS.items()],
+        top_button(),
         # Housing, then the front face between the side grips.
         rrect(BODY["x"], BODY["y"], BODY["w"], BODY["h"], 70, "url(#hh-body)", 'stroke="#050606" stroke-width="3"'),
         rrect(PANEL["x"], PANEL["y"], PANEL["w"], PANEL["h"], 50, "url(#hh-panel)", 'stroke="#111214" stroke-width="2"'),
@@ -292,6 +312,8 @@ def hit_layer():
         for c, cx, w in segments(controls):
             parts.append(f'<rect x="{cx - w / 2}" y="{y - ROW_H / 2}" width="{w}" height="{ROW_H}" fill="transparent" '
                          f'clip-path="url(#hh-row{row})" data-control="{c}"/>')
+    t = TOP_BUTTON_HIT
+    parts.append(rrect(t["x"], t["y"], t["w"], t["h"], 10, "transparent", 'data-control="emergency"'))
     parts.append("</g>")
     return "".join(parts)
 
@@ -314,6 +336,7 @@ def layout_json():
     for y, controls in ROWS:
         for c, cx, w in segments(controls):
             hit_areas[c] = {"x": round(cx - w / 2, 1), "y": y - ROW_H / 2, "w": round(w, 1), "h": ROW_H}
+    hit_areas["emergency"] = dict(TOP_BUTTON_HIT)
     knobs = {name: {"x": k["cx"] - k["w"] / 2, "y": k["top"], "w": k["w"], "h": k["bottom"] - k["top"]}
              for name, k in KNOBS.items()}
     return {
