@@ -36,6 +36,8 @@ There are two hardware modes, set with `radio.type` in `config.yaml`:
 - Channel names are set in config.
 - Selcall: send 1-20 digit sequential tone calls from the radio face, and see calls heard on
   the channel. See [Selcall](#selcall).
+- Audio clips: upload MP3s (or any audio the browser can play), pick one, and transmit it with
+  the radio's Play key. See [Audio clips](#audio-clips).
 - A radio-style control head: a desk head on wide screens and a portrait handheld on phones.
   See [Control head](#control-head).
 - With the SA818S HAT: frequencies, repeater offsets and CTCSS/DCS per channel, a VFO for any
@@ -77,7 +79,7 @@ time-out countdown, BUSY, RSSI and signal bars.
 | Channel knob (right on the desk head, the tall one on the handheld) | Picks a channel. The channel shows straight away in amber and is sent once you stop turning. |
 | D-pad up / down | One channel up or down |
 | Volume knob | Speaker volume, the same as the slider |
-| Soft keys | Call (send the selcall number, or open the Selcall panel if none is entered), Chans (channel list, desk only), Tune (SA818) or Sync (button radios), Setup (Settings) |
+| Soft keys | Call (send the selcall number, or open the Selcall panel if none is entered), Play (transmit the picked audio clip; it shows Stop while a clip is on air), Chans (channel list, desk only), Tune (SA818) or Sync (button radios; desk only while clips are on), Setup (Settings) |
 | Menu (handheld) | Settings |
 | Power (desk), held 1.5 s | Disconnect |
 | Emergency (desk), held 1.5 s | Shows a notice only. It is not connected to anything that transmits. |
@@ -117,6 +119,26 @@ The tones go out through the same audio path as voice, so `audio.tx_gain` and th
 mixer apply. Set `selcall.level` so the tones give normal deviation, about the same as speech.
 Write selcall numbers in the config in quotes (`my_id: "01234"`), so leading zeros are kept.
 
+## Audio clips
+
+Recordings kept on the Pi and sent on air from the control head: a net opening, an ID, a test
+message.
+
+- **Adding:** in the Audio clips panel, press **Upload audio…** and choose one or more files.
+  The browser converts each one itself (MP3, M4A, WAV, OGG: anything it can play), to mono at
+  the wire rate, trims silence off the ends and uploads it. The Pi needs no audio codecs. Clips
+  are limited to `clips.max_seconds` (60 s) and `clips.max_files` (50), and are shared by every
+  operator.
+- **Sending:** pick a clip, then press the **Play** soft key. The Pi keys the radio, waits
+  `tx_delay_ms`, plays the clip and unkeys. While it plays, the key reads **Stop**, and any
+  operator can press it to cut the clip off. PTT and selcalls are locked out meanwhile, and a clip
+  can't start while anyone transmits. The transmit time-out still applies.
+- **Level:** every clip is played with its peak at `clips.level`, so loud and quiet recordings
+  go out alike. Like voice, it then goes through `audio.tx_gain` and the sound card's mixer.
+
+The files are kept in `clips.dir` (`/opt/radio-remote/clips` on an install), as WAV files with
+a `clips.json` list. `update.sh` leaves them alone.
+
 ## Install on the Pi
 
 1. Build the interface: see **[docs/HARDWARE.md](docs/HARDWARE.md)**. It has generic wiring plus IC-F621 notes.
@@ -141,8 +163,8 @@ sudo ./deploy/update.sh            # git pull, copy the code to /opt/radio-remot
 sudo ./deploy/update.sh --no-pull  # deploy the clone as it is, without pulling
 ```
 
-It copies only `server/`, `web/` and `requirements.txt`, so `config.yaml`, `state.json`, `tls/`
-and the Python venv are left alone. It reinstalls Python packages only when `requirements.txt`
+It copies only `server/`, `web/` and `requirements.txt`, so `config.yaml`, `state.json`, `tls/`,
+the audio clips and the Python venv are left alone. It reinstalls Python packages only when `requirements.txt`
 changed, reloads systemd only when the service file changed, and prints the log if the service
 fails to come back up. New config options get their defaults until you add them to `config.yaml`
 (see `config.example.yaml`).
@@ -194,10 +216,15 @@ WebSocket at `/ws`. The first message must be
 | → | `{"type":"channel","action":"goto"\|"sync","channel":5}` (`sync` only for `buttons`) |
 | → | `{"type":"channel","action":"tune","freq":439.125,"tx_freq":null,"tone":"91.5"}` (`sa818` only: VFO, channel 0) |
 | → | `{"type":"selcall","digits":"12345"}` key the radio and send a selcall (1-20 digits) |
+| → | `{"type":"clip_play","id":"3f9c1a2b7d4e"}` key the radio and play a stored clip; `{"type":"clip_stop"}` stop the one on air (any operator); `{"type":"clip_delete","id":"…"}` |
 | → | binary: TX audio, int16 LE mono 16 kHz, 20 ms frames. Ignored unless you hold PTT. |
-| ← | `auth`, `hello` (channel list, timing, `radio_type`, `can_sync`, `can_tune`, `band`), `state` (channel, PTT owner, TOT remaining, `info` = frequency/tones or null, `error`), `meter` (5 Hz, plus `rssi` / `rssi_dbm` on `sa818`), `notice`. `hello.selcall` holds the selcall settings and recent calls (null if off); `state.selcall_tx` is the number being sent, or null |
+| ← | `auth`, `hello` (channel list, timing, `radio_type`, `can_sync`, `can_tune`, `band`), `state` (channel, PTT owner, TOT remaining, `info` = frequency/tones or null, `error`), `meter` (5 Hz, plus `rssi` / `rssi_dbm` on `sa818`), `notice`. `hello.selcall` holds the selcall settings and recent calls (null if off); `state.selcall_tx` is the number being sent, or null. `auth.token` authorises clip uploads; `hello.clips` holds the clip limits and `list` (null if off); `state.clip_tx` is `{"id","name"}` of the clip on air, or null |
+| ← | `{"type":"clips","list":[{"id","name","seconds","by","added"}]}` the clip list changed |
 | ← | `{"type":"selcall","dir":"tx"\|"rx","digits":"12345","by":"name"\|null,"to_me":false,"t":1793869268.1}` a call sent or heard |
 | ← | binary: RX audio, same format (not sent once WebRTC audio is connected) |
+
+Clips are uploaded over HTTP: `POST /clips?name=Net%20opening` with header `X-Radio-Token: <auth.token>`
+and a mono 16-bit WAV body at `wire_rate`. The reply is the new clip's entry, or `{"error":"…"}`.
 | → | `{"type":"rtc_offer","sdp":"…"}` complete SDP (non-trickle): one sendrecv Opus audio track, your mic out, radio in |
 | ← | `{"type":"rtc_answer","sdp":"…"}` or `{"type":"rtc_failed","text":"…"}` |
 | → | `{"type":"rtc_close"}` give up on WebRTC and go back to WebSocket audio |
@@ -207,7 +234,7 @@ WebSocket at `/ws`. The first message must be
 ```
 server/   main.py (web + WebSocket + safety watchdog), radio.py (PTT, channels, button radio),
           sa818.py (SA818S module over UART), rtc.py (WebRTC audio), audio.py (sound card, resampling),
-          selcall.py (selcall tones: encoder and decoder)
+          selcall.py (selcall tones: encoder and decoder), clips.py (stored audio clips)
 web/      index.html, app.js, worklet.js (AudioWorklet capture/playback), style.css,
           control-head/ (control head SVGs and their input handling, control_head.js)
 assets/control-head/  generators for the control head artwork, plus PNGs and layout JSON

@@ -4,7 +4,7 @@
 #                                sudo ./deploy/update.sh --no-pull  (deploy the files as they are)
 #
 # Copies only the code (server/, web/, requirements.txt) into /opt/radio-remote. Your
-# config.yaml, state.json, tls/ certificates and the Python venv are left alone. Python
+# config.yaml, state.json, tls/ certificates, audio clips and the Python venv are left alone. Python
 # packages are reinstalled only when requirements.txt changed, and the systemd unit only
 # when deploy/radio-remote.service changed. First install: use deploy/install.sh instead.
 set -euo pipefail
