@@ -17,7 +17,7 @@ from aiohttp import WSMsgType, web
 
 from .audio import create_audio
 from .config import load
-from . import clips, rtc, selcall
+from . import clips, rtc, selcall, voicefx
 from .eq import TxEq
 from .recorder import Recorder
 from .radio import RadioError, create_radio
@@ -38,6 +38,7 @@ class Client:
         self.name = f"Operator {self.id}"
         self.authed = False
         self.token = secrets.token_urlsafe(18)  # authorises this operator's clip uploads (HTTP)
+        self.fx = None  # voice effect preset this operator has switched on, or None
         self.last_hold = 0.0
         self.queue = asyncio.Queue()
         self.audio_queued = 0
@@ -81,6 +82,13 @@ class RemoteHead:
         a = cfg["audio"]
         self.tx_eq = TxEq(int(a["wire_rate"]), float(a["tx_bass_db"]), float(a["tx_bass_hz"]),
                           float(a["tx_treble_db"]), float(a["tx_treble_hz"]))
+        # Voice effects: each operator picks one (Client.fx); the transmitting operator's runs on
+        # their voice only (not clips or selcalls). Level matching is measured now, not at PTT.
+        self.fx_on = bool(cfg["voice_fx"]["enabled"])
+        self.tx_fx = None
+        if self.fx_on:
+            for name in voicefx.PRESETS:
+                voicefx.VoiceFx(name, int(a["wire_rate"]))
         log.info("audio to browsers: %s", "WebRTC (WebSocket fallback)" if self.rtc_ok else "WebSocket")
         # Selcall: digits being sent right now (the radio is keyed for them), recent calls, and the
         # decoder that watches received audio.
@@ -147,6 +155,7 @@ class RemoteHead:
             "selcall_tx": self.selcall_tx,
             "clip_tx": {"id": self.clip_tx["id"], "name": self.clip_tx["name"]} if self.clip_tx else None,
             "recording": self.recorder.status() if self.recorder else None,
+            "fx": c.fx,
         }
 
     def broadcast_state(self):
@@ -202,7 +211,7 @@ class RemoteHead:
     def _rtc_tx(self, c, pcm):
         # The browser sends packets all the time (silence when PTT is up): only take them while keyed.
         if c.tx_open and self.radio.ptt_owner == c.id:
-            self.audio.push_tx(self.tx_eq.pcm(pcm))
+            self.audio.push_tx(self._voice(pcm))
 
     def _rtc_state(self, c, state):
         if state == "connected":
@@ -248,6 +257,7 @@ class RemoteHead:
                     "decode": bool(self.selcall_rx),
                     "log": list(self.selcall_log),
                 } if self.sc["enabled"] else None,
+                "voice_fx": voicefx.preset_list() if self.fx_on else None,
                 "clips": {
                     "max_seconds": self.cl["max_seconds"],
                     "max_files": int(self.cl["max_files"]),
@@ -262,7 +272,7 @@ class RemoteHead:
             async for msg in ws:
                 if msg.type == WSMsgType.BINARY:
                     if self.radio.ptt_owner == c.id and not (c.rtc and c.rtc.ready):
-                        self.audio.push_tx(self.tx_eq.pcm(msg.data))
+                        self.audio.push_tx(self._voice(msg.data))
                 elif msg.type == WSMsgType.TEXT:
                     self._handle(c, msg.data)
                 elif msg.type == WSMsgType.ERROR:
@@ -319,6 +329,10 @@ class RemoteHead:
             if self.sc["enabled"]:
                 self._spawn(self._selcall_send(c, m.get("digits")))
             return
+        if kind == "voice_fx":
+            if self.fx_on:
+                self._set_fx(c, m.get("preset"))
+            return
         if kind == "record":
             if self.recorder:
                 self._record(c, bool(m.get("on")))
@@ -364,6 +378,22 @@ class RemoteHead:
         except RadioError as e:
             c.send_json({"type": "notice", "level": "warn", "text": str(e)})
 
+    def _voice(self, pcm):
+        """An operator's live voice on its way to the radio: their effect, then the tone control."""
+        if self.tx_fx:
+            pcm = self.tx_fx.pcm(pcm)
+        return self.tx_eq.pcm(pcm)
+
+    def _set_fx(self, c, preset):
+        if preset is not None and preset not in voicefx.PRESETS:
+            return
+        c.fx = preset
+        if self.radio.ptt_owner == c.id and not (self.selcall_tx or self.clip_tx):
+            # Switched while talking: takes effect straight away.
+            self.tx_fx = voicefx.VoiceFx(preset, int(self.cfg["audio"]["wire_rate"])) if preset else None
+        log.info("%s voice effect: %s", c.name, preset or "off")
+        c.send_json(self.state_for(c))
+
     def _ptt_on(self, c):
         if self.selcall_tx or self.clip_tx:
             text = "Sending a selcall" if self.selcall_tx else "A clip is playing on air"
@@ -378,6 +408,7 @@ class RemoteHead:
             return
         self._ptt_gen += 1
         self.tx_eq.reset()
+        self.tx_fx = voicefx.VoiceFx(c.fx, int(self.cfg["audio"]["wire_rate"])) if c.fx else None
         c.tx_open = True
         if c.rtc and c.rtc.ready:
             w = self.cfg["webrtc"]

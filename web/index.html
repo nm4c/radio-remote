@@ -107,6 +107,18 @@
       </div>
     </section>
 
+    <!-- Voice effects: pick one here; P on the desk head (P1 on the handheld) or the button
+         switches it on and off. The Pi applies it to your live voice only. -->
+    <section class="fx" id="fxPanel" hidden aria-labelledby="fxTitle">
+      <div class="selcall-top">
+        <h2 id="fxTitle">Voice effects</h2>
+        <span class="selcall-std">P / P1 on the radio</span>
+      </div>
+      <div class="fx-presets" id="fxPresets" role="group" aria-label="Voice effect"></div>
+      <button type="button" id="fxToggle" class="fx-toggle">Switch on</button>
+      <p class="selcall-hint">Changes your voice while you transmit. Clips and selcalls go out unchanged.</p>
+    </section>
+
     <div class="sliders">
       <label>Speaker volume <input id="vol" type="range" min="0" max="2" step="0.05" value="1"></label>
       <label>Mic gain <input id="micGain" type="range" min="0" max="3" step="0.05" value="1"></label>

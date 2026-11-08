@@ -38,6 +38,8 @@ There are two hardware modes, set with `radio.type` in `config.yaml`:
   the channel. See [Selcall](#selcall).
 - Audio clips: upload MP3s (or any audio the browser can play), pick one, and transmit it with
   the radio's Play key. See [Audio clips](#audio-clips).
+- Voice effects: Vader, Dalek, Demon, Robot, Giant, Female, Chipmunk and Ghost, switched on
+  and off with the radio's P key. See [Voice effects](#voice-effects).
 - Recording: the orange button records what the radio hears into 15-minute parts, which join the
   clip list. See [Recording](#recording).
 - A radio-style control head: a desk head on wide screens and a portrait handheld on phones.
@@ -83,6 +85,7 @@ time-out countdown, BUSY, RSSI and signal bars.
 | Volume knob | Speaker volume, the same as the slider |
 | Soft keys | Call (send the selcall number, or open the Selcall panel if none is entered), Play (transmit the picked audio clip; it shows Stop while a clip is on air), Chans (channel list, desk only), Tune (SA818) or Sync (button radios; desk only while clips are on), Setup (Settings) |
 | Menu (handheld) | Settings |
+| P (desk), P1 (handheld) | Switch the voice effect picked in the Voice effects panel on or off. The display shows FX while it's on. |
 | Power (desk), held 1.5 s | Disconnect |
 | Orange button (desk: top right; handheld: on top by the antenna) | Record: starts or stops recording received audio. While recording, any other control except the volume knob also stops it (and does nothing else). See [Recording](#recording). |
 
@@ -160,6 +163,31 @@ volume knob also stops it, and that press does nothing else.
 - It records the receive audio only (after `audio.rx_gain`), not your own transmissions.
 - A recording can be played on air like any clip if it fits inside `ptt.max_tx_seconds`.
   Longer ones can't be picked, but you can still listen to and save them.
+
+## Voice effects
+
+Pick an effect in the **Voice effects** panel, then press **P** on the desk head (**P1** on the
+handheld) to switch it on or off. The display shows **FX** while it's on, and the bottom line
+briefly names the effect. Picking another effect while one is on switches straight to it, even
+mid-transmission. Each operator has their own choice.
+
+| Effect | Made from |
+|---|---|
+| Vader | Pitch down 4 semitones, bass, a short metallic "mask" echo, light saturation |
+| Dalek | 30 Hz ring modulator (as on the original), grit and a boxy top |
+| Demon | An octave and a fifth down layered together, slow growl, distortion, a dark room |
+| Robot | Phase-zeroed STFT: a monotone 100 Hz buzz, plus a metallic comb |
+| Giant | Pitch down 9 semitones, heavy bass, a large room |
+| Female | Pitch up 4 semitones, a little breathy whisper mixed in, softer bass |
+| Chipmunk | Pitch up 7 semitones |
+| Ghost | Whispered (random-phase STFT), slightly raised, with a long reverb |
+
+The Pi applies the effect to your live voice only. Clips and selcalls go out unchanged, and the TX
+tone control below still applies after the effect. Each effect is matched to the dry voice's
+loudness and soft-limited, so deviation stays about the same. They add 25-60 ms of delay. The
+pitch shifting is the simple kind, which moves the voice's character with its pitch, so the big
+shifts sound cartoonish, and the strongest effects are harder to understand on a weak signal.
+Turn the feature off with `voice_fx: enabled: false`.
 
 ## TX tone control
 
@@ -247,6 +275,7 @@ WebSocket at `/ws`. The first message must be
 | → | `{"type":"channel","action":"goto"\|"sync","channel":5}` (`sync` only for `buttons`) |
 | → | `{"type":"channel","action":"tune","freq":439.125,"tx_freq":null,"tone":"91.5"}` (`sa818` only: VFO, channel 0) |
 | → | `{"type":"selcall","digits":"12345"}` key the radio and send a selcall (1-20 digits) |
+| → | `{"type":"voice_fx","preset":"vader"\|null}` switch this operator's voice effect on (a preset id from `hello.voice_fx`) or off; `state.fx` is the one on |
 | → | `{"type":"record","on":true\|false}` start or stop recording received audio |
 | → | `{"type":"clip_play","id":"3f9c1a2b7d4e"}` key the radio and play a stored clip; `{"type":"clip_stop"}` stop the one on air (any operator); `{"type":"clip_delete","id":"…"}` |
 | → | binary: TX audio, int16 LE mono 16 kHz, 20 ms frames. Ignored unless you hold PTT. |
@@ -268,7 +297,8 @@ and a mono 16-bit WAV body at `wire_rate`. The reply is the new clip's entry, or
 server/   main.py (web + WebSocket + safety watchdog), radio.py (PTT, channels, button radio),
           sa818.py (SA818S module over UART), rtc.py (WebRTC audio), audio.py (sound card, resampling),
           selcall.py (selcall tones: encoder and decoder), clips.py (stored audio clips),
-          recorder.py (recording received audio into the clip list)
+          recorder.py (recording received audio into the clip list),
+          eq.py (TX tone control), voicefx.py (voice effects)
 web/      index.html, app.js, worklet.js (AudioWorklet capture/playback), style.css,
           control-head/ (control head SVGs and their input handling, control_head.js)
 assets/control-head/  generators for the control head artwork, plus PNGs and layout JSON

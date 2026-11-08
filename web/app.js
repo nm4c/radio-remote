@@ -44,6 +44,9 @@ const S = {
   clipSel: null,       // id of the clip this operator picked for the Play key
   clipBusy: false,     // converting or uploading files
   recBase: null,       // performance.now() when the current recording started (from state.recording)
+  fxList: null,        // voice effect presets from the server (null = effects off)
+  fxSel: null,         // preset this operator picked for the P / P1 key
+  fxShown: null,       // "Voice: Vader" on the head's bottom line for a moment: {text, until}
 };
 
 // ---------- storage (best effort) ----------
@@ -303,7 +306,9 @@ async function updateAudioInfo() {
 //                           Handheld, 3 keys: Call, Play, Setup. Chans replaces Call if selcall is
 //                           off, and Tune/Sync replaces Play if clips are off. (With clips on, the
 //                           handheld reaches Tune on the page and Sync through Setup.)
-//   P, P1, P2, home, brightness and D-pad left/right: not assigned yet.
+//   P (desk), P1 (handheld)  press  switch the voice effect picked in the Voice effects panel
+//                           on or off. The status bar shows FX while it's on.
+//   P2, home, brightness and D-pad left/right: not assigned yet.
 
 const HEAD_DIR = "/static/control-head";
 const CHANNEL_SETTLE_MS = 400; // knob idle time before the picked channel is sent
@@ -397,6 +402,7 @@ function onHeadEvent(e) {
     case "volume_knob:change": setSpeakerVolume(e.value / VOLUME_KNOB_UNITY, "head"); break;
     case "power:activate": disconnect(); break;
     case "emergency:press": toggleRecord(); break;
+    case "programmable_p:press": case "p1:press": toggleFx(); break;
     case "menu:press": openSettings(); break;
     default: {
       const key = /^softkey_(\d)$/.exec(e.control);
@@ -494,10 +500,12 @@ function updateHead() {
   if (m && m.rssi_dbm != null && !p.active) status.push(`${Math.round(m.rssi_dbm)} dBm`);
   if (st.info && st.info.low_power) status.push("LOW");
   if (st.recording) status.unshift("REC");
+  if (st.fx) status.unshift("FX");
 
   // Bottom line: problems first, then who is transmitting, then the frequency.
   let detail;
-  const call = S.selcallShown && performance.now() < S.selcallShown.until ? S.selcallShown.text : null;
+  const call = S.selcallShown && performance.now() < S.selcallShown.until ? S.selcallShown.text
+    : S.fxShown && performance.now() < S.fxShown.until ? S.fxShown.text : null;
   if (st.error) detail = st.error;
   else if (st.selcall_tx) detail = `Sending selcall ${st.selcall_tx}`;
   else if (st.clip_tx) detail = `Playing ${st.clip_tx.name}`;
@@ -717,6 +725,67 @@ function renderClips() {
   }));
 }
 
+// ---------- voice effects ----------
+// The Pi runs the effect on this operator's live voice while they transmit (not on clips or
+// selcalls). The preset is picked in the panel and switched on and off with P / P1 (or the
+// panel's button). Picking another preset while one is on switches straight to it.
+
+const FX_SHOW_MS = 3000;
+
+function setupFx(list) {
+  S.fxList = list || null;
+  $("#fxPanel").hidden = !list;
+  if (!list) return;
+  const saved = store.get("fx");
+  S.fxSel = list.some((p) => p.id === saved) ? saved : list[0].id;
+  $("#fxPresets").replaceChildren(...list.map((p) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.id = `fx-${p.id}`;
+    b.textContent = p.name;
+    b.addEventListener("click", () => pickFx(p.id));
+    return b;
+  }));
+  renderFx();
+}
+
+function fxName(id) {
+  const p = S.fxList && S.fxList.find((x) => x.id === id);
+  return p ? p.name : id;
+}
+
+function pickFx(id) {
+  S.fxSel = id;
+  store.set("fx", id);
+  if (S.server && S.server.fx && S.server.fx !== id) send({ type: "voice_fx", preset: id });
+  renderFx();
+}
+
+function toggleFx() {
+  if (!S.fxList || !S.authed) {
+    toast("Voice effects aren't set up on this remote.");
+    return;
+  }
+  const on = !(S.server && S.server.fx);
+  send({ type: "voice_fx", preset: on ? S.fxSel : null });
+  S.fxShown = { text: on ? `Voice: ${fxName(S.fxSel)}` : "Voice: normal", until: performance.now() + FX_SHOW_MS };
+  updateHead();
+}
+
+function renderFx() {
+  if (!S.fxList) return;
+  const active = S.server && S.server.fx;
+  for (const b of $("#fxPresets").children) {
+    const id = b.id.slice(3);
+    b.classList.toggle("sel", id === S.fxSel);
+    b.classList.toggle("on", id === active);
+    b.setAttribute("aria-pressed", String(id === S.fxSel));
+  }
+  const btn = $("#fxToggle");
+  btn.textContent = active ? `${fxName(active)} on · switch off` : `Switch ${fxName(S.fxSel)} on`;
+  btn.classList.toggle("on", !!active);
+}
+
 // ---------- recording ----------
 // The Pi records received audio while recording is on, in parts of record_minutes, and each
 // finished part joins the clip list. It keeps going with no one connected, and after a restart.
@@ -914,6 +983,7 @@ function handle(m) {
       S.wireRate = m.wire_rate;
       setupSelcall(m.selcall);
       setupClips(m.clips);
+      setupFx(m.voice_fx);
       buildChannels();
       rtcStart();
       break;
@@ -1063,6 +1133,7 @@ function render() {
 
   updateHead(); // channel, frequency, TX/CHG/BUSY, errors and signal go on the head's screen
   renderClips(); // marks the clip on air, and stops it being deleted meanwhile
+  renderFx();
 
   const btn = $("#ptt");
   btn.classList.toggle("live", p.mine);
@@ -1132,6 +1203,7 @@ function init() {
 
   $("#clipUpload").addEventListener("click", () => $("#clipFile").click());
   $("#recordBtn").addEventListener("click", toggleRecord);
+  $("#fxToggle").addEventListener("click", toggleFx);
   $("#clipFile").addEventListener("change", (e) => {
     const files = [...e.target.files];
     e.target.value = ""; // so picking the same file again still fires change

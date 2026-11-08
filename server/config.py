@@ -93,6 +93,9 @@ DEFAULTS = {
         "tx_delay_ms": 300,       # keyed silence before the clip while the transmitter comes up
         "level": 0.5,             # every clip is played with its peak at this level, before audio.tx_gain
     },
+    "voice_fx": {
+        "enabled": True,          # voice effects (Vader, Dalek...) for live voice, switched with P / P1
+    },
     "record": {
         "enabled": True,          # the orange button records received audio into the clip list
         "max_minutes": 15,        # each recording is split into parts this long

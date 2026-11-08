@@ -134,9 +134,9 @@ button.danger { color: var(--tx); }
   font-variant-numeric: tabular-nums; }
 .tune-hint { grid-column: 1 / -1; margin: 0; color: var(--muted); font-size: 12px; }
 .tune-hint:empty { display: none; }
-.selcall, .clips { display: grid; gap: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.selcall, .clips, .fx { display: grid; gap: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
 .selcall-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
-.selcall h2, .clips h2 { margin: 0; font-size: 15px; }
+.selcall h2, .clips h2, .fx h2 { margin: 0; font-size: 15px; }
 .selcall-std { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
 .selcall label { display: grid; gap: 4px; color: var(--muted); font-size: 13px; }
 .selcall input { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px;
@@ -184,6 +184,11 @@ button.danger { color: var(--tx); }
 .clip-empty { margin: 0; color: var(--muted); font-size: 13px; }
 .clip-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
 .clip-progress { color: var(--muted); font-size: 13px; }
+.fx-presets { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.fx-presets button { padding: 8px 6px; font-size: 14px; }
+.fx-presets button.sel { border-color: var(--lcd-fg); color: var(--lcd-fg); }
+.fx-presets button.on { background: var(--lcd-fg); border-color: var(--lcd-fg); color: #1a1a1a; font-weight: 700; }
+.fx-toggle.on { background: var(--lcd-fg); border-color: var(--lcd-fg); color: #1a1a1a; font-weight: 700; }
 .sync { display: grid; gap: 10px; }
 .settings { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
 .settings summary { cursor: pointer; color: var(--muted); }

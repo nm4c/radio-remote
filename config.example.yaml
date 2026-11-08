@@ -116,6 +116,12 @@ clips:
   tx_delay_ms: 300     # keyed silence before the clip, while the transmitter comes up
   level: 0.5           # each clip is played with its peak at this level (audio.tx_gain applies on top)
 
+voice_fx:
+  # Voice effects for your live voice (not clips or selcalls): Vader, Dalek, Demon, Robot, Giant,
+  # Female, Chipmunk, Ghost. Pick one in the Voice effects panel; P (desk) or P1 (handheld)
+  # switches it on and off.
+  enabled: true
+
 record:
   # The orange button on the radio records received audio into the clip list (see README, Recording).
   enabled: true        # needs clips.enabled
