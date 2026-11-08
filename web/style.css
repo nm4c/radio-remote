@@ -131,9 +131,9 @@ button.danger { color: var(--tx); }
   font-variant-numeric: tabular-nums; }
 .tune-hint { grid-column: 1 / -1; margin: 0; color: var(--muted); font-size: 12px; }
 .tune-hint:empty { display: none; }
-.selcall { display: grid; gap: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.selcall, .clips { display: grid; gap: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
 .selcall-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
-.selcall h2 { margin: 0; font-size: 15px; }
+.selcall h2, .clips h2 { margin: 0; font-size: 15px; }
 .selcall-std { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
 .selcall label { display: grid; gap: 4px; color: var(--muted); font-size: 13px; }
 .selcall input { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px;
@@ -152,6 +152,21 @@ button.danger { color: var(--tx); }
 .selcall-log .num { font-variant-numeric: tabular-nums; letter-spacing: .06em; overflow-wrap: anywhere; }
 .selcall-log .when { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
 .selcall-log li.me .num { color: var(--lcd-fg); font-weight: 700; }
+.clip-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; max-height: 16em; overflow-y: auto; }
+.clip-list:empty, .clip-empty[hidden] { display: none; }
+.clip-list li { display: grid; grid-template-columns: auto 1fr auto auto; gap: 10px; align-items: center;
+  padding: 4px 6px; border-radius: 8px; }
+.clip-list li:hover { background: var(--panel-2); }
+.clip-list li.on { background: var(--panel-2); outline: 1px solid var(--line); }
+.clip-list li.playing .clip-name { color: var(--tx); font-weight: 700; }
+.clip-list label { display: contents; cursor: pointer; }
+.clip-list input { accent-color: var(--lcd-fg); width: 18px; height: 18px; margin: 0; }
+.clip-name { overflow-wrap: anywhere; }
+.clip-len { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.clip-list button { padding: 2px 9px; font-size: 13px; color: var(--muted); }
+.clip-empty { margin: 0; color: var(--muted); font-size: 13px; }
+.clip-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.clip-progress { color: var(--muted); font-size: 13px; }
 .sync { display: grid; gap: 10px; }
 .settings { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
 .settings summary { cursor: pointer; color: var(--muted); }

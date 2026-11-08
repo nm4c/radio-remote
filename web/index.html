@@ -84,6 +84,23 @@
       <ol class="selcall-log" id="selcallLog" aria-label="Recent selcalls"></ol>
     </section>
 
+    <!-- Audio clips: upload them here, pick one, and the head's Play soft key transmits it. The
+         page converts each file (MP3 or anything else the browser can play) before uploading. -->
+    <section class="clips" id="clipsPanel" hidden aria-labelledby="clipsTitle">
+      <div class="selcall-top">
+        <h2 id="clipsTitle">Audio clips</h2>
+        <span class="selcall-std" id="clipsInfo"></span>
+      </div>
+      <ul class="clip-list" id="clipList" aria-label="Clips"></ul>
+      <p class="clip-empty" id="clipEmpty">No clips yet. Upload an MP3 to add one.</p>
+      <p class="selcall-hint" id="clipsHint">Pick a clip, then press Play on the radio to transmit it.</p>
+      <div class="clip-actions">
+        <button type="button" id="clipUpload">Upload audio…</button>
+        <input type="file" id="clipFile" accept="audio/*,.mp3,.m4a,.wav,.ogg" multiple hidden>
+        <span class="clip-progress" id="clipProgress" aria-live="polite"></span>
+      </div>
+    </section>
+
     <div class="sliders">
       <label>Speaker volume <input id="vol" type="range" min="0" max="2" step="0.05" value="1"></label>
       <label>Mic gain <input id="micGain" type="range" min="0" max="3" step="0.05" value="1"></label>

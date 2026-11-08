@@ -38,6 +38,11 @@ const S = {
   selcall: null,       // selcall settings from the server (null = selcall off)
   selcallLog: [],      // recent calls, oldest first, as sent by the server
   selcallShown: null,  // a call shown on the head's bottom line: {text, until}
+  token: null,         // from the server at login; authorises clip uploads
+  clips: null,         // clip limits from the server (null = clips off)
+  clipList: [],        // the clips stored on the Pi, shared by every operator
+  clipSel: null,       // id of the clip this operator picked for the Play key
+  clipBusy: false,     // converting or uploading files
 };
 
 // ---------- storage (best effort) ----------
@@ -288,11 +293,14 @@ async function updateAudioInfo() {
 //   emergency     activate  desk only. Shows a notice and is not wired to anything that transmits.
 //   menu          press     open Settings (handheld)
 //   soft keys     press     Call (send the selcall number; with none entered, open the Selcall
-//                           panel), Chans (channel list), Tune (SA818) or Sync (button radios),
-//                           Setup (Settings). Desk keys 1, 2, 3, 5 are Chans, Tune/Sync, Call,
-//                           Setup. The handheld's three are Call, Tune/Sync, Setup; it shows
-//                           Chans instead of Call if selcall is off.
-//   P, P1, P2, home, brightness, D-pad left/right and the desk's soft key 4: not assigned yet.
+//                           panel), Play (transmit the clip picked in the Audio clips panel;
+//                           shows Stop while a clip is on air), Chans (channel list), Tune (SA818)
+//                           or Sync (button radios), Setup (Settings).
+//                           Desk, 5 keys: Chans, Tune/Sync, Call, Play, Setup.
+//                           Handheld, 3 keys: Call, Play, Setup. Chans replaces Call if selcall is
+//                           off, and Tune/Sync replaces Play if clips are off. (With clips on, the
+//                           handheld reaches Tune on the page and Sync through Setup.)
+//   P, P1, P2, home, brightness and D-pad left/right: not assigned yet.
 
 const HEAD_DIR = "/static/control-head";
 const CHANNEL_SETTLE_MS = 400; // knob idle time before the picked channel is sent
@@ -352,7 +360,8 @@ function headSoftkeys() {
   const second = S.radio.canTune ? { label: "Tune", run: showTune }
     : S.radio.canSync ? { label: "Sync", run: showSync } : null;
   const call = S.selcall ? { label: "Call", run: sendSelcall } : null;
-  return S.headSoftkeyCount >= 5 ? [chans, second, call, null, setup] : [call || chans, second, setup];
+  const play = S.clips ? { label: S.server && S.server.clip_tx ? "Stop" : "Play", run: playClip } : null;
+  return S.headSoftkeyCount >= 5 ? [chans, second, call, play, setup] : [call || chans, play || second, setup];
 }
 
 function openSettings() {
@@ -483,6 +492,7 @@ function updateHead() {
   const call = S.selcallShown && performance.now() < S.selcallShown.until ? S.selcallShown.text : null;
   if (st.error) detail = st.error;
   else if (st.selcall_tx) detail = `Sending selcall ${st.selcall_tx}`;
+  else if (st.clip_tx) detail = `Playing ${st.clip_tx.name}`;
   else if (p.active && !p.mine) detail = `TX by ${p.by}`;
   else if (st.stepping) detail = "Changing channel…";
   else if (call) detail = call;
@@ -617,6 +627,164 @@ function chime() {
   });
 }
 
+// ---------- audio clips ----------
+// Recordings kept on the Pi and transmitted with the head's Play soft key. The browser decodes
+// each file itself (MP3, M4A, WAV, whatever it can play), mixes it to mono at the wire rate,
+// trims silence off the ends and uploads it as a 16-bit WAV, so the Pi needs no audio codecs.
+// The server keys the radio, plays the clip at an even level and unkeys. Any operator can stop it.
+
+const CLIP_TRIM_LEVEL = 0.003; // about -50 dBFS: quieter lead-in and tail are trimmed off
+
+function setupClips(cl) {
+  S.clips = cl || null;
+  $("#clipsPanel").hidden = !cl;
+  if (!cl) return;
+  $("#clipsInfo").textContent = `up to ${Math.round(cl.max_seconds)} s each`;
+  S.clipSel = store.get("clip");
+  setClipList(cl.list);
+}
+
+function setClipList(list) {
+  S.clipList = list;
+  if (!list.some((c) => c.id === S.clipSel)) S.clipSel = null; // deleted (here or by someone else)
+  renderClips();
+  updateHead();
+}
+
+function clipLength(s) {
+  return s < 60 ? `${s.toFixed(1)} s` : `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
+}
+
+function renderClips() {
+  if (!S.clips) return;
+  const playing = S.server && S.server.clip_tx ? S.server.clip_tx.id : null;
+  $("#clipEmpty").hidden = S.clipList.length > 0;
+  $("#clipList").replaceChildren(...S.clipList.map((c) => {
+    const li = document.createElement("li");
+    li.classList.toggle("on", c.id === S.clipSel);
+    li.classList.toggle("playing", c.id === playing);
+    const label = document.createElement("label");
+    const pick = document.createElement("input");
+    pick.type = "radio";
+    pick.name = "clip";
+    pick.id = `clip-${c.id}`;
+    pick.checked = c.id === S.clipSel;
+    pick.addEventListener("change", () => {
+      S.clipSel = c.id;
+      store.set("clip", c.id);
+      renderClips();
+    });
+    const name = document.createElement("span");
+    name.className = "clip-name";
+    name.textContent = c.name;
+    name.title = c.by ? `Added by ${c.by}` : "";
+    const len = document.createElement("span");
+    len.className = "clip-len";
+    len.textContent = clipLength(c.seconds);
+    label.append(pick, name, len);
+    const del = document.createElement("button");
+    del.type = "button";
+    del.textContent = "Delete";
+    del.setAttribute("aria-label", `Delete ${c.name}`);
+    del.disabled = c.id === playing;
+    del.addEventListener("click", () => {
+      if (confirm(`Delete the clip “${c.name}” for everyone?`)) send({ type: "clip_delete", id: c.id });
+    });
+    li.append(label, del);
+    return li;
+  }));
+}
+
+function showClips() {
+  $("#clipsPanel").scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+// The Play soft key: transmit the picked clip, or stop the one on air.
+function playClip() {
+  if (!S.clips || !S.authed) return;
+  const st = S.server;
+  if (st && st.clip_tx) { send({ type: "clip_stop" }); return; }
+  const clip = S.clipList.find((c) => c.id === S.clipSel);
+  if (!clip) {
+    toast(S.clipList.length ? "Pick a clip to play first" : "Upload a clip first");
+    showClips();
+    return;
+  }
+  if (st && st.ptt.active) { toast(st.selcall_tx ? "A selcall is being sent" : "Radio is transmitting"); return; }
+  send({ type: "clip_play", id: clip.id });
+}
+
+// Decode a file and turn it into mono 16-bit WAV bytes at `rate`, with silent ends trimmed.
+async function fileToWav(file, rate, maxSeconds) {
+  const data = await file.arrayBuffer();
+  const ctx = S.ctx || new OfflineAudioContext(1, 1, rate);
+  let decoded;
+  try {
+    decoded = await ctx.decodeAudioData(data);
+  } catch {
+    throw new Error("this browser can't read that file as audio");
+  }
+  // Resample and mix down in one go: an offline context at the wire rate with one channel.
+  const off = new OfflineAudioContext(1, Math.max(1, Math.ceil(decoded.duration * rate)), rate);
+  const src = off.createBufferSource();
+  src.buffer = decoded;
+  src.connect(off.destination);
+  src.start();
+  const x = (await off.startRendering()).getChannelData(0);
+  let a = 0, b = x.length;
+  while (a < b && Math.abs(x[a]) < CLIP_TRIM_LEVEL) a++;
+  while (b > a && Math.abs(x[b - 1]) < CLIP_TRIM_LEVEL) b--;
+  if (a === b) throw new Error("it's silent");
+  const pad = Math.round(rate * 0.02); // keep a moment either side so words aren't clipped
+  const y = x.subarray(Math.max(0, a - pad), Math.min(x.length, b + pad));
+  if (y.length / rate > maxSeconds + 0.05) {
+    throw new Error(`it's ${clipLength(y.length / rate)} long; the limit is ${Math.round(maxSeconds)} s`);
+  }
+  const buf = new ArrayBuffer(44 + y.length * 2);
+  const v = new DataView(buf);
+  const text = (o, t) => { for (let i = 0; i < t.length; i++) v.setUint8(o + i, t.charCodeAt(i)); };
+  text(0, "RIFF"); v.setUint32(4, 36 + y.length * 2, true); text(8, "WAVE");
+  text(12, "fmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, rate, true); v.setUint32(28, rate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+  text(36, "data"); v.setUint32(40, y.length * 2, true);
+  for (let i = 0; i < y.length; i++) v.setInt16(44 + i * 2, Math.max(-1, Math.min(1, y[i])) * 32767, true);
+  return buf;
+}
+
+async function uploadClips(files) {
+  if (!S.clips || S.clipBusy || !files.length) return;
+  S.clipBusy = true;
+  $("#clipUpload").disabled = true;
+  const progress = $("#clipProgress");
+  let added = 0;
+  try {
+    for (const file of files) {
+      const name = file.name.replace(/\.[^.]+$/, "");
+      try {
+        progress.textContent = `Converting ${name}…`;
+        const wav = await fileToWav(file, S.wireRate, S.clips.max_seconds);
+        progress.textContent = `Uploading ${name}…`;
+        const res = await fetch(`/clips?name=${encodeURIComponent(name)}`, {
+          method: "POST",
+          headers: { "Content-Type": "audio/wav", "X-Radio-Token": S.token || "" },
+          body: wav,
+        });
+        const reply = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(reply.error || `the server said HTTP ${res.status}`);
+        added++;
+        if (!S.clipSel) { S.clipSel = reply.id; store.set("clip", reply.id); }
+      } catch (err) {
+        toast(`Couldn't add ${name}: ${err.message}`, "error");
+      }
+    }
+  } finally {
+    S.clipBusy = false;
+    $("#clipUpload").disabled = false;
+    progress.textContent = added ? `Added ${added} clip${added > 1 ? "s" : ""}` : "";
+    renderClips();
+  }
+}
+
 // ---------- WebSocket ----------
 function send(obj) {
   if (S.ws && S.ws.readyState === WebSocket.OPEN) S.ws.send(JSON.stringify(obj));
@@ -670,6 +838,7 @@ function handle(m) {
         return;
       }
       S.authed = true;
+      S.token = m.token;
       S.reconnectDelay = 1000;
       setStatus("online", `Online · ${m.name}`);
       $("#login").hidden = true;
@@ -687,7 +856,9 @@ function handle(m) {
       document.title = `${m.radio_name} · Radio Remote`;
       S.holdIntervalMs = m.hold_interval_ms;
       S.rtcAvailable = !!m.webrtc && "RTCPeerConnection" in window;
+      S.wireRate = m.wire_rate;
       setupSelcall(m.selcall);
+      setupClips(m.clips);
       buildChannels();
       rtcStart();
       break;
@@ -705,6 +876,9 @@ function handle(m) {
       break;
     case "selcall":
       onSelcall(m);
+      break;
+    case "clips":
+      setClipList(m.list);
       break;
     case "rtc_answer":
       if (S.pc) S.pc.setRemoteDescription({ type: "answer", sdp: m.sdp }).catch((e) => rtcFallback(e.message));
@@ -832,12 +1006,14 @@ function render() {
   const busyRadio = p.active || st.stepping;
 
   updateHead(); // channel, frequency, TX/CHG/BUSY, errors and signal go on the head's screen
+  renderClips(); // marks the clip on air, and stops it being deleted meanwhile
 
   const btn = $("#ptt");
   btn.classList.toggle("live", p.mine);
   btn.classList.toggle("pending", S.pttWanted && !p.mine);
   btn.classList.toggle("locked", otherTx || !S.micOk);
-  $("#pttLabel").textContent = p.mine ? (st.selcall_tx ? "SELCALL" : "ON AIR") : otherTx ? "IN USE" : "PTT";
+  $("#pttLabel").textContent = p.mine ? (st.selcall_tx ? "SELCALL" : st.clip_tx ? "CLIP" : "ON AIR")
+    : otherTx ? "IN USE" : "PTT";
 
   $("#tuneForm").querySelector("button").disabled = busyRadio;
   for (const b of $("#channelGrid").children) {
@@ -896,6 +1072,13 @@ function init() {
   $("#selcallDigits").addEventListener("input", (e) => {
     const clean = e.target.value.replace(/\D/g, "");
     if (clean !== e.target.value) e.target.value = clean;
+  });
+
+  $("#clipUpload").addEventListener("click", () => $("#clipFile").click());
+  $("#clipFile").addEventListener("change", (e) => {
+    const files = [...e.target.files];
+    e.target.value = ""; // so picking the same file again still fires change
+    uploadClips(files);
   });
 
   bindPtt();
