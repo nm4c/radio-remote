@@ -175,9 +175,12 @@ class ClipStore:
         self.path(clip_id).unlink(missing_ok=True)
         return clip
 
-    def load(self, clip_id, level):
-        """The clip as float32 samples at the wire rate, scaled so its peak is `level` (0-1)."""
+    def load(self, clip_id, level, process=None):
+        """The clip as float32 samples at the wire rate, passed through process (the TX tone
+        control) if given, then scaled so its peak is `level` (0-1)."""
         with wave.open(str(self.path(clip_id))) as w:
             x = np.frombuffer(w.readframes(w.getnframes()), "<i2").astype(np.float32) / 32768
+        if process:
+            x = process(x)
         peak = float(np.max(np.abs(x))) if len(x) else 0.0
         return x * (level / peak) if peak else x

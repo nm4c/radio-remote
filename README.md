@@ -118,7 +118,7 @@ A digit that repeats the one before it is sent as the repeat tone.
   so speech doesn't set it off. The decoder accepts tones up to about 2% off frequency.
 
 The tones go out through the same audio path as voice, so `audio.tx_gain` and the sound card's
-mixer apply. Set `selcall.level` so the tones give normal deviation, about the same as speech.
+mixer apply (but not the TX tone control below, which would change their levels). Set `selcall.level` so the tones give normal deviation, about the same as speech.
 Write selcall numbers in the config in quotes (`my_id: "01234"`), so leading zeros are kept.
 
 ## Audio clips
@@ -160,6 +160,15 @@ volume knob also stops it, and that press does nothing else.
 - It records the receive audio only (after `audio.rx_gain`), not your own transmissions.
 - A recording can be played on air like any clip if it fits inside `ptt.max_tx_seconds`.
   Longer ones can't be picked, but you can still listen to and save them.
+
+## TX tone control
+
+Transmitted voice and clips pass through a bass and treble shelf on the Pi, because phone and
+laptop mics often sound thin on FM. The defaults lift the bass by 6 dB below 400 Hz and ease the
+treble by 3 dB above 2.5 kHz. Change them under `audio:` with `tx_bass_db`, `tx_bass_hz`,
+`tx_treble_db` and `tx_treble_hz` (0 dB = flat; try a bass of up to 12 dB for a much fuller
+sound). The radio passes only about 300-3000 Hz, so no setting adds bass below that. More bass
+also raises the level, so recheck deviation after a big change. Selcall tones are not filtered.
 
 ## Install on the Pi
 

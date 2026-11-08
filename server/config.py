@@ -68,6 +68,10 @@ DEFAULTS = {
         "rx_gain": 1.0,
         "tx_gain": 1.0,
         "tx_prebuffer_ms": 80,
+        "tx_bass_db": 6,          # tone control for transmitted voice and clips (not selcall tones):
+        "tx_bass_hz": 400,        #   bass shelf: boost below this frequency, in dB
+        "tx_treble_db": -3,       #   treble shelf: cut (negative) or boost above this frequency
+        "tx_treble_hz": 2500,
         "busy_threshold_dbfs": -45,
     },
     "selcall": {
@@ -126,6 +130,11 @@ def load(path):
     a = cfg["audio"]
     if int(a["device_rate"]) % int(a["wire_rate"]):
         raise SystemExit("config: audio.device_rate must be a multiple of audio.wire_rate")
+    for key in ("tx_bass_db", "tx_treble_db"):
+        if not -20 <= float(a[key]) <= 20:
+            raise SystemExit(f"config: audio.{key} must be between -20 and 20 (0 = flat)")
+    if not 100 <= float(a["tx_bass_hz"]) <= 1500 or not 1000 <= float(a["tx_treble_hz"]) <= 6000:
+        raise SystemExit("config: audio.tx_bass_hz must be 100-1500 and audio.tx_treble_hz 1000-6000")
     kind = cfg["radio"]["type"]
     if kind not in ("buttons", "sa818"):
         raise SystemExit("config: radio.type must be buttons or sa818")

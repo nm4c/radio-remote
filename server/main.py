@@ -18,6 +18,7 @@ from aiohttp import WSMsgType, web
 from .audio import create_audio
 from .config import load
 from . import clips, rtc, selcall
+from .eq import TxEq
 from .recorder import Recorder
 from .radio import RadioError, create_radio
 
@@ -75,6 +76,11 @@ class RemoteHead:
         self._tasks = set()
         self._ptt_gen = 0
         self.rtc_ok = rtc.setup(cfg)
+        # Bass/treble for transmitted voice and clips (not selcall tones). One stream at a time
+        # goes on air, so one filter state is enough; it is reset at each PTT press.
+        a = cfg["audio"]
+        self.tx_eq = TxEq(int(a["wire_rate"]), float(a["tx_bass_db"]), float(a["tx_bass_hz"]),
+                          float(a["tx_treble_db"]), float(a["tx_treble_hz"]))
         log.info("audio to browsers: %s", "WebRTC (WebSocket fallback)" if self.rtc_ok else "WebSocket")
         # Selcall: digits being sent right now (the radio is keyed for them), recent calls, and the
         # decoder that watches received audio.
@@ -196,7 +202,7 @@ class RemoteHead:
     def _rtc_tx(self, c, pcm):
         # The browser sends packets all the time (silence when PTT is up): only take them while keyed.
         if c.tx_open and self.radio.ptt_owner == c.id:
-            self.audio.push_tx(pcm)
+            self.audio.push_tx(self.tx_eq.pcm(pcm))
 
     def _rtc_state(self, c, state):
         if state == "connected":
@@ -256,7 +262,7 @@ class RemoteHead:
             async for msg in ws:
                 if msg.type == WSMsgType.BINARY:
                     if self.radio.ptt_owner == c.id and not (c.rtc and c.rtc.ready):
-                        self.audio.push_tx(msg.data)
+                        self.audio.push_tx(self.tx_eq.pcm(msg.data))
                 elif msg.type == WSMsgType.TEXT:
                     self._handle(c, msg.data)
                 elif msg.type == WSMsgType.ERROR:
@@ -371,6 +377,7 @@ class RemoteHead:
             c.send_json({"type": "notice", "level": "warn", "code": "ptt_denied", "text": str(e)})
             return
         self._ptt_gen += 1
+        self.tx_eq.reset()
         c.tx_open = True
         if c.rtc and c.rtc.ready:
             w = self.cfg["webrtc"]
@@ -557,7 +564,7 @@ class RemoteHead:
     async def _clip_play(self, c, clip):
         job = self.clip_tx
         try:
-            samples = self.clips.load(clip["id"], float(self.cl["level"]))
+            samples = self.clips.load(clip["id"], float(self.cl["level"]), self.tx_eq.whole)
             log.info("%s playing clip %r (%.1f s)", c.name, clip["name"], clip["seconds"])
             completed = await self._transmit(c, samples, int(self.cl["tx_delay_ms"]))
         except (OSError, RadioError, EOFError) as e:

@@ -79,6 +79,14 @@ audio:
   rx_gain: 1.0         # radio -> browser
   tx_gain: 1.0         # browser -> radio
   tx_prebuffer_ms: 80  # jitter buffer before TX audio starts playing to the radio
+  # Tone control for transmitted voice and clips (selcall tones are left alone). Phone and laptop
+  # mics often sound thin on FM: more bass and a little less treble sounds fuller. 0 = flat.
+  # The radio itself passes roughly 300-3000 Hz, so bass below ~300 Hz can't be added.
+  # More bass also means more level: recheck deviation after changing it.
+  tx_bass_db: 6        # boost below tx_bass_hz (try up to 12 for a lot more)
+  tx_bass_hz: 400
+  tx_treble_db: -3     # cut above tx_treble_hz (negative = less treble)
+  tx_treble_hz: 2500
   busy_threshold_dbfs: -45  # RX level considered "signal present" if no busy_pin
 
 selcall:
