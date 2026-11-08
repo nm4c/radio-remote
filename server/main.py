@@ -18,6 +18,7 @@ from aiohttp import WSMsgType, web
 from .audio import create_audio
 from .config import load
 from . import clips, rtc, selcall
+from .recorder import Recorder
 from .radio import RadioError, create_radio
 
 log = logging.getLogger("server")
@@ -91,6 +92,10 @@ class RemoteHead:
             self.clips = clips.ClipStore(self.cl["dir"], int(cfg["audio"]["wire_rate"]),
                                          self.cl["max_seconds"], int(self.cl["max_files"]))
         self.clip_tx = None
+        # Recording of received audio into the clip list (needs clips on).
+        self.recorder = None
+        if self.clips and cfg["record"]["enabled"]:
+            self.recorder = Recorder(self.clips, int(cfg["audio"]["wire_rate"]), cfg["record"], self._record_changed)
 
     # ---- helpers -------------------------------------------------------
 
@@ -135,6 +140,7 @@ class RemoteHead:
             "operators": sorted(x.name for x in self._authed()),
             "selcall_tx": self.selcall_tx,
             "clip_tx": {"id": self.clip_tx["id"], "name": self.clip_tx["name"]} if self.clip_tx else None,
+            "recording": self.recorder.status() if self.recorder else None,
         }
 
     def broadcast_state(self):
@@ -148,6 +154,8 @@ class RemoteHead:
 
     def _broadcast_audio(self, pcm):
         owner = self.radio.ptt_owner
+        if self.recorder:
+            self.recorder.feed(pcm)
         if self.selcall_rx:
             if owner is None:
                 for digits in self.selcall_rx.feed(pcm):
@@ -237,6 +245,9 @@ class RemoteHead:
                 "clips": {
                     "max_seconds": self.cl["max_seconds"],
                     "max_files": int(self.cl["max_files"]),
+                    "max_play_seconds": self._max_play_seconds(),
+                    "record": bool(self.recorder),
+                    "record_minutes": float(self.cfg["record"]["max_minutes"]),
                     "list": self.clips.list(),
                 } if self.clips else None,
             })
@@ -301,6 +312,10 @@ class RemoteHead:
         if kind == "selcall":
             if self.sc["enabled"]:
                 self._spawn(self._selcall_send(c, m.get("digits")))
+            return
+        if kind == "record":
+            if self.recorder:
+                self._record(c, bool(m.get("on")))
             return
         if kind in ("clip_play", "clip_stop", "clip_delete"):
             if self.clips:
@@ -508,8 +523,36 @@ class RemoteHead:
         if busy:
             return refuse(f"Can't play a clip: {busy[0].lower()}{busy[1:]}")
         clip = self.clips.get(clip_id)
+        if clip["seconds"] > self._max_play_seconds():
+            return refuse(f"“{clip['name']}” is too long to transmit "
+                          f"(the limit is {self._max_play_seconds():g} s, set by ptt.max_tx_seconds)")
         self.clip_tx = {"id": clip_id, "name": clip["name"]}  # claim the radio before any await
         self._spawn(self._clip_play(c, clip))
+
+    def _max_play_seconds(self):
+        """Longest clip that can go on air: it, its lead-in and a margin must fit in the TX limit."""
+        return float(self.cfg["ptt"]["max_tx_seconds"]) - int(self.cl["tx_delay_ms"]) / 1000 - 2
+
+    # ---- recording ------------------------------------------------------
+
+    def _record(self, c, on):
+        try:
+            if on:
+                self.recorder.start(c.name)
+            else:
+                if self.recorder.active:
+                    log.info("%s stopped recording", c.name)
+                self.recorder.stop()
+        except OSError as e:
+            c.send_json({"type": "notice", "level": "warn", "text": f"Can't record: {e}"})
+
+    def _record_changed(self, error=None):
+        """From the recorder: started, stopped, a part was finished, or writing failed."""
+        self.broadcast_state()
+        self._clips_changed()
+        if error:
+            for o in self._authed():
+                o.send_json({"type": "notice", "level": "error", "text": error})
 
     async def _clip_play(self, c, clip):
         job = self.clip_tx
@@ -529,6 +572,20 @@ class RemoteHead:
             for o in self._authed():
                 if who or o is c:
                     o.send_json({"type": "notice", "level": "warn", "text": text})
+
+    async def clip_file(self, request):
+        """GET /clips/<id>.wav?token=...  the clip's audio, to listen to or save. The token is in
+        the query because an <audio> element or a link can't send headers."""
+        token = request.query.get("token", "")
+        if not self.clips or not any(hmac.compare_digest(x.token, token) for x in self._authed()):
+            raise web.HTTPForbidden(text="Not logged in (reload the page)")
+        clip = self.clips.get(request.match_info["id"])
+        if not clip:
+            raise web.HTTPNotFound(text="That clip has been deleted")
+        name = "".join(ch if ch.isalnum() or ch in " -_" else "_" for ch in clip["name"]).strip() or "clip"
+        return web.FileResponse(self.clips.path(clip["id"]), headers={
+            "Content-Type": "audio/wav", "Cache-Control": "no-store",
+            "Content-Disposition": f'inline; filename="{name}.wav"'})
 
     async def clip_upload(self, request):
         """POST /clips?name=...  body: mono 16-bit WAV at the wire rate, as made by the page.
@@ -595,6 +652,12 @@ class RemoteHead:
     async def on_startup(self, app):
         self.loop = asyncio.get_running_loop()
         self.audio.start()
+        if self.recorder and self.recorder.was_recording:
+            log.info("recording was on when the server stopped: carrying on")
+            try:
+                self.recorder.start(self.recorder.marker.read_text().strip() or "restart")
+            except OSError as e:
+                log.error("can't resume recording: %s", e)
         app["watchdog"] = asyncio.create_task(self.watchdog())
         app["radio"] = asyncio.create_task(self.radio.run())
 
@@ -615,6 +678,8 @@ class RemoteHead:
                 pass
         self.radio.close()
         self.audio.stop()
+        if self.recorder:
+            self.recorder.close()
 
 
 async def _index(request):
@@ -627,6 +692,7 @@ def build_app(cfg):
     app.router.add_get("/", _index)
     app.router.add_get("/ws", head.ws_handler)
     app.router.add_post("/clips", head.clip_upload)
+    app.router.add_get(r"/clips/{id:[0-9a-f]{12}}.wav", head.clip_file)
     app.router.add_static("/static", WEB_DIR)
     app.on_startup.append(head.on_startup)
     app.on_shutdown.append(head.on_shutdown)

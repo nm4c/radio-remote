@@ -89,6 +89,12 @@ DEFAULTS = {
         "tx_delay_ms": 300,       # keyed silence before the clip while the transmitter comes up
         "level": 0.5,             # every clip is played with its peak at this level, before audio.tx_gain
     },
+    "record": {
+        "enabled": True,          # the orange button records received audio into the clip list
+        "max_minutes": 15,        # each recording is split into parts this long
+        "keep_mb": 2000,          # oldest recordings are deleted beyond this (about 17 hours)
+        "min_free_mb": 300,       # recording stops if the disk gets this full
+    },
     "webrtc": {
         "enabled": True,
         "ice_servers": [],
@@ -133,6 +139,7 @@ def load(path):
 
     _check_selcall(cfg["selcall"])
     _check_clips(cfg["clips"], cfg["ptt"])
+    _check_record(cfg["record"])
 
     # Resolve the state file and clip folder relative to the config file.
     for section, key in (("server", "state_file"), ("clips", "dir")):
@@ -194,3 +201,12 @@ def _check_clips(cl, ptt):
         raise SystemExit("config: clips.tx_delay_ms must be 0-3000")
     if not 0 < float(cl["level"]) <= 1:
         raise SystemExit("config: clips.level must be between 0 and 1")
+
+
+def _check_record(rec):
+    if not 0.1 <= float(rec["max_minutes"]) <= 120:
+        raise SystemExit("config: record.max_minutes must be 0.1-120")
+    if float(rec["keep_mb"]) < 50:
+        raise SystemExit("config: record.keep_mb must be at least 50")
+    if float(rec["min_free_mb"]) < 0:
+        raise SystemExit("config: record.min_free_mb can't be negative")

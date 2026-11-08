@@ -108,6 +108,13 @@ clips:
   tx_delay_ms: 300     # keyed silence before the clip, while the transmitter comes up
   level: 0.5           # each clip is played with its peak at this level (audio.tx_gain applies on top)
 
+record:
+  # The orange button on the radio records received audio into the clip list (see README, Recording).
+  enabled: true        # needs clips.enabled
+  max_minutes: 15      # each recording is split into parts this long
+  keep_mb: 2000        # the oldest recordings are deleted beyond this (about 115 MB an hour)
+  min_free_mb: 300     # recording stops if the disk gets this full
+
 webrtc:
   # Audio over WebRTC (Opus over UDP) for the lowest, steadiest latency. Browsers that can't connect
   # fall back to audio over the WebSocket automatically. Control (PTT, channels) always uses the WebSocket.
