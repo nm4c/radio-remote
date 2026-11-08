@@ -11,9 +11,15 @@ def chain(s, pts):
         s.wire(a, b)
 
 
-def build(path, page, hp_n=True, lib="pihat"):
+# I2S lines: Pi-side global label -> codec pin
+I2S = [("R17", "I2S_BCLK", "2"), ("R18", "I2S_LRCLK", "3"), ("R19", "I2S_DIN", "4"), ("R20", "I2S_DOUT", "5")]
+
+
+def build(path, page, hp_n=True, lib="pihat", i2s_series=True):
     """hp_n=False leaves HPLCOM unconnected (single-ended TX, as on the SA818S board).
-    lib: the project symbol library holding TLV320AIC3104."""
+    lib: the project symbol library holding TLV320AIC3104.
+    i2s_series=False drops the 33R resistors on the I2S lines (R17-R20): a few cm of trace on a
+    HAT needs no damping. R16 stays on MCLK, where the oscillator's fast edges arrive."""
     s = Sheet("Codec", path, page)
     G = ("pwr", "GND")
     s.text("I2S CODEC  TLV320AIC3104 (QFN-32, RHB)", (17.78, 30.48), 2.0, bold=True)
@@ -22,7 +28,10 @@ def build(path, page, hp_n=True, lib="pihat"):
     ux, uy = 139.7, 101.6
     nc = {str(n): ("nc",) for n in (12, 13, 14, 16, 15, 23, 22, 27, 28, 29, 30)}
     left = {"1": "U2_MCLK", "2": "U2_BCLK", "3": "U2_WCLK", "4": "U2_DIN", "5": "U2_DOUT"}
-    conn = {**nc, **{k: ("label", v, 5.08) for k, v in left.items()},
+    if not i2s_series:
+        left = {"1": "U2_MCLK"}
+    direct = {} if i2s_series else {pin: ("glabel", net, 5.08) for _, net, pin in I2S}
+    conn = {**nc, **{k: ("label", v, 5.08) for k, v in left.items()}, **direct,
             "8": ("glabel", "I2C_SCL", 5.08), "9": ("glabel", "I2C_SDA", 5.08),
             "10": ("glabel", "RX_P", 5.08), "11": ("glabel", "RX_N", 5.08),
             "19": ("glabel", "HP_P", 5.08), "20": ("glabel", "HP_N", 5.08) if hp_n else ("nc",)}
@@ -65,10 +74,12 @@ def build(path, page, hp_n=True, lib="pihat"):
     s.text("Thermal pad (33) to DRVSS / ground plane", (gs[-1][0] + 3.81, yg + 1.27))
 
     # ---- series resistors on MCLK and the I2S lines
-    s.text("33R SERIES  (place near U2)", (17.78, 52.07), 1.5, bold=True)
-    series = [("R16", "OSC_12M", False, "U2_MCLK"), ("R17", "I2S_BCLK", True, "U2_BCLK"),
-              ("R18", "I2S_LRCLK", True, "U2_WCLK"), ("R19", "I2S_DIN", True, "U2_DIN"),
-              ("R20", "I2S_DOUT", True, "U2_DOUT")]
+    s.text("33R SERIES  (place near U2)" if i2s_series else "33R SERIES ON MCLK  (place near U2)",
+           (17.78, 52.07), 1.5, bold=True)
+    series = [("R16", "OSC_12M", False, "U2_MCLK")]
+    if i2s_series:
+        series += [(ref, net, True, bot) for (ref, net, _), bot in
+                   zip(I2S, ("U2_BCLK", "U2_WCLK", "U2_DIN", "U2_DOUT"))]
     for i, (ref, top, glob, bot) in enumerate(series):
         x = 22.86 + i * 15.24
         s.symbol("Device:R", ref, "33R", (x, 76.2), footprint=R0603, lcsc="C23140",

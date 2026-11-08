@@ -1,4 +1,8 @@
-"""Sheet: Audio isolation. T1 drives the radio mic through a -40 dB pad; T2 takes the radio speaker into the codec differentially."""
+"""Sheet: Audio isolation. T1 drives the radio's TX audio input; T2 takes the radio's RX audio into the codec differentially.
+
+No TX pad: the codec's output volume sets the level in software, from line level (e.g. a
+DM4601e rear connector) down to mic level. The RX pad suits line-level RX audio; for a speaker
+output, drop R13 to 1k (see the note on the sheet)."""
 from schbuild import Sheet
 
 R0603 = "Resistor_SMD:R_0603_1608Metric"
@@ -36,21 +40,12 @@ def build(path, page):
         s.wire(b, s.p(pin))
         s.wire(a, (a[0] - 5.08, y))
         s.label(net, (a[0] - 5.08, y), (-1, 0), glob=True)
-    # secondary: 6 -> R9 -> pad node (R10 to RGND) -> C1 -> FB4 -> R_MIC (C7 to RGND)
-    a9, b9 = hpart(s, "Device:R", "R9", "10k", (133.35, yt), footprint=R0603, lcsc="C25804")
-    chain(s, [s.p("T1.6"), a9])
-    pad = (144.78, yt)
-    s.symbol("Device:R", "R10", "100R", (144.78, yt + 3.81), footprint=R0603, lcsc="C22775",
-             ref_at=(146.05, yt + 6.35), val_at=(146.05, yt + 8.89), ref_just="left", val_just="left")
+    # secondary: 6 -> C1 -> FB4 -> R_MIC (C7 to RGND) ; 4 -> RGND
     rgn = (144.78, yb)
-    chain(s, [s.p("T1.4"), rgn])
-    chain(s, [s.p("R10.2"), rgn, (144.78, yb + 2.54)])
-    s.junction(rgn)
+    chain(s, [s.p("T1.4"), rgn, (144.78, yb + 2.54)])
     s.power("RGND", (144.78, yb + 2.54))
     a1, b1 = hpart(s, "Device:C", "C1", "1uF X7R", (157.48, yt), footprint=C0805, lcsc="C28323")
-    chain(s, [b9, pad, a1])
-    s.wire(pad, s.p("R10.1"))
-    s.junction(pad)
+    chain(s, [s.p("T1.6"), a1])
     af, bf = hpart(s, "Device:FerriteBead_Small", "FB4", "600R@100MHz", (170.18, yt), footprint=FB0603, lcsc="C1002")
     s.wire(b1, af)
     mic = (180.34, yt)
@@ -59,25 +54,25 @@ def build(path, page):
     s.junction(mic)
     s.label("R_MIC", (190.5, yt), (1, 0), glob=True)
     for i, t in enumerate((
-        "Pad = R10 / (R9 + R10) = about -40 dB.",
-        "Fine level in software (alsamixer HP volume).",
+        "No pad: set the level in software (alsamixer HP volume).",
+        "Line-level inputs need about -6 to -12 dB, mic inputs about -40 dB.",
         "HPLCOM is set to 'differential of HPLOUT', so T1 sees no DC.",
         "C1 blocks the radio's electret bias on the MIC pin.",
     )):
         s.text(t, (17.78, 52.07 + i * 3.81))
 
     # ---------------- RX: radio speaker (floating) -> T2 -> differential pad -> codec MIC1L
-    s.text("RX  radio speaker -> codec", (17.78, 87.63), 1.5, bold=True)
+    s.text("RX  radio RX audio -> codec", (17.78, 87.63), 1.5, bold=True)
     yt, yb = 101.6, 111.76
     s.symbol("pihat:SM-LP-5001", "T2", "SM-LP-5001E", (114.3, 106.68), ref_at=(116.84, 97.15), val_at=(116.84, 118.11), ref_just="left", val_just="left", **XFMR)
     s.dashed((114.3, 91.44), (114.3, 121.92))
     s.text("GND", (104.14, 92.71), 1.27, bold=True)
     s.text("RGND", (116.84, 92.71), 1.27, bold=True)
-    for fb, net, y, pin in (("FB5", "R_SPP", yt, "T2.6"), ("FB6", "R_SPN", yb, "T2.4")):
-        a, b = hpart(s, "Device:FerriteBead_Small", fb, "600R@100MHz", (130.81, y), footprint=FB0603, lcsc="C1002")
-        s.wire(s.p(pin), a)
-        s.wire(b, (b[0] + 5.08, y))
-        s.label(net, (b[0] + 5.08, y), (1, 0), glob=True)
+    # No RF filtering here: RX audio is ignored while the radio transmits.
+    for net, y, pin in (("R_SPP", yt, "T2.6"), ("R_SPN", yb, "T2.4")):
+        end = (s.p(pin)[0] + 21.59, y)
+        chain(s, [s.p(pin), end])
+        s.label(net, end, (1, 0), glob=True)
     nodes = {}
     for ref, cref, net, y, pin in (("R11", "C2", "RX_P", yt, "T2.1"), ("R12", "C3", "RX_N", yb, "T2.3")):
         a, b = hpart(s, "Device:R", ref, "10k", (96.52, y), footprint=R0603, lcsc="C25804")
@@ -89,14 +84,14 @@ def build(path, page):
         s.wire(ca, (ca[0] - 5.08, y))
         s.label(net, (ca[0] - 5.08, y), (-1, 0), glob=True)
         nodes[net] = node
-    s.symbol("Device:R", "R13", "1k", (86.36, (yt + yb) / 2), footprint=R0603, lcsc="C21190",
+    s.symbol("Device:R", "R13", "10k", (86.36, (yt + yb) / 2), footprint=R0603, lcsc="C25804",
              ref_at=(88.9, (yt + yb) / 2 - 1.27), val_at=(88.9, (yt + yb) / 2 + 1.27), ref_just="left", val_just="left")
     s.wire(nodes["RX_P"], s.p("R13.1"))
     s.wire(s.p("R13.2"), nodes["RX_N"])
     for i, t in enumerate((
-        "Pad = R13 / (R11 + R12 + R13) = about -26 dB, differential.",
-        "Neither speaker wire is grounded: safe on BTL speaker amps.",
-        "Line-level source (e.g. TK-880 DEO, 250 mV): raise R13 to 10k.",
+        "Pad = R13 / (R11 + R12 + R13) = about -9.5 dB, differential: for line-level RX audio",
+        "(e.g. DM4601e rear connector, TK-880 DEO). Speaker output instead: R13 = 1k (-26 dB).",
+        "Neither RX wire is grounded: safe on BTL speaker amps.",
     )):
         s.text(t, (17.78, 127.0 + i * 3.81))
     return s

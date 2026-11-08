@@ -17,20 +17,17 @@ NET = os.path.join(os.environ.get("PIHAT_PROJ") or os.path.join(HERE, "..", ".."
 POWER = {
     "13V8_IN": "J6.1 F1.1",
     "VIN_F": "F1.2 D1.2",
-    "VIN": "D1.1 D3.1 C16.1 C17.1 C18.1 C19.1 U3.2",
-    "RT": "U3.4 R28.1",
-    "COMP": "U3.6 R29.1 C29.1",
-    "COMP_MID": "R29.2 C28.1",
-    "BOOT": "U3.1 C20.1",
-    "SW": "U3.8 C20.2 D2.1 L1.1",
+    "VIN": "D1.1 D3.1 C16.1 C17.1 C18.1 C19.1 U3.2 U3.3",     # EN tied to VIN
+    "VCC": "U3.6 C28.1",
+    "BOOT": "U3.7 C20.1",
+    "SW": "U3.8 C20.2 L1.1",
     "+5V": "L1.2 C21.1 C22.1 C23.1 R25.1 U4.3 C24.1 R7.1",
-    "FB_MID": "R25.2 R26.1",
-    "FB": "U3.5 R26.2 R27.1",
-    "+3.3VA": "U4.2 C25.1 C26.1 U5.1 U5.3",
+    "FB": "U3.5 R25.2 R26.1",
+    "+3.3VA": "U4.2 C25.1 U5.1 U5.3",
     "+1V8": "U5.5 C27.1",
     "LED": "R7.2 LED1.2",
-    "GND": "J6.2 D3.2 C16.2 C17.2 C18.2 C19.2 U3.7 U3.9 R28.2 C28.2 C29.2 D2.2 C21.2 C22.2 C23.2 R27.2 "
-           "U4.1 C24.2 C25.2 C26.2 U5.2 C27.2 LED1.1",
+    "GND": "J6.2 D3.2 C16.2 C17.2 C18.2 C19.2 U3.1 U3.9 C28.2 C21.2 C22.2 C23.2 R26.2 "
+           "U4.1 C24.2 C25.2 U5.2 C27.2 LED1.1",
 }
 CONTROL = {
     "GPIO17": "R1.1 R8.1 J1.11",
@@ -41,18 +38,16 @@ CONTROL = {
     "OPTO_A3": "R3.2 U1.5",
     "PTT_C": "U1.16 FB1.1",
     "R_PTT": "FB1.2 C4.1",
-    "UP_C": "U1.14 R5.1",
-    "UP_F": "R5.2 FB2.1",
-    "R_UP": "FB2.2 C5.1",
-    "DN_C": "U1.12 R6.1",
-    "DN_F": "R6.2 FB3.1",
-    "R_DN": "FB3.2 C6.1",
+    "UP_C": "U1.14 R5.1 JP3.1",
+    "R_UP": "R5.2 JP3.2",
+    "DN_C": "U1.12 R6.1 JP4.1",
+    "R_DN": "R6.2 JP4.2",
     "BUSY+": "R4.2",
     "OPTO_A4": "U1.7 R4.1 D4.1",
     "BUSY-": "U1.8 D4.2",
     "GPIO23": "U1.10 J1.16",
     "LED2_A": "R8.2 LED2.2",
-    "RGND": "U1.15 U1.13 U1.11 C4.2 C5.2 C6.2",
+    "RGND": "U1.15 U1.13 U1.11 C4.2",
     "GND": "U1.2 U1.4 U1.6 U1.9 LED2.1",
 }
 ROOT = {
@@ -82,14 +77,10 @@ CODEC = {
     "CODEC_RST": "U2.31 R21.1 J1.37",
     "OSC_12M": "Y1.3 R16.1",
     "U2_MCLK": "R16.2 U2.1",
-    "I2S_BCLK": "R17.1 J1.12",
-    "U2_BCLK": "R17.2 U2.2",
-    "I2S_LRCLK": "R18.1 J1.35",
-    "U2_WCLK": "R18.2 U2.3",
-    "I2S_DIN": "R19.1 J1.40",
-    "U2_DIN": "R19.2 U2.4",
-    "I2S_DOUT": "R20.1 J1.38",
-    "U2_DOUT": "R20.2 U2.5",
+    "I2S_BCLK": "U2.2 J1.12",                 # no series resistors on I2S
+    "I2S_LRCLK": "U2.3 J1.35",
+    "I2S_DIN": "U2.4 J1.40",
+    "I2S_DOUT": "U2.5 J1.38",
     "+3V3": "U2.7 Y1.4 Y1.1 C11.1 C14.1 J1.1 J1.17 U6.8",
     "+1V8": "U2.32 C12.1",
     "+3.3VA": "U2.25 U2.18 U2.24 C8.1 C9.1 C10.1 C13.1",
@@ -102,22 +93,19 @@ CODEC = {
 AUDIO = {
     "T1_1": "R14.2 T1.1",
     "T1_3": "R15.2 T1.3",
-    "T1_6": "T1.6 R9.1",
-    "TXPAD": "R9.2 R10.1 C1.1",
+    "T1_6": "T1.6 C1.1",                      # no TX pad
     "C1_FB4": "C1.2 FB4.1",
     "R_MIC": "FB4.2 C7.1",
-    "RGND": "T1.4 R10.2 C7.2",
-    "T2_6": "T2.6 FB5.1",
-    "R_SPP": "FB5.2",
-    "T2_4": "T2.4 FB6.1",
-    "R_SPN": "FB6.2",
+    "RGND": "T1.4 C7.2",
+    "R_SPP": "T2.6",                          # no RX ferrites
+    "R_SPN": "T2.4",
     "T2_1": "T2.1 R11.2",
     "RXP": "R11.1 R13.1 C2.2",
     "T2_3": "T2.3 R12.2",
     "RXN": "R12.1 R13.2 C3.2",
 }
 SHEETS = {"root": ROOT, "power": POWER, "control": CONTROL, "connectors": CONNECTORS, "codec": CODEC, "audio": AUDIO}
-NC = {"U3.3", "U5.4", "T1.2", "T1.5", "T2.2", "T2.5"} | {f"U2.{n}" for n in (12, 13, 14, 15, 16, 22, 23, 27, 28, 29, 30)}
+NC = {"U3.4", "U5.4", "T1.2", "T1.5", "T2.2", "T2.5"} | {f"U2.{n}" for n in (12, 13, 14, 15, 16, 22, 23, 27, 28, 29, 30)}
 NAMED = {"RGND": "U1.15", "GND": "U1.2"}   # these nets must carry exactly this name
 
 

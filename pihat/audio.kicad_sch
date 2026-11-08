@@ -1327,199 +1327,6 @@
 		)
 		(uuid "a4042942-475a-5aa5-8106-17df8aa751cb")
 	)
-	(symbol
-		(lib_id "Device:R")
-		(at 133.35 55.88 90)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "d18424fc-7d85-5d2d-882d-a5375bc127f8")
-		(property "Reference" "R9"
-			(at 133.35 52.07 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "10k"
-			(at 133.35 59.69 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
-			(at 133.35 55.88 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 133.35 55.88 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Resistor"
-			(at 133.35 55.88 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C25804"
-			(at 133.35 55.88 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "cd1b8bad-81f0-52ea-83fc-1140fe7a6dfa")
-		)
-		(pin "2"
-			(uuid "78aeafeb-9a99-54f9-baa0-e12c878175e7")
-		)
-		(instances
-			(project "pihat"
-				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/03e67a46-df82-40fd-bf27-56d219872ce6"
-					(reference "R9")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(wire
-		(pts
-			(xy 121.92 55.88)
-			(xy 129.54 55.88)
-		)
-		(stroke
-			(width 0)
-			(type solid)
-		)
-		(uuid "628a8dc6-986e-5868-8eb7-362ff078caf1")
-	)
-	(symbol
-		(lib_id "Device:R")
-		(at 144.78 59.69 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "3132903d-f07b-55df-a97e-7c601434f784")
-		(property "Reference" "R10"
-			(at 146.05 62.23 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "100R"
-			(at 146.05 64.77 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
-			(at 144.78 59.69 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 144.78 59.69 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Resistor"
-			(at 144.78 59.69 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C22775"
-			(at 144.78 59.69 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "337119a5-dc44-5bb5-81ca-07271b36019c")
-		)
-		(pin "2"
-			(uuid "5f05f6a2-8578-5641-86ee-ca3ed51d6aad")
-		)
-		(instances
-			(project "pihat"
-				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/03e67a46-df82-40fd-bf27-56d219872ce6"
-					(reference "R10")
-					(unit 1)
-				)
-			)
-		)
-	)
 	(wire
 		(pts
 			(xy 121.92 66.04)
@@ -1533,17 +1340,6 @@
 	)
 	(wire
 		(pts
-			(xy 144.78 63.5)
-			(xy 144.78 66.04)
-		)
-		(stroke
-			(width 0)
-			(type solid)
-		)
-		(uuid "caa0d751-900f-52d1-8552-612921a5e0a2")
-	)
-	(wire
-		(pts
 			(xy 144.78 66.04)
 			(xy 144.78 68.58)
 		)
@@ -1552,12 +1348,6 @@
 			(type solid)
 		)
 		(uuid "5f0df18e-6d69-5131-bc2f-83b63630cc65")
-	)
-	(junction
-		(at 144.78 66.04)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "92932c79-fa0e-5299-8af5-5ee8ba501082")
 	)
 	(symbol
 		(lib_id "power:GND")
@@ -1728,42 +1518,14 @@
 	)
 	(wire
 		(pts
-			(xy 137.16 55.88)
-			(xy 144.78 55.88)
-		)
-		(stroke
-			(width 0)
-			(type solid)
-		)
-		(uuid "9ed4b9d6-f617-5388-be35-57d048bb0c90")
-	)
-	(wire
-		(pts
-			(xy 144.78 55.88)
+			(xy 121.92 55.88)
 			(xy 153.67 55.88)
 		)
 		(stroke
 			(width 0)
 			(type solid)
 		)
-		(uuid "326c9f01-a359-5b03-931e-ea1e1f9ee799")
-	)
-	(wire
-		(pts
-			(xy 144.78 55.88)
-			(xy 144.78 55.88)
-		)
-		(stroke
-			(width 0)
-			(type solid)
-		)
-		(uuid "1e11b186-faaa-5c27-839e-c5b5e85feadc")
-	)
-	(junction
-		(at 144.78 55.88)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "9963b962-d9bb-5db6-b85b-efa19a166ae3")
+		(uuid "f8c77385-0d94-5131-ac67-0b591059ef1b")
 	)
 	(symbol
 		(lib_id "Device:FerriteBead_Small")
@@ -2075,7 +1837,7 @@
 		)
 		(uuid "ea9a8288-6705-5bfd-809d-bd1bbf3fed69")
 	)
-	(text "Pad = R10 / (R9 + R10) = about -40 dB."
+	(text "No pad: set the level in software (alsamixer HP volume)."
 		(exclude_from_sim no)
 		(at 17.78 52.07 0)
 		(effects
@@ -2084,9 +1846,9 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "25e006c6-a04c-5552-8101-db8eaecc0fc3")
+		(uuid "5ec5899b-9362-55a1-8c46-7d04acb294a0")
 	)
-	(text "Fine level in software (alsamixer HP volume)."
+	(text "Line-level inputs need about -6 to -12 dB, mic inputs about -40 dB."
 		(exclude_from_sim no)
 		(at 17.78 55.88 0)
 		(effects
@@ -2095,7 +1857,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "fc4cca1c-f316-5e40-92a5-d4e2d8df9cb3")
+		(uuid "3c389406-6224-5438-9955-52299b677515")
 	)
 	(text "HPLCOM is set to 'differential of HPLOUT', so T1 sees no DC."
 		(exclude_from_sim no)
@@ -2119,7 +1881,7 @@
 		)
 		(uuid "1e2e4512-72b3-5303-8502-e826a3331a32")
 	)
-	(text "RX  radio speaker -> codec"
+	(text "RX  radio RX audio -> codec"
 		(exclude_from_sim no)
 		(at 17.78 87.63 0)
 		(effects
@@ -2129,7 +1891,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "3184b230-fbeb-5298-81c4-dc26177d72b8")
+		(uuid "bbb02bf2-e8eb-5947-9f75-e9dad591cc26")
 	)
 	(symbol
 		(lib_id "pihat:SM-LP-5001")
@@ -2270,121 +2032,20 @@
 		)
 		(uuid "bdfb5201-ca0f-5b01-95c4-779d231cd829")
 	)
-	(symbol
-		(lib_id "Device:FerriteBead_Small")
-		(at 130.81 101.6 90)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "f45ad319-3fc0-5263-a9c1-a751ad988cd0")
-		(property "Reference" "FB5"
-			(at 130.81 97.79 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "600R@100MHz"
-			(at 130.81 105.41 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Inductor_SMD:L_0603_1608Metric"
-			(at 130.81 101.6 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 130.81 101.6 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Ferrite bead, small symbol"
-			(at 130.81 101.6 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C1002"
-			(at 130.81 101.6 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "865e13c7-6201-50e9-9c1a-3a961f40d80f")
-		)
-		(pin "2"
-			(uuid "0b8587b8-a3f9-5b56-a7dc-9f9e64e8bc64")
-		)
-		(instances
-			(project "pihat"
-				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/03e67a46-df82-40fd-bf27-56d219872ce6"
-					(reference "FB5")
-					(unit 1)
-				)
-			)
-		)
-	)
 	(wire
 		(pts
 			(xy 121.92 101.6)
-			(xy 128.27 101.6)
+			(xy 143.51 101.6)
 		)
 		(stroke
 			(width 0)
 			(type solid)
 		)
-		(uuid "eb5c7032-f40a-5666-a457-2b427a652628")
-	)
-	(wire
-		(pts
-			(xy 133.35 101.6)
-			(xy 138.43 101.6)
-		)
-		(stroke
-			(width 0)
-			(type solid)
-		)
-		(uuid "8412bf83-1016-5956-b6d4-975347d8203f")
+		(uuid "5e9c69ae-62bf-5584-90c2-beae797ec5fb")
 	)
 	(global_label "R_SPP"
 		(shape bidirectional)
-		(at 138.43 101.6 0)
+		(at 143.51 101.6 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -2392,123 +2053,22 @@
 			)
 			(justify left)
 		)
-		(uuid "da3e743d-7ab6-53f8-af8a-6f687f8ae00d")
-	)
-	(symbol
-		(lib_id "Device:FerriteBead_Small")
-		(at 130.81 111.76 90)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "8cd7290b-8631-5451-9ba9-246d91d53b84")
-		(property "Reference" "FB6"
-			(at 130.81 107.95 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "600R@100MHz"
-			(at 130.81 115.57 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Inductor_SMD:L_0603_1608Metric"
-			(at 130.81 111.76 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 130.81 111.76 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Ferrite bead, small symbol"
-			(at 130.81 111.76 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C1002"
-			(at 130.81 111.76 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "491ec20e-b8da-5a90-833f-4a64a5d1f31a")
-		)
-		(pin "2"
-			(uuid "755ab824-2dcf-5c50-8001-121a7c052b7c")
-		)
-		(instances
-			(project "pihat"
-				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/03e67a46-df82-40fd-bf27-56d219872ce6"
-					(reference "FB6")
-					(unit 1)
-				)
-			)
-		)
+		(uuid "17219af0-fea9-5f64-8891-588a142d7bcc")
 	)
 	(wire
 		(pts
 			(xy 121.92 111.76)
-			(xy 128.27 111.76)
+			(xy 143.51 111.76)
 		)
 		(stroke
 			(width 0)
 			(type solid)
 		)
-		(uuid "0483cdb9-6ffb-5aca-8f41-08fdf2e5bb18")
-	)
-	(wire
-		(pts
-			(xy 133.35 111.76)
-			(xy 138.43 111.76)
-		)
-		(stroke
-			(width 0)
-			(type solid)
-		)
-		(uuid "9489158d-3810-5cb5-938c-a53b8d659366")
+		(uuid "54590a30-a71b-5009-b2d4-abea2b099d80")
 	)
 	(global_label "R_SPN"
 		(shape bidirectional)
-		(at 138.43 111.76 0)
+		(at 143.51 111.76 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -2516,7 +2076,7 @@
 			)
 			(justify left)
 		)
-		(uuid "dde14cfa-66e2-5a45-bc62-95d961f9a278")
+		(uuid "184717b1-f1e1-530e-93f7-9eff7e905735")
 	)
 	(symbol
 		(lib_id "Device:R")
@@ -3024,7 +2584,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "1k"
+		(property "Value" "10k"
 			(at 88.9 107.95 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3068,7 +2628,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C21190"
+		(property "LCSC" "C25804"
 			(at 86.36 106.68 0)
 			(hide yes)
 			(show_name no)
@@ -3116,7 +2676,7 @@
 		)
 		(uuid "f50dbec9-4903-50fb-b9b9-2048d2637c16")
 	)
-	(text "Pad = R13 / (R11 + R12 + R13) = about -26 dB, differential."
+	(text "Pad = R13 / (R11 + R12 + R13) = about -9.5 dB, differential: for line-level RX audio"
 		(exclude_from_sim no)
 		(at 17.78 127 0)
 		(effects
@@ -3125,9 +2685,9 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "7e261797-1d2e-562f-81b7-03504c71f11a")
+		(uuid "98973bea-d85f-5782-a660-565749b30da5")
 	)
-	(text "Neither speaker wire is grounded: safe on BTL speaker amps."
+	(text "(e.g. DM4601e rear connector, TK-880 DEO). Speaker output instead: R13 = 1k (-26 dB)."
 		(exclude_from_sim no)
 		(at 17.78 130.81 0)
 		(effects
@@ -3136,9 +2696,9 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "2c41cab4-c76c-5df7-9110-53119a3f71ce")
+		(uuid "cc709823-9dc6-5fc7-8116-6b17490ad77b")
 	)
-	(text "Line-level source (e.g. TK-880 DEO, 250 mV): raise R13 to 10k."
+	(text "Neither RX wire is grounded: safe on BTL speaker amps."
 		(exclude_from_sim no)
 		(at 17.78 134.62 0)
 		(effects
@@ -3147,7 +2707,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "f4bf8f08-1135-5a7c-b7bd-704aa1e13acd")
+		(uuid "015bb841-3cca-505a-894b-8cf147f096ad")
 	)
 	(embedded_fonts no)
 )

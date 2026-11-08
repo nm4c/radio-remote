@@ -2105,15 +2105,17 @@
 		)
 		(uuid "d923153a-6784-5f76-89c1-dec47fefbe6f")
 	)
-	(label "U2_BCLK"
+	(global_label "I2S_BCLK"
+		(shape bidirectional)
 		(at 114.3 86.36 180)
+		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right bottom)
+			(justify right)
 		)
-		(uuid "19e32597-9546-5a8d-ab4c-3bf8168453e6")
+		(uuid "e3aa59a3-0ccc-5085-b6e5-41720b3a156b")
 	)
 	(wire
 		(pts
@@ -2126,15 +2128,17 @@
 		)
 		(uuid "369a2575-5603-5ac9-8acc-ec83748674ec")
 	)
-	(label "U2_WCLK"
+	(global_label "I2S_LRCLK"
+		(shape bidirectional)
 		(at 114.3 88.9 180)
+		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right bottom)
+			(justify right)
 		)
-		(uuid "b178d664-c8a7-5dc4-8123-ee243ac064dc")
+		(uuid "433489ae-026f-5a63-8e14-91fc66133299")
 	)
 	(wire
 		(pts
@@ -2147,15 +2151,17 @@
 		)
 		(uuid "8bafc91d-76a5-5afc-b4f4-215ceb7bbcc5")
 	)
-	(label "U2_DIN"
+	(global_label "I2S_DIN"
+		(shape bidirectional)
 		(at 114.3 91.44 180)
+		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right bottom)
+			(justify right)
 		)
-		(uuid "83c40179-fb49-5bd7-8919-320d9e62c6c1")
+		(uuid "c155c88a-6e79-5c34-bfa9-297d8ab4754e")
 	)
 	(wire
 		(pts
@@ -2168,15 +2174,17 @@
 		)
 		(uuid "0127a456-4778-52ad-aabb-fd525ac47433")
 	)
-	(label "U2_DOUT"
+	(global_label "I2S_DOUT"
+		(shape bidirectional)
 		(at 114.3 93.98 180)
+		(fields_autoplaced yes)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
-			(justify right bottom)
+			(justify right)
 		)
-		(uuid "e64a280d-50e5-5a5c-9790-a108ecccb5c5")
+		(uuid "fd175f9e-ecc9-5704-b7f7-ddde2d5c69ae")
 	)
 	(wire
 		(pts
@@ -3083,7 +3091,7 @@
 		)
 		(uuid "21d4a367-e3c5-5828-8f24-f36be8cb56de")
 	)
-	(text "33R SERIES  (place near U2)"
+	(text "33R SERIES ON MCLK  (place near U2)"
 		(exclude_from_sim no)
 		(at 17.78 52.07 0)
 		(effects
@@ -3093,7 +3101,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "46392914-9afd-52cb-ba08-25ac349131f1")
+		(uuid "21af7a3d-a0c8-5279-bb2b-4a70c1d1a0d2")
 	)
 	(symbol
 		(lib_id "Device:R")
@@ -3228,550 +3236,6 @@
 			(justify right bottom)
 		)
 		(uuid "c34ebad0-51b4-5ffe-8609-253f048fef56")
-	)
-	(symbol
-		(lib_id "Device:R")
-		(at 38.1 76.2 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "92c145c3-6324-5a0b-8fcf-b4afa03a4028")
-		(property "Reference" "R17"
-			(at 40.64 74.93 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "33R"
-			(at 40.64 77.47 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
-			(at 38.1 76.2 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 38.1 76.2 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Resistor"
-			(at 38.1 76.2 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C23140"
-			(at 38.1 76.2 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "aa5906fe-af7a-56a7-b06b-ddc9c0c4db0d")
-		)
-		(pin "2"
-			(uuid "adeec02b-d836-526f-9f1c-bfbfe12c3cba")
-		)
-		(instances
-			(project "pihat"
-				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/407eaf88-a4db-490c-99bd-995294b6f442"
-					(reference "R17")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(wire
-		(pts
-			(xy 38.1 72.39)
-			(xy 38.1 67.31)
-		)
-		(stroke
-			(width 0)
-			(type solid)
-		)
-		(uuid "46785609-3587-5eaf-8f75-db8733493368")
-	)
-	(global_label "I2S_BCLK"
-		(shape bidirectional)
-		(at 38.1 67.31 90)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "430921e8-9d8e-57ab-a93b-016aea796881")
-	)
-	(wire
-		(pts
-			(xy 38.1 80.01)
-			(xy 38.1 85.09)
-		)
-		(stroke
-			(width 0)
-			(type solid)
-		)
-		(uuid "94c4e1f3-44b6-5bcd-a90d-8f882dc68ebb")
-	)
-	(label "U2_BCLK"
-		(at 38.1 85.09 270)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "d04eed57-d8a8-5edc-bc65-2416481be2a9")
-	)
-	(symbol
-		(lib_id "Device:R")
-		(at 53.34 76.2 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "1a3ad8b3-8bae-520a-9661-9a6f555b4605")
-		(property "Reference" "R18"
-			(at 55.88 74.93 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "33R"
-			(at 55.88 77.47 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
-			(at 53.34 76.2 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 53.34 76.2 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Resistor"
-			(at 53.34 76.2 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C23140"
-			(at 53.34 76.2 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "155a1b8f-2c59-5e0a-a5b5-26a0efaa1734")
-		)
-		(pin "2"
-			(uuid "2d8e0529-5e12-50a7-8c3d-0d8687985e81")
-		)
-		(instances
-			(project "pihat"
-				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/407eaf88-a4db-490c-99bd-995294b6f442"
-					(reference "R18")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(wire
-		(pts
-			(xy 53.34 72.39)
-			(xy 53.34 67.31)
-		)
-		(stroke
-			(width 0)
-			(type solid)
-		)
-		(uuid "1d007f2b-01f1-5b85-96d0-7f435d03d748")
-	)
-	(global_label "I2S_LRCLK"
-		(shape bidirectional)
-		(at 53.34 67.31 90)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "6efc6da8-85e3-5695-a240-0ef2ab85cf19")
-	)
-	(wire
-		(pts
-			(xy 53.34 80.01)
-			(xy 53.34 85.09)
-		)
-		(stroke
-			(width 0)
-			(type solid)
-		)
-		(uuid "40b9075d-d9df-586d-92cb-3bead8fb52f7")
-	)
-	(label "U2_WCLK"
-		(at 53.34 85.09 270)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "93d59b57-cc9e-5032-bbe0-cb123eec500d")
-	)
-	(symbol
-		(lib_id "Device:R")
-		(at 68.58 76.2 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "d01dca7e-2670-5de7-977b-644b6f77eb93")
-		(property "Reference" "R19"
-			(at 71.12 74.93 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "33R"
-			(at 71.12 77.47 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
-			(at 68.58 76.2 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 68.58 76.2 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Resistor"
-			(at 68.58 76.2 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C23140"
-			(at 68.58 76.2 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "719d7f7e-ec80-5bd0-9bd3-9eac5b6f908b")
-		)
-		(pin "2"
-			(uuid "bee93b8e-79a2-5b4a-920b-76705316b582")
-		)
-		(instances
-			(project "pihat"
-				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/407eaf88-a4db-490c-99bd-995294b6f442"
-					(reference "R19")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(wire
-		(pts
-			(xy 68.58 72.39)
-			(xy 68.58 67.31)
-		)
-		(stroke
-			(width 0)
-			(type solid)
-		)
-		(uuid "b5b5a01d-9261-5b4b-aef7-30ed15fa5251")
-	)
-	(global_label "I2S_DIN"
-		(shape bidirectional)
-		(at 68.58 67.31 90)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "6bec8541-1d68-5706-b41f-38dcb669e9a5")
-	)
-	(wire
-		(pts
-			(xy 68.58 80.01)
-			(xy 68.58 85.09)
-		)
-		(stroke
-			(width 0)
-			(type solid)
-		)
-		(uuid "6aa4bce1-044d-5227-b1e1-8338b63b1f8c")
-	)
-	(label "U2_DIN"
-		(at 68.58 85.09 270)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "85f80e6f-62dd-53fa-b33f-5a52f6e23123")
-	)
-	(symbol
-		(lib_id "Device:R")
-		(at 83.82 76.2 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "77c1d687-9159-559e-886b-801630010e2e")
-		(property "Reference" "R20"
-			(at 86.36 74.93 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "33R"
-			(at 86.36 77.47 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
-			(at 83.82 76.2 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 83.82 76.2 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Resistor"
-			(at 83.82 76.2 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C23140"
-			(at 83.82 76.2 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "7c929f9a-b240-5405-bc3a-300476a78941")
-		)
-		(pin "2"
-			(uuid "aa1c3ed5-8872-5e5f-b6d1-fb1a33067771")
-		)
-		(instances
-			(project "pihat"
-				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/407eaf88-a4db-490c-99bd-995294b6f442"
-					(reference "R20")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(wire
-		(pts
-			(xy 83.82 72.39)
-			(xy 83.82 67.31)
-		)
-		(stroke
-			(width 0)
-			(type solid)
-		)
-		(uuid "c155c3f0-d007-5a73-8421-6f06e35d590a")
-	)
-	(global_label "I2S_DOUT"
-		(shape bidirectional)
-		(at 83.82 67.31 90)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "c435ceeb-22c5-5c33-8923-693362e04b14")
-	)
-	(wire
-		(pts
-			(xy 83.82 80.01)
-			(xy 83.82 85.09)
-		)
-		(stroke
-			(width 0)
-			(type solid)
-		)
-		(uuid "c4defa70-d5e9-513c-bd1f-f5b8c5e654f6")
-	)
-	(label "U2_DOUT"
-		(at 83.82 85.09 270)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify right bottom)
-		)
-		(uuid "5b1865e8-0838-58c6-9710-d2dae3a16c89")
 	)
 	(text "I2S_DIN = Pi to codec (GPIO21).  I2S_DOUT = codec to Pi (GPIO20)."
 		(exclude_from_sim no)

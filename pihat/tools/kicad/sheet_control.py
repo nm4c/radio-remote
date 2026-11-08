@@ -23,10 +23,13 @@ def build(path, page):
 
     rows = [52.07, 80.01, 107.95, 135.89]
     chans = [
-        # (unit, gpio, R led, net, series R, ferrite, cap, title)
+        # (unit, gpio, R led, net, ladder R + its jumper, ferrite, cap, title)
+        # Only PTT is RF-filtered (FB1 + C4): it is the line the radio watches while it transmits.
+        # UP and DOWN are only pulsed while receiving. Their R5/R6 footprints are bridged by the
+        # closed solder jumpers JP3/JP4; for a shared resistor-ladder line, fit R5/R6 and cut JP3/JP4.
         (1, "GPIO17", "R1", "R_PTT", None, "FB1", "C4", "ch 1  PTT"),
-        (2, "GPIO27", "R2", "R_UP", "R5", "FB2", "C5", "ch 2  UP"),
-        (3, "GPIO22", "R3", "R_DN", "R6", "FB3", "C6", "ch 3  DOWN"),
+        (2, "GPIO27", "R2", "R_UP", ("R5", "JP3"), None, None, "ch 2  UP"),
+        (3, "GPIO22", "R3", "R_DN", ("R6", "JP4"), None, None, "ch 3  DOWN"),
     ]
     for (unit, gpio, rled, net, rser, fb, cap, title), yc in zip(chans, rows):
         ya, yk = yc - 2.54, yc + 2.54
@@ -43,25 +46,35 @@ def build(path, page):
         k = s.p(f"U1.{2 * unit}")
         chain(s, [k, (114.3, yk), (114.3, yk + 2.54)])
         s.power("GND", (114.3, yk + 2.54))
-        # transistor side: C -> [0R] -> ferrite -> node(100p to RGND) -> global label ; E -> RGND
+        # transistor side ; E -> RGND
+        #   PTT:     C -> ferrite -> node(100p to RGND) -> global label
+        #   UP/DOWN: C -> R5/R6 (not fitted) bridged by JP3/JP4 -> global label
         c = s.p(f"U1.{18 - 2 * unit}")
         e = s.p(f"U1.{17 - 2 * unit}")
         if rser:
-            s.symbol("Device:R", rser, "0R", (144.78, ya), rot=90, footprint=R0603, lcsc="C21189",
-                     ref_at=(144.78, ya - 3.81), val_at=(144.78, ya + 3.81))
-            a, b = sorted([s.p(f"{rser}.1"), s.p(f"{rser}.2")])
-            s.wire(c, a)
-            start = b
+            rref, jref = rser
+            s.symbol("Device:R", rref, "ladder", (144.78, ya), rot=90, footprint=R0603, dnp=True,
+                     ref_at=(144.78, ya + 3.81), val_at=(144.78, ya + 6.35))
+            a, b = sorted([s.p(f"{rref}.1"), s.p(f"{rref}.2")])
+            s.symbol("Jumper:SolderJumper_2_Bridged", jref, "closed", (144.78, ya - 5.08),
+                     footprint="Jumper:SolderJumper-2_P1.3mm_Bridged_RoundedPad1.0x1.5mm", in_bom=False,
+                     ref_at=(144.78, ya - 8.89), val_at=(144.78, ya - 11.43))
+            j1, j2 = sorted([s.p(f"{jref}.1"), s.p(f"{jref}.2")])
+            jl, jr = (j1[0], ya), (j2[0], ya)
+            chain(s, [c, jl, a])
+            chain(s, [j1, jl])
+            chain(s, [b, jr, (176.53, ya)])
+            chain(s, [j2, jr])
+            s.junction(jl); s.junction(jr)
         else:
-            start = c
-        s.symbol("Device:FerriteBead_Small", fb, "600R@100MHz", (156.21, ya), rot=90, footprint=FB0603,
-                 lcsc="C1002", ref_at=(156.21, ya - 3.81), val_at=(156.21, ya + 3.81))
-        f1, f2 = sorted([s.p(f"{fb}.1"), s.p(f"{fb}.2")])
-        s.wire(start, f1)
-        node = (166.37, ya)
-        s.symbol("Device:C", cap, "100pF", (166.37, ya + 3.81), footprint=C0603, lcsc="C14858", conn={"2": RG})
-        chain(s, [f2, node, (176.53, ya)])
-        s.junction(node)
+            s.symbol("Device:FerriteBead_Small", fb, "600R@100MHz", (156.21, ya), rot=90, footprint=FB0603,
+                     lcsc="C1002", ref_at=(156.21, ya - 3.81), val_at=(156.21, ya + 3.81))
+            f1, f2 = sorted([s.p(f"{fb}.1"), s.p(f"{fb}.2")])
+            s.wire(c, f1)
+            node = (166.37, ya)
+            s.symbol("Device:C", cap, "100pF", (166.37, ya + 3.81), footprint=C0603, lcsc="C14858", conn={"2": RG})
+            chain(s, [f2, node, (176.53, ya)])
+            s.junction(node)
         s.label(net, (176.53, ya), (1, 0), glob=True)
         chain(s, [e, (139.7, yk), (139.7, yk + 2.54)])
         s.power("RGND", (139.7, yk + 2.54))
@@ -121,9 +134,10 @@ def build(path, page):
     # notes
     s.text("NOTES", (17.78, 45.72), 1.5, bold=True)
     for i, t in enumerate((
-        "R5 / R6: 0R for separate UP/DN",
-        "lines. For a shared ladder line,",
-        "fit the values measured on the mic.",
+        "R5 / R6 are not fitted: JP3 / JP4",
+        "bridge them for separate UP/DN lines.",
+        "Shared ladder line: fit the values",
+        "measured on the mic, cut JP3 / JP4.",
         "",
         "Opto LED: (3.3 - 1.35 V) / 470R",
         "= 4 mA; >= 2 mA sink at 50% CTR.",

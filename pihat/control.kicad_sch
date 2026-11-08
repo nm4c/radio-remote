@@ -1703,6 +1703,197 @@
 			)
 			(embedded_fonts no)
 		)
+		(symbol "Jumper:SolderJumper_2_Bridged"
+			(pin_numbers
+				(hide yes)
+			)
+			(pin_names
+				(offset 0)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom no)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "JP"
+				(at 0 2.032 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "SolderJumper_2_Bridged"
+				(at 0 -2.54 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 -6.35 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "Solder Jumper, 2-pole, closed/bridged"
+				(at 0 -5.08 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "solder jumper SPST"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_fp_filters" "SolderJumper*Bridged*"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "SolderJumper_2_Bridged_0_1"
+				(rectangle
+					(start -0.508 0.508)
+					(end 0.508 -0.508)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(polyline
+					(pts
+						(xy -0.254 1.016)
+						(xy -0.254 -1.016)
+					)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(arc
+					(start -0.254 -1.016)
+					(mid -1.2656 0)
+					(end -0.254 1.016)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(arc
+					(start 0.254 1.016)
+					(mid 1.2656 0)
+					(end 0.254 -1.016)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type outline)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0.254 1.016)
+						(xy 0.254 -1.016)
+					)
+					(stroke
+						(width 0.1524)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "SolderJumper_2_Bridged_1_1"
+				(pin passive line
+					(at -5.08 0 0)
+					(length 3.81)
+					(name "A"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 5.08 0 180)
+					(length 3.81)
+					(name "B"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 		(symbol "Device:D"
 			(pin_numbers
 				(hide yes)
@@ -3362,10 +3553,10 @@
 		(in_bom yes)
 		(on_board yes)
 		(in_pos_files yes)
-		(dnp no)
+		(dnp yes)
 		(uuid "4de25dae-7277-5128-b09b-c2fc9aaf0a5b")
 		(property "Reference" "R5"
-			(at 144.78 73.66 90)
+			(at 144.78 81.28 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -3374,8 +3565,8 @@
 				)
 			)
 		)
-		(property "Value" "0R"
-			(at 144.78 81.28 90)
+		(property "Value" "ladder"
+			(at 144.78 83.82 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -3417,17 +3608,6 @@
 				)
 			)
 		)
-		(property "LCSC" "C21189"
-			(at 144.78 77.47 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
 		(pin "1"
 			(uuid "525f612a-15b1-5256-b7a7-0027c98da37f")
 		)
@@ -3443,314 +3623,162 @@
 			)
 		)
 	)
+	(symbol
+		(lib_id "Jumper:SolderJumper_2_Bridged")
+		(at 144.78 72.39 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom no)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "be3e935a-5243-5af8-a7bf-7689928dba68")
+		(property "Reference" "JP3"
+			(at 144.78 68.58 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "closed"
+			(at 144.78 66.04 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Jumper:SolderJumper-2_P1.3mm_Bridged_RoundedPad1.0x1.5mm"
+			(at 144.78 72.39 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 144.78 72.39 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Solder Jumper, 2-pole, closed/bridged"
+			(at 144.78 72.39 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "f9b6a685-8bb7-59f7-bc94-305901826d39")
+		)
+		(pin "2"
+			(uuid "ce04b867-5730-53e4-b7e9-fcb638b16dfc")
+		)
+		(instances
+			(project "pihat"
+				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/5390a064-7792-48cd-8d19-6d04a44525a9"
+					(reference "JP3")
+					(unit 1)
+				)
+			)
+		)
+	)
 	(wire
 		(pts
 			(xy 134.62 77.47)
+			(xy 139.7 77.47)
+		)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(uuid "e33e806d-3822-5e31-b1eb-95f7d28c3b32")
+	)
+	(wire
+		(pts
+			(xy 139.7 77.47)
 			(xy 140.97 77.47)
 		)
 		(stroke
 			(width 0)
 			(type solid)
 		)
-		(uuid "f9d2ba35-2d8f-5424-8141-6ba04675c163")
+		(uuid "55841a39-7f7e-5483-8e5c-835274c0fec3")
 	)
-	(symbol
-		(lib_id "Device:FerriteBead_Small")
-		(at 156.21 77.47 90)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "a41dbdf4-27b8-512a-af0b-c3be5b18e3da")
-		(property "Reference" "FB2"
-			(at 156.21 73.66 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
+	(wire
+		(pts
+			(xy 139.7 72.39)
+			(xy 139.7 77.47)
 		)
-		(property "Value" "600R@100MHz"
-			(at 156.21 81.28 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
+		(stroke
+			(width 0)
+			(type solid)
 		)
-		(property "Footprint" "Inductor_SMD:L_0603_1608Metric"
-			(at 156.21 77.47 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 156.21 77.47 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Ferrite bead, small symbol"
-			(at 156.21 77.47 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C1002"
-			(at 156.21 77.47 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "51d4cc01-67e0-5d02-a36d-0e706a00631a")
-		)
-		(pin "2"
-			(uuid "96595dfe-9e29-5971-9796-3e13d248a0fc")
-		)
-		(instances
-			(project "pihat"
-				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/5390a064-7792-48cd-8d19-6d04a44525a9"
-					(reference "FB2")
-					(unit 1)
-				)
-			)
-		)
+		(uuid "abd58917-e6dd-5d69-8db7-4889a5f577a5")
 	)
 	(wire
 		(pts
 			(xy 148.59 77.47)
-			(xy 153.67 77.47)
+			(xy 149.86 77.47)
 		)
 		(stroke
 			(width 0)
 			(type solid)
 		)
-		(uuid "80f3f37e-15e6-5ce0-b084-80e8c9558acc")
-	)
-	(symbol
-		(lib_id "Device:C")
-		(at 166.37 81.28 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "e208dc74-d9ba-5536-8098-3cae71e81ec8")
-		(property "Reference" "C5"
-			(at 168.91 80.01 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "100pF"
-			(at 168.91 82.55 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
-			(at 166.37 81.28 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 166.37 81.28 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Unpolarized capacitor"
-			(at 166.37 81.28 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C14858"
-			(at 166.37 81.28 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "957517df-3ffd-5962-8023-8313d9d73d67")
-		)
-		(pin "2"
-			(uuid "0a4ae4c9-756d-53c7-a8bd-eb1699a8c54e")
-		)
-		(instances
-			(project "pihat"
-				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/5390a064-7792-48cd-8d19-6d04a44525a9"
-					(reference "C5")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:GND")
-		(at 166.37 85.09 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom no)
-		(on_board no)
-		(in_pos_files no)
-		(dnp no)
-		(uuid "34e2af15-afdd-5540-8ba0-6b3d1b928300")
-		(property "Reference" "#PWR305"
-			(at 166.37 85.09 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "RGND"
-			(at 166.37 90.17 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 166.37 85.09 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 166.37 85.09 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 166.37 85.09 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "bc84587a-c648-5d60-83a3-cab546582017")
-		)
-		(instances
-			(project "pihat"
-				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/5390a064-7792-48cd-8d19-6d04a44525a9"
-					(reference "#PWR305")
-					(unit 1)
-				)
-			)
-		)
+		(uuid "aa60afb4-def3-5704-96a3-acfc163a86fd")
 	)
 	(wire
 		(pts
-			(xy 158.75 77.47)
-			(xy 166.37 77.47)
-		)
-		(stroke
-			(width 0)
-			(type solid)
-		)
-		(uuid "40d913c1-bd79-58fe-b898-d097a20e8c48")
-	)
-	(wire
-		(pts
-			(xy 166.37 77.47)
+			(xy 149.86 77.47)
 			(xy 176.53 77.47)
 		)
 		(stroke
 			(width 0)
 			(type solid)
 		)
-		(uuid "ffd14e33-d4ab-527c-860f-2216753d42fb")
+		(uuid "bc87ce91-3c85-5db9-9b2a-3c64311c2f95")
+	)
+	(wire
+		(pts
+			(xy 149.86 72.39)
+			(xy 149.86 77.47)
+		)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(uuid "8926f99d-847d-5c1f-8c7d-173e9a5ad4fd")
 	)
 	(junction
-		(at 166.37 77.47)
+		(at 139.7 77.47)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "d8855d31-8307-5377-850b-e5e9d84083b0")
+		(uuid "9ba63a10-485f-59c0-b22e-d78cb5854df7")
+	)
+	(junction
+		(at 149.86 77.47)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "b4a7c03b-b8d2-51fc-bf13-badf5ae1b2cf")
 	)
 	(global_label "R_UP"
 		(shape bidirectional)
@@ -3796,8 +3824,8 @@
 		(on_board no)
 		(in_pos_files no)
 		(dnp no)
-		(uuid "cdd75f1e-020f-5706-a6e6-604c1156963e")
-		(property "Reference" "#PWR306"
+		(uuid "34e2af15-afdd-5540-8ba0-6b3d1b928300")
+		(property "Reference" "#PWR305"
 			(at 139.7 85.09 0)
 			(hide yes)
 			(show_name no)
@@ -3852,12 +3880,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "df149728-bf23-5963-a4b7-635147cb1ebc")
+			(uuid "bc84587a-c648-5d60-83a3-cab546582017")
 		)
 		(instances
 			(project "pihat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/5390a064-7792-48cd-8d19-6d04a44525a9"
-					(reference "#PWR306")
+					(reference "#PWR305")
 					(unit 1)
 				)
 			)
@@ -4129,8 +4157,8 @@
 		(on_board no)
 		(in_pos_files no)
 		(dnp no)
-		(uuid "7fe0ae1c-560c-5382-920a-fd8d6dc8bbe5")
-		(property "Reference" "#PWR307"
+		(uuid "cdd75f1e-020f-5706-a6e6-604c1156963e")
+		(property "Reference" "#PWR306"
 			(at 114.3 113.03 0)
 			(hide yes)
 			(show_name no)
@@ -4185,12 +4213,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "6811c26c-51d7-5eaf-b0b0-88c9cd7a2aa9")
+			(uuid "df149728-bf23-5963-a4b7-635147cb1ebc")
 		)
 		(instances
 			(project "pihat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/5390a064-7792-48cd-8d19-6d04a44525a9"
-					(reference "#PWR307")
+					(reference "#PWR306")
 					(unit 1)
 				)
 			)
@@ -4205,10 +4233,10 @@
 		(in_bom yes)
 		(on_board yes)
 		(in_pos_files yes)
-		(dnp no)
+		(dnp yes)
 		(uuid "ce76fccb-c68e-5fd0-a7cb-786376f89ff4")
 		(property "Reference" "R6"
-			(at 144.78 101.6 90)
+			(at 144.78 109.22 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -4217,8 +4245,8 @@
 				)
 			)
 		)
-		(property "Value" "0R"
-			(at 144.78 109.22 90)
+		(property "Value" "ladder"
+			(at 144.78 111.76 90)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -4260,17 +4288,6 @@
 				)
 			)
 		)
-		(property "LCSC" "C21189"
-			(at 144.78 105.41 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
 		(pin "1"
 			(uuid "87e7c8ca-c98f-5b73-9b95-58583baae508")
 		)
@@ -4286,314 +4303,162 @@
 			)
 		)
 	)
+	(symbol
+		(lib_id "Jumper:SolderJumper_2_Bridged")
+		(at 144.78 100.33 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom no)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "cc790a75-fdae-5835-b7c1-157989c4cbb6")
+		(property "Reference" "JP4"
+			(at 144.78 96.52 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "closed"
+			(at 144.78 93.98 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Jumper:SolderJumper-2_P1.3mm_Bridged_RoundedPad1.0x1.5mm"
+			(at 144.78 100.33 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 144.78 100.33 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Solder Jumper, 2-pole, closed/bridged"
+			(at 144.78 100.33 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "c85a4bf6-0da6-5e42-b0f7-fb75e99367e1")
+		)
+		(pin "2"
+			(uuid "283225a1-6cfe-5314-9a10-ec52b2880c13")
+		)
+		(instances
+			(project "pihat"
+				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/5390a064-7792-48cd-8d19-6d04a44525a9"
+					(reference "JP4")
+					(unit 1)
+				)
+			)
+		)
+	)
 	(wire
 		(pts
 			(xy 134.62 105.41)
+			(xy 139.7 105.41)
+		)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(uuid "6dcfa6e0-07d4-5e64-818c-d8c0eee2a430")
+	)
+	(wire
+		(pts
+			(xy 139.7 105.41)
 			(xy 140.97 105.41)
 		)
 		(stroke
 			(width 0)
 			(type solid)
 		)
-		(uuid "662373cc-5478-543f-87c6-ba063fbd9873")
+		(uuid "031e59e2-cbb4-5414-8424-a6103c649b53")
 	)
-	(symbol
-		(lib_id "Device:FerriteBead_Small")
-		(at 156.21 105.41 90)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "16408e3c-f681-5be2-ac95-8445aba9a76f")
-		(property "Reference" "FB3"
-			(at 156.21 101.6 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
+	(wire
+		(pts
+			(xy 139.7 100.33)
+			(xy 139.7 105.41)
 		)
-		(property "Value" "600R@100MHz"
-			(at 156.21 109.22 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
+		(stroke
+			(width 0)
+			(type solid)
 		)
-		(property "Footprint" "Inductor_SMD:L_0603_1608Metric"
-			(at 156.21 105.41 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 156.21 105.41 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Ferrite bead, small symbol"
-			(at 156.21 105.41 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C1002"
-			(at 156.21 105.41 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "05922a66-1367-51da-b757-e9afe81b199e")
-		)
-		(pin "2"
-			(uuid "08e40c3c-5009-5aec-b788-96d5b90a49bd")
-		)
-		(instances
-			(project "pihat"
-				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/5390a064-7792-48cd-8d19-6d04a44525a9"
-					(reference "FB3")
-					(unit 1)
-				)
-			)
-		)
+		(uuid "8baa2ab7-f5be-5abc-afd0-b8a91a8f8ff5")
 	)
 	(wire
 		(pts
 			(xy 148.59 105.41)
-			(xy 153.67 105.41)
+			(xy 149.86 105.41)
 		)
 		(stroke
 			(width 0)
 			(type solid)
 		)
-		(uuid "386d4e6c-cd82-5786-8ac3-5aa6cea037e0")
-	)
-	(symbol
-		(lib_id "Device:C")
-		(at 166.37 109.22 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "547fc259-c408-5927-9b09-5dcfd835b694")
-		(property "Reference" "C6"
-			(at 168.91 107.95 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "100pF"
-			(at 168.91 110.49 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
-			(at 166.37 109.22 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 166.37 109.22 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Unpolarized capacitor"
-			(at 166.37 109.22 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C14858"
-			(at 166.37 109.22 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "d6ad8152-e966-5578-a122-e04cd08870ea")
-		)
-		(pin "2"
-			(uuid "71a740af-0842-5cb3-b52f-bf99e701d699")
-		)
-		(instances
-			(project "pihat"
-				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/5390a064-7792-48cd-8d19-6d04a44525a9"
-					(reference "C6")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:GND")
-		(at 166.37 113.03 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom no)
-		(on_board no)
-		(in_pos_files no)
-		(dnp no)
-		(uuid "e56e84b9-6834-5b03-ae75-636f3f23e865")
-		(property "Reference" "#PWR308"
-			(at 166.37 113.03 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "RGND"
-			(at 166.37 118.11 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 166.37 113.03 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 166.37 113.03 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 166.37 113.03 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "9e63075e-093c-59a5-b260-e4a58e7faff8")
-		)
-		(instances
-			(project "pihat"
-				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/5390a064-7792-48cd-8d19-6d04a44525a9"
-					(reference "#PWR308")
-					(unit 1)
-				)
-			)
-		)
+		(uuid "147a8f17-63d1-59dd-91b8-5ad5485c7b32")
 	)
 	(wire
 		(pts
-			(xy 158.75 105.41)
-			(xy 166.37 105.41)
-		)
-		(stroke
-			(width 0)
-			(type solid)
-		)
-		(uuid "bd4ebd9b-487d-5755-8f25-b56ac36d5893")
-	)
-	(wire
-		(pts
-			(xy 166.37 105.41)
+			(xy 149.86 105.41)
 			(xy 176.53 105.41)
 		)
 		(stroke
 			(width 0)
 			(type solid)
 		)
-		(uuid "31fd4d7c-09fb-5c36-8ba3-3dc7838ac6c8")
+		(uuid "81c41ca5-0be3-5566-abba-c045b90c7324")
+	)
+	(wire
+		(pts
+			(xy 149.86 100.33)
+			(xy 149.86 105.41)
+		)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(uuid "ef50df4a-046d-5a79-90c4-38f6ac3d68a6")
 	)
 	(junction
-		(at 166.37 105.41)
+		(at 139.7 105.41)
 		(diameter 0)
 		(color 0 0 0 0)
-		(uuid "9aa2fcac-ba10-5e66-8f2a-5f44759664c4")
+		(uuid "7a7510bd-058c-5985-a194-4363a818c8db")
+	)
+	(junction
+		(at 149.86 105.41)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "ccfe4dc3-d776-57b4-9169-755aeee4ce8a")
 	)
 	(global_label "R_DN"
 		(shape bidirectional)
@@ -4639,8 +4504,8 @@
 		(on_board no)
 		(in_pos_files no)
 		(dnp no)
-		(uuid "77bf1b98-abd5-50b1-bd63-990e06d34d10")
-		(property "Reference" "#PWR309"
+		(uuid "7fe0ae1c-560c-5382-920a-fd8d6dc8bbe5")
+		(property "Reference" "#PWR307"
 			(at 139.7 113.03 0)
 			(hide yes)
 			(show_name no)
@@ -4695,12 +4560,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "80c567ce-fb66-5d77-af50-1b31bfeb4d91")
+			(uuid "6811c26c-51d7-5eaf-b0b0-88c9cd7a2aa9")
 		)
 		(instances
 			(project "pihat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/5390a064-7792-48cd-8d19-6d04a44525a9"
-					(reference "#PWR309")
+					(reference "#PWR307")
 					(unit 1)
 				)
 			)
@@ -5178,8 +5043,8 @@
 		(on_board no)
 		(in_pos_files no)
 		(dnp no)
-		(uuid "0e313afb-9e0c-5168-b438-b66c5e97861e")
-		(property "Reference" "#PWR310"
+		(uuid "e56e84b9-6834-5b03-ae75-636f3f23e865")
+		(property "Reference" "#PWR308"
 			(at 114.3 140.97 0)
 			(hide yes)
 			(show_name no)
@@ -5234,12 +5099,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "f233e964-8dce-5e35-a67e-211b3e43307f")
+			(uuid "9e63075e-093c-59a5-b260-e4a58e7faff8")
 		)
 		(instances
 			(project "pihat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/5390a064-7792-48cd-8d19-6d04a44525a9"
-					(reference "#PWR310")
+					(reference "#PWR308")
 					(unit 1)
 				)
 			)
@@ -5255,8 +5120,8 @@
 		(on_board no)
 		(in_pos_files no)
 		(dnp no)
-		(uuid "6a49f6b1-9559-5c29-bb16-8f5839a1d5fc")
-		(property "Reference" "#PWR311"
+		(uuid "77bf1b98-abd5-50b1-bd63-990e06d34d10")
+		(property "Reference" "#PWR309"
 			(at 190.5 120.65 0)
 			(hide yes)
 			(show_name no)
@@ -5311,12 +5176,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "449edb1a-b524-566e-ad3f-826b9396bef5")
+			(uuid "80c567ce-fb66-5d77-af50-1b31bfeb4d91")
 		)
 		(instances
 			(project "pihat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/5390a064-7792-48cd-8d19-6d04a44525a9"
-					(reference "#PWR311")
+					(reference "#PWR309")
 					(unit 1)
 				)
 			)
@@ -5332,8 +5197,8 @@
 		(on_board no)
 		(in_pos_files no)
 		(dnp no)
-		(uuid "7afcb709-136d-5fb7-847f-dea4a19c68b8")
-		(property "Reference" "#FLG312"
+		(uuid "f0661eba-badc-54a3-8b28-51aa1319451e")
+		(property "Reference" "#FLG310"
 			(at 190.5 120.65 0)
 			(hide yes)
 			(show_name no)
@@ -5388,12 +5253,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "545ccc60-e7ea-5199-a5f0-2f802f1c6499")
+			(uuid "0a32a818-fd9e-58eb-a550-730d8afd9923")
 		)
 		(instances
 			(project "pihat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/5390a064-7792-48cd-8d19-6d04a44525a9"
-					(reference "#FLG312")
+					(reference "#FLG310")
 					(unit 1)
 				)
 			)
@@ -5657,8 +5522,8 @@
 		(on_board no)
 		(in_pos_files no)
 		(dnp no)
-		(uuid "50a3173e-c24f-5f1d-863e-47e0d75cfb41")
-		(property "Reference" "#PWR313"
+		(uuid "6a49f6b1-9559-5c29-bb16-8f5839a1d5fc")
+		(property "Reference" "#PWR311"
 			(at 63.5 170.18 0)
 			(hide yes)
 			(show_name no)
@@ -5713,12 +5578,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "946a4391-3aa3-5fbe-bd52-5466ddbff4dc")
+			(uuid "449edb1a-b524-566e-ad3f-826b9396bef5")
 		)
 		(instances
 			(project "pihat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/5390a064-7792-48cd-8d19-6d04a44525a9"
-					(reference "#PWR313")
+					(reference "#PWR311")
 					(unit 1)
 				)
 			)
@@ -5736,7 +5601,7 @@
 		)
 		(uuid "1b8a2f43-ce40-59f5-901b-05f0c2abb4b6")
 	)
-	(text "R5 / R6: 0R for separate UP/DN"
+	(text "R5 / R6 are not fitted: JP3 / JP4"
 		(exclude_from_sim no)
 		(at 17.78 49.53 0)
 		(effects
@@ -5745,9 +5610,9 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "f32b2aab-6002-5707-9aa6-2decc35c9151")
+		(uuid "3ba5fc63-0bcc-5b85-a3cd-92f897a94302")
 	)
-	(text "lines. For a shared ladder line,"
+	(text "bridge them for separate UP/DN lines."
 		(exclude_from_sim no)
 		(at 17.78 53.34 0)
 		(effects
@@ -5756,9 +5621,9 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "45d4ec59-feff-5067-8ce6-f8d506ba3d6a")
+		(uuid "c5ae2429-bd73-5925-b7d3-40f11d2d1cca")
 	)
-	(text "fit the values measured on the mic."
+	(text "Shared ladder line: fit the values"
 		(exclude_from_sim no)
 		(at 17.78 57.15 0)
 		(effects
@@ -5767,11 +5632,22 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "c1e40529-a967-5264-b289-5623384326e3")
+		(uuid "40cdc047-6b83-5646-97e2-8a038b50acc8")
+	)
+	(text "measured on the mic, cut JP3 / JP4."
+		(exclude_from_sim no)
+		(at 17.78 60.96 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "0585743b-3eed-56de-949f-2c98e31f0b8c")
 	)
 	(text "Opto LED: (3.3 - 1.35 V) / 470R"
 		(exclude_from_sim no)
-		(at 17.78 64.77 0)
+		(at 17.78 68.58 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5782,7 +5658,7 @@
 	)
 	(text "= 4 mA; >= 2 mA sink at 50% CTR."
 		(exclude_from_sim no)
-		(at 17.78 68.58 0)
+		(at 17.78 72.39 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5793,7 +5669,7 @@
 	)
 	(text "D4: reverse protection for the"
 		(exclude_from_sim no)
-		(at 17.78 76.2 0)
+		(at 17.78 80.01 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5804,7 +5680,7 @@
 	)
 	(text "BUSY LED (J8 wired backwards)."
 		(exclude_from_sim no)
-		(at 17.78 80.01 0)
+		(at 17.78 83.82 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5815,7 +5691,7 @@
 	)
 	(text "GPIO23 uses the Pi's pull-up"
 		(exclude_from_sim no)
-		(at 17.78 87.63 0)
+		(at 17.78 91.44 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5826,7 +5702,7 @@
 	)
 	(text "(config busy_pull_up: true)."
 		(exclude_from_sim no)
-		(at 17.78 91.44 0)
+		(at 17.78 95.25 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5837,7 +5713,7 @@
 	)
 	(text "RGND = radio ground. Keep it"
 		(exclude_from_sim no)
-		(at 17.78 99.06 0)
+		(at 17.78 102.87 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -5848,7 +5724,7 @@
 	)
 	(text ">= 2 mm from GND copper."
 		(exclude_from_sim no)
-		(at 17.78 102.87 0)
+		(at 17.78 106.68 0)
 		(effects
 			(font
 				(size 1.27 1.27)
