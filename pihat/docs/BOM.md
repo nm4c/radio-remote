@@ -12,29 +12,32 @@ so re-check before ordering.
 
 | | Unique parts |
 |---|---|
-| **Basic** (no loading fee) | 22 |
+| **Basic** (no loading fee) | 18 |
 | **Extended** (≈ US$3 each, per order) | 17 |
 
 That's about US$51 in loading fees per order, not per board. To cut it:
 1. **Solder the through-hole connectors yourself:** J1 (Pi header), J2/J3 (RJ45), J4/J5 (patch
    headers), J6–J9 (screw terminals). That's 4 fewer Extended parts, and the board qualifies for
    JLC's cheaper "Economic" assembly, which only does SMD parts.
-2. **Leave the power section off** (U3, L1, D1–D3, F1, C19) if the Pi has its own supply. That's
+2. **Leave the power section off** (U3, L1, D1, D3, F1, C19, C28) if the Pi has its own supply. That's
    6 fewer Extended parts. The codec rails (U4, U5) are still needed and run from the Pi's 5 V.
 
 ## Design choices
 
 - **Basic parts wherever possible:** all resistors, nearly all capacitors, ferrites, LEDs and D4.
 - **Reused values:** 33 Ω for all series resistors, 10 kΩ for the pads and pull-downs, 100 pF and a
-  ferrite on every radio-side line.
-- **One part doing two jobs:** SS56 is both the reverse-polarity diode and the buck catch diode.
+  ferrite on the two RF-sensitive radio lines (PTT and MIC).
+- **Synchronous buck:** the LMR33640 has its own low-side switch and internal compensation, so
+  there is no catch diode, compensation network or frequency resistor.
 - **TI regulators:** TLV76133 for 3.3 V. The TLV76118 (1.8 V) has too little stock, so the 1.8 V
   rail uses a TPS7A2018 instead: TI, very low noise, 11k in stock.
   Avoid the "TP"-prefixed look-alikes JLC lists (3PEAK clones, not TI).
 - **TCMT4100 quad opto:** one package for all four channels. At its 50 % minimum gain, 470 Ω from
   3.3 V (≈ 4 mA) still sinks ≥ 2 mA on the radio side.
-- **No trimmers:** the codec sets TX and RX levels in software.
-- **Feedback from Basic values only:** 51 kΩ + 2.2 kΩ over 10 kΩ gives 5.06 V.
+- **No trimmers or TX pad:** the codec sets the TX level in software, from line level down to mic
+  level. The RX pad (R11/R12/R13, −9.5 dB) suits line-level RX audio; from a speaker output, fit
+  R13 = 1 kΩ (−26 dB).
+- **Feedback from Basic values only:** 82 kΩ over 20 kΩ with the LMR33640's 1.0 V reference gives 5.10 V.
 - **Don't substitute an RJ45 with magnetics** (for example HR911105A). Its Ethernet transformers
   block the DC on PTT and HOOK.
 
@@ -42,7 +45,9 @@ That's about US$51 in loading fees per order, not per board. To cut it:
 
 See the "Before layout" checklist at the end of the schematic page. In short:
 - **Y1 pinout:** confirm it (the datasheet is encrypted).
-- **U3 compensation:** R29/C28/C29 are calculated (10k / 6.8 nF / 47 pF). Confirm with a load-step test at bring-up.
+- **U3 stock:** LMR33640ADDAR (C2836966) is Extended. One JLCPCB snapshot showed very few
+  available to order, so check the live page; pre-order or consign if it is short.
+- **U5 placement:** U5 shares C25 at U4's output instead of having its own input cap; keep them close.
 - **Codec clock:** confirm the clock setup at bring-up.
 - **Mic-jack numbering:** check each radio's mic-jack numbering before patching J4 → J5.
 - **Isolation clearance:** keep radio-side copper ≥ 2 mm from Pi-side copper.

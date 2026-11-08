@@ -192,10 +192,10 @@ def sheet_overview():
     block(330, 40, 230, 96, "Control · U1 TCMT4100", ["4 opto channels: PTT, UP, DN out", "BUSY in (LED on radio side)"], "pi")
     block(330, 170, 230, 96, "Codec · U2 TLV320AIC3104", ["I2S slave, I2C 0x18", "HP out diff → TX · MIC1L diff ← RX"], "pi")
     block(330, 300, 230, 80, "U6 HAT ID EEPROM", ["AT24C32D @ 0x50 on ID_SD/ID_SC", "auto-loads the codec overlay"], "pi")
-    block(700, 40, 170, 96, "Filters", ["ferrite + 100 pF", "on every radio line"], "rd")
-    block(700, 170, 170, 96, "Audio isolation", ["T1 TX: −40 dB pad", "T2 RX: −26 dB diff pad"], "rd")
+    block(700, 40, 170, 96, "Filters", ["ferrite + 100 pF", "on PTT and MIC"], "rd")
+    block(700, 170, 170, 96, "Audio isolation", ["T1 TX: level in software", "T2 RX: −9.5 dB diff pad"], "rd")
     block(930, 50, 160, 330, "Radio connectors", ["J2 RJ45 → radio mic", "J3 RJ45 ← original mic", "J4/J5 patch headers", "J7 speaker in", "J8 busy in", "J9 accessory PTT", "", "J6 13.8 V in"], "rd")
-    block(330, 410, 520, 44, "Power · J6 13.8 V → F1, D1, D3 → U3 TPS54360B → 5V0 → U4 → 3V3A → U5 → 1V8", [], "pwr")
+    block(330, 410, 520, 44, "Power · J6 13.8 V → F1, D1, D3 → U3 LMR33640 → 5V0 → U4 3V3A → U5 1V8", [], "pwr")
     # barrier
     s.add('<line x1="630" y1="30" x2="630" y2="395" class="barrier"/>')
     s.text(622, 392, "GND (Pi side)", "t-pi t-small", "end")
@@ -232,33 +232,27 @@ def sheet_power():
     s.two("tvs", 300, 210, "u"); s.gnd(300, 210)
     s.two("cap", 370, 150, "d"); s.gnd(370, 210)
     s.two("ecap", 440, 150, "d"); s.gnd(440, 210)
-    for x, a, b in ((300, "D3", "SMBJ24A"), (370, "C16–C18", "2.2µF ×3"), (440, "C19", "100µF 50V")):
+    for x, a, b in ((300, "D3", "SMBJ22A"), (370, "C16–C18", "2.2µF ×3"), (440, "C19", "100µF 50V")):
         s.text(x, 246, a, "t-ref", "middle"); s.text(x, 259, b, "t-val", "middle")
-    e = s.ic(600, 110, 150, "U3", "TPS54360BDDAR",
-             [(2, "VIN"), (3, "EN", "NC"), (4, "RT/CLK"), (6, "COMP")],
-             [(1, "BOOT"), (8, "SW"), (5, "FB", "FB"), (7, "GND"), (9, "PAD")], top=40, rows=5)
-    s.text(556, 166, "open = on", "t-note", "end")
-    # RT
-    s.poly([(570, 190), (520, 190), (520, 290)])
-    s.two("res", 520, 290, "d", ref="R28", val="150 k", lab="left"); s.gnd(520, 350)
-    s.text(512, 375, "≈ 640 kHz", "t-note", "end")
-    # COMP
-    s.poly([(570, 210), (560, 210), (560, 290)])
-    s.add('<rect x="548" y="290" width="124" height="52" class="tbd"/>')
-    s.text(610, 309, "Rc + Cc ∥ Cf", "t-ref", "middle")
-    s.text(610, 324, "R29 · C28 · C29", "t-val", "middle")
-    s.text(610, 337, "10k · 6.8 nF · 47 pF", "t-val", "middle")
-    s.line(610, 342, 610, 352); s.gnd(610, 352)
-    # GND / PAD
-    s.poly([(780, 210), (790, 210), (790, 230), (780, 230)]); s.gnd(790, 230)
-    # BOOT / SW
+    e = s.ic(600, 110, 150, "U3", "LMR33640ADDAR",
+             [(2, "VIN"), (3, "EN"), (6, "VCC")],
+             [(7, "BOOT"), (8, "SW"), (5, "FB", "FB"), (4, "PG", "NC"), (1, "PGND"), (9, "PAD")], top=40, rows=6)
+    # EN tied to VIN: always on
+    s.poly([(570, 170), (560, 170), (560, 150)]); s.dot(560, 150)
+    s.text(552, 184, "EN = VIN: on", "t-note", "end")
+    # VCC: internal 5 V LDO, 1 µF
+    s.poly([(570, 190), (520, 190), (520, 230)])
+    s.two("cap", 520, 230, "d", ref="C28", val="1 µF", lab="left"); s.gnd(520, 290)
+    s.text(512, 315, "VCC bypass", "t-note", "end")
+    # PGND / PAD
+    s.poly([(780, 230), (790, 230), (790, 250), (780, 250)]); s.gnd(790, 250)
+    # BOOT / SW: synchronous, so no catch diode
     s.poly([(780, 150), (795, 150), (795, 110)])
     s.two("cap", 795, 110, "r", ref="C20", val="100 nF", lab="above")
     s.poly([(855, 110), (855, 170)])
     s.line(780, 170, 900, 170)
     s.text(818, 164, "SW", "t-wire", "middle")
-    s.dot(855, 170); s.dot(880, 170)
-    s.two("diode", 880, 230, "u", ref="D2", val="SS56", lab="left"); s.gnd(880, 230)
+    s.dot(855, 170)
     s.two("ind", 900, 170, "r", ref="L1", val="6.8 µH 5 A", lab="split")
     s.line(960, 170, 1040, 170); s.dot(990, 170)
     s.two("cap", 990, 170, "d"); s.gnd(990, 230)
@@ -267,14 +261,13 @@ def sheet_power():
     s.text(1050, 200, "→ J1 pins 2, 4", "t-note")
     # feedback divider
     s.flag(720, 360, "5V0", "l")
-    s.two("res", 720, 360, "r", ref="R25", val="51 k", lab="split")
-    s.two("res", 780, 360, "r", ref="R26", val="2.2 k", lab="split")
-    s.line(840, 360, 880, 360); s.dot(860, 360)
-    s.poly([(860, 360), (860, 330)]); s.flag(860, 330, "FB", "r")
-    s.two("res", 880, 360, "r", ref="R27", val="10 k", lab="split")
-    s.poly([(940, 360), (955, 360), (955, 370)]); s.gnd(955, 370)
-    s.text(720, 405, "VOUT = 0.8 V × (1 + (R25 + R26) / R27) = 5.06 V", "t-note")
-    s.text(720, 420, "No back-feed diode needed: the TPS54360 can't sink current.", "t-note")
+    s.two("res", 720, 360, "r", ref="R25", val="82 k", lab="split")
+    s.line(780, 360, 820, 360); s.dot(800, 360)
+    s.poly([(800, 360), (800, 330)]); s.flag(800, 330, "FB", "r")
+    s.two("res", 820, 360, "r", ref="R26", val="20 k", lab="split")
+    s.poly([(880, 360), (895, 360), (895, 370)]); s.gnd(895, 370)
+    s.text(720, 405, "VOUT = 1.0 V × (1 + R25 / R26) = 5.10 V", "t-note")
+    s.text(720, 420, "400 kHz, internal compensation, synchronous.", "t-note")
     # rails
     s.text(40, 412, "CODEC RAILS + POWER LED", "t-sec")
     s.flag(100, 450, "5V0", "l")
@@ -284,9 +277,9 @@ def sheet_power():
     s.ic(220, 420, 120, "U4", "TLV76133DCYR", [(3, "IN"), (1, "GND")], [(2, "OUT")], top=30, rows=2)
     s.poly([(190, 470), (180, 470), (180, 480)]); s.gnd(180, 480)
     s.line(370, 450, 490, 450)
-    for x in (400, 450, 475): s.dot(x, 450)
+    for x in (400, 475): s.dot(x, 450)
     s.two("cap", 400, 450, "d"); s.gnd(400, 510); s.text(400, 545, "C25 10 µF", "t-val", "middle")
-    s.two("cap", 450, 450, "d"); s.gnd(450, 510); s.text(450, 558, "C26 1 µF", "t-val", "middle")
+    s.text(400, 558, "also U5 input: place U5 by U4", "t-note", "middle")
     s.poly([(425, 450), (425, 420)]); s.dot(425, 450); s.flag(425, 420, "3V3A", "r")
     s.ic(520, 420, 120, "U5", "TPS7A2018PDBVR", [(1, "IN"), (3, "EN"), (2, "GND")], [(5, "OUT"), (4, "NC", "NC")], top=30, rows=3)
     s.poly([(490, 470), (475, 470), (475, 450)])
@@ -334,28 +327,37 @@ def sheet_control():
     s.text(360, ya + 24, "D4 1N4148WS", "t-ref", "end")
     # transistor side
     xs = 650
-    def radio_line(y, net, rref, fb, cref):
-        if rref:
-            s.line(xs, y, 660, y)
-            s.two("res", 660, y, "r", ref=rref, val="0 Ω", lab="above")
-        else:
-            s.line(xs, y, 720, y)
-        s.line(720, y, 730, y)
+    def radio_line(y, net, fb, cref):
+        # PTT: ferrite + 100 pF to RGND
+        s.line(xs, y, 730, y)
         s.two("fb", 730, y, "r", ref=fb, lab="above")
         s.line(790, y, 840, y); s.dot(810, y)
         s.two("cap", 810, y, "d", L=50); s.rgnd(810, y + 50)
         s.text(824, y + 28, cref, "t-ref"); s.text(824, y + 40, "100 pF", "t-val")
         s.flag(840, y, net, "r", "rd")
-    radio_line(rows[0], "R_PTT", None, "FB1", "C4")
-    radio_line(rows[2], "R_UP", "R5", "FB2", "C5")
-    radio_line(rows[4], "R_DN", "R6", "FB3", "C6")
+
+    def ladder_line(y, net, rref, jref):
+        # UP / DOWN: closed solder jumper, with a not-fitted resistor footprint across it
+        s.line(xs, y, 690, y); s.dot(690, y)
+        s.two("jumper", 690, y, "r", ref=jref, val="closed", lab="above")
+        s.line(717, y, 723, y, "p")  # the bridge
+        s.line(750, y, 840, y); s.dot(750, y)
+        s.poly([(690, y), (690, y + 18)]); s.poly([(750, y), (750, y + 18)])
+        s.two("res", 690, y + 18, "r", L=60)
+        s.text(720, y + 36, f"{rref} not fitted", "t-val", "middle")
+        s.flag(840, y, net, "r", "rd")
+    radio_line(rows[0], "R_PTT", "FB1", "C4")
+    ladder_line(rows[2], "R_UP", "R5", "JP3")
+    ladder_line(rows[4], "R_DN", "R6", "JP4")
     for y in (rows[1], rows[3], rows[5]):
         s.poly([(xs, y), (668, y)]); s.rgnd(668, y)
     s.flag(xs, rows[6], "GPIO23", "r")
     s.poly([(xs, rows[7]), (668, rows[7])]); s.gnd(668, rows[7])
-    s.text(915, rows[2] - 16, "R5/R6: fit 0 Ω for separate", "t-note")
-    s.text(915, rows[2] - 3, "UP/DN lines, or the measured", "t-note")
-    s.text(915, rows[2] + 10, "ladder values for a shared line", "t-note")
+    s.text(915, rows[2] - 16, "Separate UP/DN lines: leave", "t-note")
+    s.text(915, rows[2] - 3, "JP3/JP4 closed. Shared ladder", "t-note")
+    s.text(915, rows[2] + 10, "line: fit R5/R6, cut JP3/JP4", "t-note")
+    s.text(915, rows[4] - 3, "Only PTT is RF-filtered: UP/DN", "t-note")
+    s.text(915, rows[4] + 10, "pulse only while receiving", "t-note")
     s.text(700, rows[6] + 28, "Pi pull-up on GPIO23: config busy_pull_up: true", "t-note")
     s.text(40, 470, "PTT INDICATOR", "t-sec")
     s.flag(140, 510, "GPIO17", "l")
@@ -429,15 +431,14 @@ def sheet_codec():
     e = s.ic(440, 80, 240, "U2", "TLV320AIC3104IRHBR", left, right, pitch=20, top=24)
     y0 = 104
     nets = ["OSC_12M", "I2S_BCLK", "I2S_LRCLK", "I2S_DIN", "I2S_DOUT"]
-    refs = ["R16", "R17", "R18", "R19", "R20"]
-    for i in range(5):
-        y = y0 + 20 * i
-        s.line(410, y, 400, y)
-        s.two("res", 340, y, "r")
-        s.line(400, y, 400, y)
-        s.flag(340, y, nets[i], "l")
-        s.text(330 - len(nets[i]) * CW - 30, y + 4, refs[i], "t-ref", "end")
-    s.text(370, y0 - 16, "33 Ω series", "t-val", "middle")
+    refs = ["R16"]
+    # 33 Ω only on MCLK (the oscillator's fast edges); the I2S lines go straight to the Pi
+    s.two("res", 340, y0, "r")
+    s.flag(340, y0, nets[0], "l")
+    s.text(330 - len(nets[0]) * CW - 30, y0 + 4, refs[0], "t-ref", "end")
+    s.text(370, y0 - 16, "33 Ω", "t-val", "middle")
+    for i in range(1, 5):
+        s.flag(410, y0 + 20 * i, nets[i], "l")
     # DVSS gnd
     yd = y0 + 20 * 10
     s.poly([(410, yd), (398, yd)]); s.gnd(398, yd)
@@ -507,11 +508,8 @@ def sheet_audio():
     s.flag(260, 120, "HP_P", "l"); s.two("res", 260, 120, "r", ref="R14", val="33 Ω", lab="above"); s.line(320, 120, 380, 120)
     s.flag(260, 180, "HP_N", "l"); s.two("res", 260, 180, "r", ref="R15", val="33 Ω", lab="above"); s.line(320, 180, 380, 180)
     xfmr(s, 410, 120, "T1", "SM-LP-5001E")
-    s.line(500, 120, 530, 120)
-    s.two("res", 530, 120, "r", ref="R9", val="10 k", lab="above", side="rd")
-    s.line(590, 120, 640, 120); s.dot(620, 120)
-    s.two("res", 620, 120, "d", L=60, ref="R10", val="100 Ω", lab="right", side="rd")
-    s.line(500, 180, 620, 180); s.dot(620, 180)
+    s.line(500, 120, 640, 120)
+    s.line(500, 180, 620, 180)
     s.poly([(620, 180), (620, 196)]); s.rgnd(620, 196)
     s.two("cap", 640, 120, "r", ref="C1", val="1 µF X7R", lab="above", side="rd")
     s.two("fb", 700, 120, "r", ref="FB4", lab="above")
@@ -519,13 +517,13 @@ def sheet_audio():
     s.two("cap", 790, 120, "d", L=50); s.rgnd(790, 170)
     s.text(804, 148, "C7", "t-ref"); s.text(804, 160, "100 pF", "t-val")
     s.flag(820, 120, "R_MIC", "r", "rd")
-    s.text(530, 230, "Pad ≈ −40 dB (R10 / (R9 + R10)). Fine level in software: alsamixer HP volume.", "t-note")
+    s.text(530, 230, "No pad: set the level in software (alsamixer HP volume), about −6 to −12 dB for a line input, −40 dB for a mic.", "t-note")
     s.text(530, 244, "HPLCOM is set to “differential of HPLOUT”, so T1 sees no DC.", "t-note")
 
-    s.text(40, 292, "RX: RADIO SPEAKER → CODEC", "t-sec")
+    s.text(40, 292, "RX: RADIO RX AUDIO → CODEC", "t-sec")
     s.flag(1000, 330, "R_SPP", "r", "rd"); s.flag(1000, 390, "R_SPN", "r", "rd")
-    s.two("fb", 1000, 330, "l", ref="FB5", lab="above"); s.two("fb", 1000, 390, "l", ref="FB6", lab="above")
-    s.line(940, 330, 920, 330); s.line(940, 390, 920, 390)
+    s.line(920, 330, 1000, 330); s.line(920, 390, 1000, 390)
+    s.text(1110, 364, "no RF filter: RX ignored in TX", "t-note", "end")
     s.text(1090, 486, "T2 primary floats: safe on BTL speaker amps", "t-note", "end")
     xfmr(s, 830, 330, "T2", "SM-LP-5001E")
     # left: secondary pins at x=800 (1 top, 3 bottom) — mirrored placement: use T2 left side for codec
@@ -533,11 +531,11 @@ def sheet_audio():
     s.line(800, 390, 760, 390); s.two("res", 760, 390, "l", ref="R12", val="10 k", lab="above")
     s.line(700, 330, 640, 330); s.line(700, 390, 640, 390)
     s.dot(670, 330); s.dot(670, 390)
-    s.two("res", 670, 330, "d", L=60, ref="R13", val="1 k", lab="right")
+    s.two("res", 670, 330, "d", L=60, ref="R13", val="10 k", lab="right")
     s.two("cap", 640, 330, "l", ref="C2", val="1 µF", lab="above")
     s.two("cap", 640, 390, "l", ref="C3", val="1 µF", lab="above")
     s.flag(580, 330, "RX_P", "l"); s.flag(580, 390, "RX_N", "l")
-    s.text(450, 470, "Pad ≈ −26 dB differential. For a line-level source (e.g. TK-880 DEO, 250 mV) raise R13 to 10 k.", "t-note")
+    s.text(380, 470, "Pad ≈ −9.5 dB differential, for line-level RX audio (DM4601e rear connector, TK-880 DEO). From a speaker output, fit R13 = 1 k (−26 dB).", "t-note")
 
     # EEPROM
     s.text(40, 520, "HAT ID EEPROM", "t-sec")
@@ -569,55 +567,54 @@ HEADER = [
     (3, "GPIO2 SDA1", "I2C_SDA", "U2 SDA"), (4, "5V", "5V0", "power in (from U3)"),
     (5, "GPIO3 SCL1", "I2C_SCL", "U2 SCL"), (6, "GND", "GND", ""),
     (9, "GND", "GND", ""), (11, "GPIO17", "GPIO17", "R1 → U1 ch 1 (PTT), R8 → LED2"),
-    (12, "GPIO18 PCM_CLK", "I2S_BCLK", "R17 → U2 BCLK"), (13, "GPIO27", "GPIO27", "R2 → U1 ch 2 (UP)"),
+    (12, "GPIO18 PCM_CLK", "I2S_BCLK", "U2 BCLK"), (13, "GPIO27", "GPIO27", "R2 → U1 ch 2 (UP)"),
     (14, "GND", "GND", ""), (15, "GPIO22", "GPIO22", "R3 → U1 ch 3 (DOWN)"),
     (16, "GPIO23", "GPIO23", "U1 pin 10 (BUSY in)"), (17, "3V3", "3V3_PI", ""),
     (20, "GND", "GND", ""), (25, "GND", "GND", ""),
     (27, "GPIO0 ID_SD", "ID_SD", "U6 SDA, R22"), (28, "GPIO1 ID_SC", "ID_SC", "U6 SCL, R23"),
     (30, "GND", "GND", ""), (34, "GND", "GND", ""),
-    (35, "GPIO19 PCM_FS", "I2S_LRCLK", "R18 → U2 WCLK"), (37, "GPIO26", "CODEC_RST", "U2 RESET, R21"),
-    (38, "GPIO20 PCM_DIN", "I2S_DOUT", "R20 ← U2 DOUT"), (39, "GND", "GND", ""),
-    (40, "GPIO21 PCM_DOUT", "I2S_DIN", "R19 → U2 DIN"),
+    (35, "GPIO19 PCM_FS", "I2S_LRCLK", "U2 WCLK"), (37, "GPIO26", "CODEC_RST", "U2 RESET, R21"),
+    (38, "GPIO20 PCM_DIN", "I2S_DOUT", "← U2 DOUT"), (39, "GND", "GND", ""),
+    (40, "GPIO21 PCM_DOUT", "I2S_DIN", "U2 DIN"),
 ]
 
 NETS = [
     ("pwr", "13V8_IN", "J6.1, F1.1"),
     ("pwr", "VIN_F", "F1.2, D1 A"),
-    ("pwr", "VIN", "D1 K, D3 K, C16–C18, C19 +, U3.2 VIN"),
-    ("pwr", "SW", "U3.8, C20.2, D2 K, L1.1"),
-    ("pwr", "BOOT", "U3.1, C20.1"),
-    ("pwr", "RT", "U3.4, R28.1"),
-    ("pwr", "COMP", "U3.6, R29.1, C29.1 (R29.2 → C28.1)"),
-    ("pwr", "FB", "U3.5, R26.2, R27.1"),
-    ("pwr", "FB_MID", "R25.2, R26.1"),
+    ("pwr", "VIN", "D1 K, D3 K, C16–C18, C19 +, U3.2 VIN, U3.3 EN"),
+    ("pwr", "SW", "U3.8, C20.2, L1.1"),
+    ("pwr", "BOOT", "U3.7, C20.1"),
+    ("pwr", "VCC", "U3.6, C28.1"),
+    ("pwr", "FB", "U3.5, R25.2, R26.1"),
     ("pwr", "5V0", "L1.2, C21–C23, R25.1, J1.2, J1.4, U4.3 IN, C24, R7"),
-    ("pwr", "3V3A", "U4.2 OUT, C25, U5.1 IN, U5.3 EN, C26, U2.25, U2.18, U2.24, C8, C9, C10, C13"),
+    ("pwr", "3V3A", "U4.2 OUT, C25, U5.1 IN, U5.3 EN, U2.25, U2.18, U2.24, C8, C9, C10, C13"),
     ("pwr", "1V8", "U5.5 OUT, C27, U2.32 DVDD, C12"),
     ("pi", "3V3_PI", "J1.1, J1.17, U2.7 IOVDD, C11, Y1.4, Y1.1, C14, U6.8, C15, R22, R23, R24"),
-    ("pi", "GND", "J1 GND pins, J6.2, C16–C27, D2 A, D3 A, R27, R28, U3.7/9, U4.1, U5.2, U1.2/4/6/9, U2.6/17/21/26/33, Y1.2, U6.1–4, R21, LED1 K, LED2 K, JP1.2, JP2.2"),
+    ("pi", "GND", "J1 GND pins, J6.2, C16–C19, C21–C25, C27, C28, D3 A, R26, U3.1/9, U4.1, U5.2, U1.2/4/6/9, U2.6/17/21/26/33, Y1.2, U6.1–4, R21, LED1 K, LED2 K, JP1.2, JP2.2"),
     ("pi", "GPIO17", "J1.11, R1.1, R8.1"),
     ("pi", "GPIO27", "J1.13, R2.1"),
     ("pi", "GPIO22", "J1.15, R3.1"),
     ("pi", "GPIO23", "J1.16, U1.10 (C4)"),
     ("pi", "I2C_SDA", "J1.3, U2.9"),
     ("pi", "I2C_SCL", "J1.5, U2.8"),
-    ("pi", "I2S_BCLK", "J1.12, R17 → U2.2"),
-    ("pi", "I2S_LRCLK", "J1.35, R18 → U2.3"),
-    ("pi", "I2S_DIN", "J1.40, R19 → U2.4 (codec DIN)"),
-    ("pi", "I2S_DOUT", "J1.38, R20 ← U2.5 (codec DOUT)"),
+    ("pi", "I2S_BCLK", "J1.12, U2.2"),
+    ("pi", "I2S_LRCLK", "J1.35, U2.3"),
+    ("pi", "I2S_DIN", "J1.40, U2.4 (codec DIN)"),
+    ("pi", "I2S_DOUT", "J1.38, U2.5 (codec DOUT)"),
     ("pi", "OSC_12M", "Y1.3, R16 → U2.1 MCLK"),
     ("pi", "CODEC_RST", "J1.37, U2.31, R21.1"),
     ("pi", "ID_SD", "J1.27, U6.5, R22.2"),
     ("pi", "ID_SC", "J1.28, U6.6, R23.2"),
     ("pi", "EE_WP", "U6.7, R24.2, TP1, JP2.1"),
     ("pi", "HP_P / HP_N", "U2.19 / U2.20 → R14 / R15 → T1.1 / T1.3"),
+    ("rd", "T1 secondary", "T1.6 → C1 → FB4 → R_MIC; T1.4 → RGND"),
     ("pi", "RX_P / RX_N", "C2 / C3 → U2.10 / U2.11"),
-    ("rd", "RGND", "U1.11/13/15, C4–C7, R10.2, T1.4, J5.5–8, J9.2, JP1.1"),
+    ("rd", "RGND", "U1.11/13/15, C4, C7, T1.4, J5.5–8, J9.2, JP1.1"),
     ("rd", "R_PTT", "FB1.2, C4, J5.1, J9.1"),
-    ("rd", "R_UP", "FB2.2, C5, J5.2"),
-    ("rd", "R_DN", "FB3.2, C6, J5.3"),
+    ("rd", "R_UP", "U1.14 → JP3 ∥ R5 (not fitted), J5.2"),
+    ("rd", "R_DN", "U1.12 → JP4 ∥ R6 (not fitted), J5.3"),
     ("rd", "R_MIC", "FB4.2, C7, J5.4"),
-    ("rd", "R_SPP / R_SPN", "J7.1 / J7.2 → FB5 / FB6 → T2.6 / T2.4"),
+    ("rd", "R_SPP / R_SPN", "J7.1 / J7.2 → T2.6 / T2.4"),
     ("rd", "BUSY+", "J8.1, R4.1"),
     ("rd", "BUSY−", "J8.2, U1.8 (K4), D4 A"),
     ("rd", "RJ1 … RJ8", "J2.n, J3.n, J4.n (pin for pin)"),
@@ -626,34 +623,31 @@ NETS = [
 PARTS = [
     ("U1", "TCMT4100 quad opto, SOP-16", "C2938669", "Ext"),
     ("U2", "TLV320AIC3104IRHBR codec, QFN-32", "C181753", "Ext"),
-    ("U3", "TPS54360BDDAR buck, SOIC-8-EP", "C524806", "Ext"),
+    ("U3", "LMR33640ADDAR buck, HSOIC-8-EP", "C2836966", "Ext"),
     ("U4", "TLV76133DCYR 3.3 V LDO, SOT-223", "C7527500", "Ext"),
     ("U5", "TPS7A2018PDBVR 1.8 V LDO, SOT-23-5", "C963430", "Ext"),
     ("U6", "AT24C32D-SSHM-T EEPROM, SOIC-8", "C60583", "Ext"),
     ("Y1", "HSO321S 12 MHz 3.3 V oscillator, 3225", "C160457", "Ext"),
     ("T1, T2", "SM-LP-5001E 600:600 Ω transformer", "C840532", "Ext"),
     ("L1", "FXL0630-6R8-M 6.8 µH 5 A", "C167221", "Ext"),
-    ("D1, D2", "SS56 Schottky 60 V 5 A, SMA", "C65009", "Ext"),
-    ("D3", "SMBJ24A TVS, SMB", "C123819", "Ext"),
+    ("D1", "SS56 Schottky 60 V 5 A, SMA", "C65009", "Ext"),
+    ("D3", "SMBJ22A TVS (Littelfuse), SMB", "C224015", "Ext"),
     ("D4", "1N4148WS, SOD-323", "C2128", "Basic"),
     ("F1", "1812L150/33GR PTC 1.5 A 33 V", "C18198333", "Ext"),
     ("LED1, LED2", "KT-0603R red LED, 0603", "C2286", "Basic"),
-    ("FB1–FB6", "GZ1608D601TF ferrite 600 Ω, 0603", "C1002", "Basic"),
+    ("FB1, FB4", "GZ1608D601TF ferrite 600 Ω, 0603", "C1002", "Basic"),
     ("R1–R3", "470 Ω 0603", "C23179", "Basic"),
-    ("R4, R26", "2.2 kΩ 0603", "C4190", "Basic"),
-    ("R5, R6", "0 Ω 0603 (or ladder values)", "C21189", "Basic"),
-    ("R7, R8, R13, R24", "1 kΩ 0603", "C21190", "Basic"),
-    ("R9, R11, R12, R21, R27, R29", "10 kΩ 0603", "C25804", "Basic"),
-    ("R10", "100 Ω 0603", "C22775", "Basic"),
-    ("R14–R20", "33 Ω 0603", "C23140", "Basic"),
+    ("R4", "2.2 kΩ 0603", "C4190", "Basic"),
+    ("R5, R6", "Not fitted: 0603 footprints for ladder values (JP3/JP4 bridge them)", "—", "DNP"),
+    ("R7, R8, R24", "1 kΩ 0603", "C21190", "Basic"),
+    ("R11, R12, R13, R21", "10 kΩ 0603", "C25804", "Basic"),
+    ("R14–R16", "33 Ω 0603", "C23140", "Basic"),
     ("R22, R23", "3.9 kΩ 0603", "C23018", "Basic"),
-    ("R25", "51 kΩ 0603", "C23196", "Basic"),
-    ("R28", "150 kΩ 0603", "C22807", "Basic"),
-    ("C28", "6.8 nF 50 V X7R 0603 (U3 compensation)", "C1631", "Basic"),
-    ("C29", "47 pF 50 V C0G 0603 (U3 compensation)", "C1671", "Basic"),
+    ("R25", "82 kΩ 0603 1 %", "C23254", "Basic"),
+    ("R26", "20 kΩ 0603 1 %", "C4184", "Basic"),
     ("C1", "1 µF 50 V X7R 0805", "C28323", "Basic"),
-    ("C2, C3, C24, C26, C27", "1 µF 50 V X5R 0603", "C15849", "Basic"),
-    ("C4–C7", "100 pF C0G 0603", "C14858", "Basic"),
+    ("C2, C3, C24, C27, C28", "1 µF 50 V X5R 0603", "C15849", "Basic"),
+    ("C4, C7", "100 pF C0G 0603", "C14858", "Basic"),
     ("C8–C12, C14, C15, C20", "100 nF 50 V X7R 0603", "C14663", "Basic"),
     ("C13, C25", "10 µF 25 V X5R 0805", "C15850", "Basic"),
     ("C16–C18", "2.2 µF 50 V X7R 1206", "C50254", "Basic"),
@@ -663,14 +657,14 @@ PARTS = [
     ("J2, J3", "RJ45 8P8C shielded, no magnetics (Amphenol RJHSE5380)", "C464586", "Ext · THT"),
     ("J4, J5", "1×8 male header 2.54 mm", "C492407", "Ext · THT"),
     ("J6–J9", "KF350-3.5-2P screw terminal", "C474892", "Ext · THT"),
-    ("JP1, JP2, TP1", "PCB features only (solder jumpers, test pad)", "—", "—"),
+    ("JP1–JP4, TP1", "PCB features only (solder jumpers; JP3/JP4 are closed by default; test pad)", "—", "—"),
 ]
 
 FOOTPRINT = {
-    "C2938669": "SOIC-16_4.4x10.3mm_P1.27mm", "C181753": "QFN-32-1EP_5x5mm_P0.5mm", "C524806": "SOIC-8-1EP_3.9x4.9mm_P1.27mm",
+    "C2938669": "SOIC-16_4.4x10.3mm_P1.27mm", "C181753": "QFN-32-1EP_5x5mm_P0.5mm", "C2836966": "HSOP-8-1EP_3.9x4.9mm_P1.27mm",
     "C7527500": "SOT-223-3_TabPin2", "C963430": "SOT-23-5", "C60583": "SOIC-8_3.9x4.9mm_P1.27mm",
     "C160457": "Oscillator_SMD_3225-4Pin", "C840532": "Bourns_SM-LP-5001", "C167221": "L_7.0x6.6mm",
-    "C65009": "D_SMA", "C123819": "D_SMB", "C2128": "D_SOD-323", "C18198333": "Fuse_1812", "C2286": "LED_0603",
+    "C65009": "D_SMA", "C224015": "D_SMB", "C2128": "D_SOD-323", "C18198333": "Fuse_1812", "C2286": "LED_0603",
     "C1002": "L_0603", "C28323": "C_0805", "C15850": "C_0805", "C50254": "C_1206", "C12891": "C_1206",
     "C72480": "CP_Elec_8x10.2", "C2977589": "PinSocket_2x20_P2.54mm_Vertical", "C464586": "RJ45_Amphenol_RJHSE5380",
     "C492407": "PinHeader_1x08_P2.54mm_Vertical", "C474892": "TerminalBlock_P3.50mm_1x02",
@@ -707,7 +701,8 @@ def write_csv(path):
 
 CHECKS = [
     ("Y1 pinout", "The HSO321S datasheet is encrypted, so pin numbers follow the usual 3225 layout. Confirm before layout; tying pin 1 high is safe either way."),
-    ("U3 compensation", "R29 10k, C28 6.8 nF, C29 47 pF from the TPS54360 datasheet procedure (8.2.2.11), assuming 42 µF of derated output capacitance. Confirm at bring-up with a load-step test (0.5 A → 3 A): ringing that settles in a few cycles is fine."),
+    ("U3 stock", "LMR33640ADDAR (C2836966) is an Extended part. LCSC showed about 2,400 in stock, but one JLCPCB snapshot showed only 6 available to order. Check the live JLC page before ordering; pre-order or consign if it is short."),
+    ("U4 / U5 placement", "U5 has no input capacitor of its own: it shares C25 at U4's output. Place U5 within a few mm of U4 and C25."),
     ("Codec clocking", "The in-kernel dacberry400 overlay sets the codec PLL source to BCLK (clock id 2) while stating 12 MHz. Y1 feeds MCLK so a small custom overlay can select MCLK instead. First bring-up test: confirm 48 kHz playback is the right pitch."),
     ("IOVDD", "Runs at 3.3 V (3V3_PI) to match Pi logic. The dacberry400 overlay describes IOVDD as 1.8 V; that only names a regulator for the driver and doesn't change the hardware."),
     ("Mic-jack numbering", "RJ45 pin numbers versus each radio's numbering: confirm with a straight patch lead and a meter before setting the J4 → J5 jumpers."),
@@ -718,11 +713,11 @@ CHECKS = [
 def main():
     sheets = [
         ("overview", "Block diagram", sheet_overview(), "Block diagram: Pi-side blocks on the left of the isolation barrier, radio-side filters and connectors on the right, power along the bottom.", "Everything left of the dashed barrier is on Pi ground (GND). Everything right of it is on radio ground (RGND). Only optocouplers and transformers cross it."),
-        ("power", "Power", sheet_power(), "Power sheet: 13.8 V input through fuse, reverse diode and TVS into a TPS54360 buck making 5.06 V, then a TLV76133 3.3 V LDO and TPS7A2018 1.8 V LDO for the codec.", "The 5V0 rail powers the Pi through header pins 2 and 4. 3V3A is a quiet analog rail for the codec; the Pi's own 3V3 is used only for logic."),
+        ("power", "Power", sheet_power(), "Power sheet: 13.8 V input through fuse, reverse diode and TVS into an LMR33640 buck making 5.10 V, then a TLV76133 3.3 V LDO and TPS7A2018 1.8 V LDO for the codec.", "The 5V0 rail powers the Pi through header pins 2 and 4. 3V3A is a quiet analog rail for the codec; the Pi's own 3V3 is used only for logic."),
         ("control", "Control", sheet_control(), "Control sheet: the TCMT4100 quad optocoupler with three Pi-driven channels for PTT, UP and DOWN, and one reversed channel bringing BUSY in.", "Channels 1–3 are driven from the Pi. Channel 4 is reversed: its LED sits on the radio side, so BUSY arrives isolated on GPIO23."),
         ("connectors", "Radio connectors", sheet_connectors(), "Radio connectors sheet: two RJ45 jacks wired in parallel, a patch header pair for per-radio pin mapping, and screw terminals for speaker, busy and accessory PTT.", "J2 and J3 are joined pin for pin, so the original mic keeps working. Each radio gets its own short set of jumpers between J4 and J5."),
-        ("codec", "Codec", sheet_codec(), "Codec sheet: TLV320AIC3104 with I2S and I2C to the Pi, 12 MHz master clock, reset pull-down, decoupling, and unused pins marked no-connect.", "All 33 pins are shown so the KiCad symbol can be checked pin for pin. Crossed pins are no-connect."),
-        ("audio", "Audio + ID EEPROM", sheet_audio(), "Audio isolation sheet: T1 drives the radio mic through a 40 dB pad; T2 takes the radio speaker into the codec's differential input; plus the HAT ID EEPROM.", "Both transformers sit across the barrier. TX audio leaves the codec differentially; RX audio arrives differentially, so neither speaker wire is ever grounded."),
+        ("codec", "Codec", sheet_codec(), "Codec sheet: TLV320AIC3104 with I2S and I2C straight to the Pi, 12 MHz master clock through 33 Ω, reset pull-down, decoupling, and unused pins marked no-connect.", "All 33 pins are shown so the KiCad symbol can be checked pin for pin. Crossed pins are no-connect."),
+        ("audio", "Audio + ID EEPROM", sheet_audio(), "Audio isolation sheet: T1 drives the radio's TX audio input with the level set in software; T2 takes the radio's RX audio into the codec's differential input through a light pad; plus the HAT ID EEPROM.", "Both transformers sit across the barrier. TX audio leaves the codec differentially; RX audio arrives differentially, so neither speaker wire is ever grounded."),
     ]
     sheet_count = 7
     nav = "".join(f'<a href="#{k}"><span class="num">{i+1 if i == 0 else i+2}</span>{t}</a>' for i, (k, t, *_ ) in enumerate(sheets[:1]))
