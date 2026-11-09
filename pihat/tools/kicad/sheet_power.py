@@ -163,8 +163,8 @@ def build(path, page, fuse=("1.5A 33V", "C18198333"), vin_global=False, buck="tp
     buck: "lmr33640" or "tps54360" (see the module notes). tvs: (value, LCSC) for D3; it must
     clamp below the buck's maximum input. u5_cin: a separate input cap at U5 (C26); without it
     U5 shares C25 at U4's output, so place U5 next to U4.
-    power_in: (ref, value, footprint, LCSC) for the 13.8 V input connector; default J6, a 3.5 mm
-    screw terminal."""
+    power_in: (ref, value, footprint, LCSC[, dnp]) for the 13.8 V input connector; default J6, a
+    3.5 mm screw terminal. dnp=True marks it Do Not Populate (hand-soldered)."""
     s = Sheet("Power", path, page)
     G = ("pwr", "GND")
 
@@ -173,10 +173,11 @@ def build(path, page, fuse=("1.5A 33V", "C18198333"), vin_global=False, buck="tp
 
     # ---- input: J6 -> F1 -> D1 -> VIN
     y = 50.8
-    jref, jval, jfp, jlcsc = power_in or (
+    jref, jval, jfp, jlcsc, *jdnp = power_in or (
         "J6", "13.8 V in", "TerminalBlock_Phoenix:TerminalBlock_Phoenix_PT-1,5-2-3.5-H_1x02_P3.50mm_Horizontal", "C474892")
     s.symbol("Connector:Screw_Terminal_01x02", jref, jval, (25.4, y), mirror="y", footprint=jfp,
-             lcsc=jlcsc, ref_at=(22.86, 45.72), val_at=(22.86, 43.18))
+             lcsc=jlcsc, ref_at=(22.86, 45.72), val_at=(22.86, 43.18), dnp=bool(jdnp and jdnp[0]),
+             in_bom=not (jdnp and jdnp[0]))
     s.symbol("Device:Polyfuse", "F1", fuse[0], (49.53, y), rot=90, footprint=sharedlib.fp("Fuse:Fuse_1812_4532Metric"),
              lcsc=fuse[1], ref_at=(49.53, 46.99), val_at=(49.53, 55.88))
     s.symbol("Device:D_Schottky", "D1", "SS56", (68.58, y), rot=180, footprint="Diode_SMD:D_SMA",

@@ -641,10 +641,10 @@ PARTS = [
     ("C16–C18", "2.2 µF 50 V X7R 1206", "C50254", "Basic"),
     ("C19", "100 µF 50 V electrolytic 8×10.2", "C72480", "Ext"),
     ("C21–C23", "22 µF 25 V X5R 1206", "C12891", "Basic"),
-    ("J1", "2×20 female header 2.54 mm", "C2977589", "Ext · THT"),
-    ("J2", "XY2500V-F-3.5-2P pluggable header, 3.5 mm, vertical, closed", "C880554", "Ext · THT"),
-    ("J3", "XY2500V-F-3.5-4P pluggable header, 3.5 mm, vertical, closed", "C880556", "Ext · THT"),
-    ("J4", "XY2500V-F-3.5-6P pluggable header, 3.5 mm, vertical, closed", "C880558", "Ext · THT"),
+    ("J1", "2×20 female header 2.54 mm", "C2977589", "DNP · hand-solder"),
+    ("J2", "XY2500V-F-3.5-2P pluggable header, 3.5 mm, vertical, closed", "C880554", "DNP · hand-solder"),
+    ("J3", "XY2500V-F-3.5-4P pluggable header, 3.5 mm, vertical, closed", "C880556", "DNP · hand-solder"),
+    ("J4", "XY2500V-F-3.5-6P pluggable header, 3.5 mm, vertical, closed", "C880558", "DNP · hand-solder"),
     ("JP1–JP4, TP1", "PCB features only (solder jumpers; JP3/JP4 are closed by default; test pad)", "—", "—"),
 ]
 
@@ -679,9 +679,9 @@ def write_csv(path):
         w = csv.writer(f)
         w.writerow(["Comment", "Designator", "Footprint", "LCSC Part #"])
         n = 0
-        for refs, desc, lcsc, _ in PARTS:
-            if not lcsc.startswith("C"):
-                continue  # TBD values and PCB-only features
+        for refs, desc, lcsc, kind in PARTS:
+            if not lcsc.startswith("C") or kind.startswith("DNP"):
+                continue  # TBD values, PCB-only features, and parts soldered by hand
             fp = FOOTPRINT.get(lcsc) or ("R_0603" if refs.startswith("R") else "C_0603")
             des = expand(refs)
             n += len(des)
@@ -692,9 +692,10 @@ def write_csv(path):
 CHECKS = [
     ("Y1 pinout", "The HSO321S datasheet is encrypted, so pin numbers follow the usual 3225 layout. Confirm before layout; tying pin 1 high is safe either way."),
     ("U3 stock", "LMR33640ADDAR (C2836966) is an Extended part. LCSC showed about 2,400 in stock, but one JLCPCB snapshot showed only 6 available to order. Check the live JLC page before ordering; pre-order or consign if it is short."),
-    ("Codec clocking", "The in-kernel dacberry400 overlay sets the codec PLL source to BCLK (clock id 2) while stating 12 MHz. Y1 feeds MCLK so a small custom overlay can select MCLK instead. First bring-up test: confirm 48 kHz playback is the right pitch."),
+    ("Codec clocking", "Y1 drives MCLK at 12 MHz. simple-audio-card always clocks the codec from MCLK, so a small custom overlay (codec at 0x18, reset on GPIO26, 12 MHz system clock) runs it correctly. The stock dacberry400 overlay clocks the PLL from BCLK while claiming 12 MHz: don't use it on this board."),
     ("IOVDD", "Runs at 3.3 V (3V3_PI) to match Pi logic. The dacberry400 overlay describes IOVDD as 1.8 V; that only names a regulator for the driver and doesn't change the hardware."),
     ("Connector footprints", "J2–J4 use footprints made from LCSC's data for the exact XY2500V-F parts (1.4 mm drills, 2.2 mm pads). Plugs go in from above, so leave room above them in the case opening."),
+    ("Back-feeding", "Don't power the Pi from USB-C with the HAT fitted and 13.8 V off: the Pi's 5 V would sit on the LMR33640's output with no input, which its datasheet says not to allow."),
     ("Isolation clearance", "Keep RGND copper and every radio-side net at least 2 mm from GND-side copper, including under U1 and T1/T2."),
 ]
 

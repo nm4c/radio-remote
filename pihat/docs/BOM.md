@@ -13,13 +13,12 @@ so re-check before ordering.
 | | Unique parts |
 |---|---|
 | **Basic** (no loading fee) | 18 |
-| **Extended** (≈ US$3 each, per order) | 17 |
+| **Extended** (≈ US$3 each, per order) | 13 |
 
-That's about US$51 in loading fees per order, not per board. To cut it:
-1. **Solder the through-hole connectors yourself:** J1 (Pi header) and J2–J4 (pluggable
-   headers). That's 4 fewer Extended parts, and the board qualifies for
-   JLC's cheaper "Economic" assembly, which only does SMD parts.
-2. **Leave the power section off** (U3, L1, D1, D3, F1, C19, C28) if the Pi has its own supply. That's
+J1 (Pi header) and J2–J4 (pluggable headers) are **Do Not Populate**: through-hole, soldered by
+hand. That leaves JLC only SMD parts, so the board qualifies for the cheaper "Economic" assembly,
+and about US$39 in loading fees per order, not per board. To cut it further:
+1. **Leave the power section off** (U3, L1, D1, D3, F1, C19, C28) if the Pi has its own supply. That's
    6 fewer Extended parts. The codec rails (U4, U5) are still needed and run from the Pi's 5 V.
 
 ## Design choices

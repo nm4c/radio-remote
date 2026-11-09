@@ -30,7 +30,3 @@ GZ1608D601TF ferrite 600 Ω,"FB1,FB4",L_0603,C1002
 2.2 µF 50 V X7R 1206,"C16,C17,C18",C_1206,C50254
 100 µF 50 V electrolytic 8×10.2,C19,CP_Elec_8x10.2,C72480
 22 µF 25 V X5R 1206,"C21,C22,C23",C_1206,C12891
-2×20 female header 2.54 mm,J1,PinSocket_2x20_P2.54mm_Vertical,C2977589
-XY2500V-F-3.5-2P pluggable header,J2,Xinlaiya_XY2500V-F-3.5_1x02_P3.50mm_Vertical,C880554
-XY2500V-F-3.5-4P pluggable header,J3,Xinlaiya_XY2500V-F-3.5_1x04_P3.50mm_Vertical,C880556
-XY2500V-F-3.5-6P pluggable header,J4,Xinlaiya_XY2500V-F-3.5_1x06_P3.50mm_Vertical,C880558

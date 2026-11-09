@@ -111,6 +111,14 @@ def _symbol_block(text, ref):
     return start, end
 
 
+def set_dnp(text, ref, dnp=True, in_bom=False):
+    """Mark a root-sheet symbol Do Not Populate (left out of assembly) and, by default, out of the BOM."""
+    st, en = _symbol_block(text, ref)
+    blk = text[st:en].replace(f"(dnp {'no' if dnp else 'yes'})", f"(dnp {'yes' if dnp else 'no'})", 1)
+    blk = re.sub(r"\(in_bom (yes|no)\)", f"(in_bom {'yes' if in_bom else 'no'})", blk, count=1)
+    return text[:st] + blk + text[en:]
+
+
 def set_fields(text, ref, fields):
     start, end = _symbol_block(text, ref)
     block = text[start:end]

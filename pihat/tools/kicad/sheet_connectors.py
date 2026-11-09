@@ -14,7 +14,8 @@ def fp(n):
     return f"{sharedlib.LIB}:{sharedlib.xy2500v_name(n)}"
 
 
-POWER_IN = ("J2", "13.8 V in", fp(2), LCSC[2])  # for sheet_power.build(power_in=...)
+# All three are Do Not Populate: through-hole, soldered by hand, so JLC assembles SMD only.
+POWER_IN = ("J2", "13.8 V in", fp(2), LCSC[2], True)  # for sheet_power.build(power_in=...)
 
 # Pin assignments, pin 1 first. RGND is the radio's ground.
 AUDIO = ["R_MIC", "RGND", "R_SPP", "R_SPN"]
@@ -30,7 +31,7 @@ def header(s, ref, value, pins, at):
     """An XY2500V-F header with global labels (or RGND symbols) on its pins."""
     n = len(pins)
     x, y = at
-    s.symbol(f"Connector_Generic:Conn_01x0{n}", ref, value, at, mirror="y", footprint=fp(n),
+    s.symbol(f"Connector_Generic:Conn_01x0{n}", ref, value, at, mirror="y", footprint=fp(n), dnp=True, in_bom=False,
              lcsc=LCSC[n], ref_at=(x, y - 3.81 - 1.27 * n), val_at=(x, y + 3.81 + 1.27 * n),
              conn={str(i + 1): ("pwr", "RGND", 5.08) if net == "RGND" else ("glabel", net, 5.08)
                    for i, net in enumerate(pins)})

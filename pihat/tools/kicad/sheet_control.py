@@ -53,7 +53,7 @@ def build(path, page):
         e = s.p(f"U1.{17 - 2 * unit}")
         if rser:
             rref, jref = rser
-            s.symbol("Device:R", rref, "ladder", (144.78, ya), rot=90, footprint=R0603, dnp=True,
+            s.symbol("Device:R", rref, "ladder", (144.78, ya), rot=90, footprint=R0603, dnp=True, in_bom=False,
                      ref_at=(144.78, ya + 3.81), val_at=(144.78, ya + 6.35))
             a, b = sorted([s.p(f"{rref}.1"), s.p(f"{rref}.2")])
             s.symbol("Jumper:SolderJumper_2_Bridged", jref, "closed", (144.78, ya - 5.08),

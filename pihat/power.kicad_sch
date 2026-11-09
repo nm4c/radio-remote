@@ -2905,10 +2905,10 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
-		(dnp no)
+		(dnp yes)
 		(uuid "11c310fb-ce02-5677-86a7-9118ec5f8cc0")
 		(property "Reference" "J2"
 			(at 22.86 45.72 0)
