@@ -7067,6 +7067,175 @@
 			)
 		)
 	)
+	(symbol
+		(lib_id "Device:C")
+		(at 88.9 143.51 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "dd6a397d-2259-5ef0-85b3-844f962722d8")
+		(property "Reference" "C26"
+			(at 91.44 142.24 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "1uF"
+			(at 91.44 144.78 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
+			(at 88.9 143.51 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 88.9 143.51 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Unpolarized capacitor"
+			(at 88.9 143.51 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C15849"
+			(at 88.9 143.51 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "1194618f-5c17-5f0b-b9de-359c2bfa0a51")
+		)
+		(pin "2"
+			(uuid "15bce23a-b444-5681-b8a2-edcaa4d530c0")
+		)
+		(instances
+			(project "pihat"
+				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/3f334889-f2db-480c-9a92-0b877ffd5570"
+					(reference "C26")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 88.9 147.32 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom no)
+		(on_board no)
+		(in_pos_files no)
+		(dnp no)
+		(uuid "f418cdf3-bc2f-58ef-b84d-7d7910b19045")
+		(property "Reference" "#PWR222"
+			(at 88.9 147.32 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 88.9 152.4 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 88.9 147.32 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 88.9 147.32 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 88.9 147.32 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "1a070057-8731-5431-9a70-d6bba550ce84")
+		)
+		(instances
+			(project "pihat"
+				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/3f334889-f2db-480c-9a92-0b877ffd5570"
+					(reference "#PWR222")
+					(unit 1)
+				)
+			)
+		)
+	)
 	(wire
 		(pts
 			(xy 68.58 139.7)
@@ -7135,6 +7304,12 @@
 		(uuid "fecc1555-c402-5a71-95b8-4f36626112f3")
 	)
 	(junction
+		(at 88.9 139.7)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "cb702145-a65a-5190-9f92-e619b5c0ecd7")
+	)
+	(junction
 		(at 99.06 139.7)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -7150,8 +7325,8 @@
 		(on_board no)
 		(in_pos_files no)
 		(dnp no)
-		(uuid "f418cdf3-bc2f-58ef-b84d-7d7910b19045")
-		(property "Reference" "#PWR222"
+		(uuid "6e635282-4792-57d3-929f-8cfbe500d5e6")
+		(property "Reference" "#PWR223"
 			(at 81.28 139.7 0)
 			(hide yes)
 			(show_name no)
@@ -7206,12 +7381,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "1a070057-8731-5431-9a70-d6bba550ce84")
+			(uuid "3dd5a714-f123-52c0-b15f-9c1bf8709d07")
 		)
 		(instances
 			(project "pihat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/3f334889-f2db-480c-9a92-0b877ffd5570"
-					(reference "#PWR222")
+					(reference "#PWR223")
 					(unit 1)
 				)
 			)
@@ -7341,8 +7516,8 @@
 		(on_board no)
 		(in_pos_files no)
 		(dnp no)
-		(uuid "6e635282-4792-57d3-929f-8cfbe500d5e6")
-		(property "Reference" "#PWR223"
+		(uuid "5374185a-d3c2-57fa-aecd-d5ef0f35252a")
+		(property "Reference" "#PWR224"
 			(at 129.54 147.32 0)
 			(hide yes)
 			(show_name no)
@@ -7397,12 +7572,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "3dd5a714-f123-52c0-b15f-9c1bf8709d07")
+			(uuid "57638dec-bd72-51b2-aac0-0525bde23995")
 		)
 		(instances
 			(project "pihat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/3f334889-f2db-480c-9a92-0b877ffd5570"
-					(reference "#PWR223")
+					(reference "#PWR224")
 					(unit 1)
 				)
 			)
@@ -7446,8 +7621,8 @@
 		(on_board no)
 		(in_pos_files no)
 		(dnp no)
-		(uuid "5374185a-d3c2-57fa-aecd-d5ef0f35252a")
-		(property "Reference" "#PWR224"
+		(uuid "dd972c17-a300-5d7b-b21c-fb3ef9fb448c")
+		(property "Reference" "#PWR225"
 			(at 137.16 139.7 0)
 			(hide yes)
 			(show_name no)
@@ -7502,12 +7677,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "57638dec-bd72-51b2-aac0-0525bde23995")
+			(uuid "ee6b4cb0-c172-583d-b03c-9a5c019c0bb8")
 		)
 		(instances
 			(project "pihat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/3f334889-f2db-480c-9a92-0b877ffd5570"
-					(reference "#PWR224")
+					(reference "#PWR225")
 					(unit 1)
 				)
 			)
@@ -7726,8 +7901,8 @@
 		(on_board no)
 		(in_pos_files no)
 		(dnp no)
-		(uuid "dd972c17-a300-5d7b-b21c-fb3ef9fb448c")
-		(property "Reference" "#PWR225"
+		(uuid "2b5f7029-272a-5950-822c-8b0e1daa5f10")
+		(property "Reference" "#PWR226"
 			(at 177.8 139.7 0)
 			(hide yes)
 			(show_name no)
@@ -7782,12 +7957,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "ee6b4cb0-c172-583d-b03c-9a5c019c0bb8")
+			(uuid "1313e338-7103-53da-8c0b-dc096cafe948")
 		)
 		(instances
 			(project "pihat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/3f334889-f2db-480c-9a92-0b877ffd5570"
-					(reference "#PWR225")
+					(reference "#PWR226")
 					(unit 1)
 				)
 			)
@@ -7825,8 +8000,8 @@
 		(on_board no)
 		(in_pos_files no)
 		(dnp no)
-		(uuid "2b5f7029-272a-5950-822c-8b0e1daa5f10")
-		(property "Reference" "#PWR226"
+		(uuid "3567531d-614e-5b90-b9dc-5376d20c300d")
+		(property "Reference" "#PWR227"
 			(at 208.28 139.7 0)
 			(hide yes)
 			(show_name no)
@@ -7881,12 +8056,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "1313e338-7103-53da-8c0b-dc096cafe948")
+			(uuid "d2aabe28-cb7b-5593-a39d-ff2bb4bf81a5")
 		)
 		(instances
 			(project "pihat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/3f334889-f2db-480c-9a92-0b877ffd5570"
-					(reference "#PWR226")
+					(reference "#PWR227")
 					(unit 1)
 				)
 			)
@@ -7902,8 +8077,8 @@
 		(on_board no)
 		(in_pos_files no)
 		(dnp no)
-		(uuid "bc1194bb-90d2-5a24-98d2-f9867b779a05")
-		(property "Reference" "#FLG227"
+		(uuid "65ee78c7-2c8b-507c-9506-784127e47da8")
+		(property "Reference" "#FLG228"
 			(at 208.28 139.7 0)
 			(hide yes)
 			(show_name no)
@@ -7958,12 +8133,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "638a9fcd-40b4-50c3-bff4-5c2b74b79392")
+			(uuid "048f134b-8e1c-5ec1-bac7-0ad0f18a6910")
 		)
 		(instances
 			(project "pihat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/3f334889-f2db-480c-9a92-0b877ffd5570"
-					(reference "#FLG227")
+					(reference "#FLG228")
 					(unit 1)
 				)
 			)

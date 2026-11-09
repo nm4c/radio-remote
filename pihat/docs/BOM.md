@@ -49,7 +49,6 @@ See the "Before layout" checklist at the end of the schematic page. In short:
 - **Y1 pinout:** confirm it (the datasheet is encrypted).
 - **U3 stock:** LMR33640ADDAR (C2836966) is Extended. One JLCPCB snapshot showed very few
   available to order, so check the live page; pre-order or consign if it is short.
-- **U5 placement:** U5 shares C25 at U4's output instead of having its own input cap; keep them close.
 - **Codec clock:** confirm the clock setup at bring-up.
 - **Connector footprints:** J2–J4 use KiCad's Phoenix MC 1,5/x-G-3,5 footprints, which the
   XY2500R-G copies. Check them against the Xinlaiya drawing and keep the plug side at the board edge.

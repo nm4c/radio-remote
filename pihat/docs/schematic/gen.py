@@ -277,9 +277,9 @@ def sheet_power():
     s.ic(220, 420, 120, "U4", "TLV76133DCYR", [(3, "IN"), (1, "GND")], [(2, "OUT")], top=30, rows=2)
     s.poly([(190, 470), (180, 470), (180, 480)]); s.gnd(180, 480)
     s.line(370, 450, 490, 450)
-    for x in (400, 475): s.dot(x, 450)
+    for x in (400, 450, 475): s.dot(x, 450)
     s.two("cap", 400, 450, "d"); s.gnd(400, 510); s.text(400, 545, "C25 10 µF", "t-val", "middle")
-    s.text(400, 558, "also U5 input: place U5 by U4", "t-note", "middle")
+    s.two("cap", 450, 450, "d"); s.gnd(450, 510); s.text(450, 558, "C26 1 µF", "t-val", "middle")
     s.poly([(425, 450), (425, 420)]); s.dot(425, 450); s.flag(425, 420, "3V3A", "r")
     s.ic(520, 420, 120, "U5", "TPS7A2018PDBVR", [(1, "IN"), (3, "EN"), (2, "GND")], [(5, "OUT"), (4, "NC", "NC")], top=30, rows=3)
     s.poly([(490, 470), (475, 470), (475, 450)])
@@ -576,10 +576,10 @@ NETS = [
     ("pwr", "VCC", "U3.6, C28.1"),
     ("pwr", "FB", "U3.5, R25.2, R26.1"),
     ("pwr", "5V0", "L1.2, C21–C23, R25.1, J1.2, J1.4, U4.3 IN, C24, R7"),
-    ("pwr", "3V3A", "U4.2 OUT, C25, U5.1 IN, U5.3 EN, U2.25, U2.18, U2.24, C8, C9, C10, C13"),
+    ("pwr", "3V3A", "U4.2 OUT, C25, U5.1 IN, U5.3 EN, C26, U2.25, U2.18, U2.24, C8, C9, C10, C13"),
     ("pwr", "1V8", "U5.5 OUT, C27, U2.32 DVDD, C12"),
     ("pi", "3V3_PI", "J1.1, J1.17, U2.7 IOVDD, C11, Y1.4, Y1.1, C14, U6.8, C15, R22, R23, R24"),
-    ("pi", "GND", "J1 GND pins, J2.2, C16–C19, C21–C25, C27, C28, D3 A, R26, U3.1/9, U4.1, U5.2, U1.2/4/6/9, U2.6/17/21/26/33, Y1.2, U6.1–4, R21, LED1 K, LED2 K, JP1.2, JP2.2"),
+    ("pi", "GND", "J1 GND pins, J2.2, C16–C19, C21–C28, D3 A, R26, U3.1/9, U4.1, U5.2, U1.2/4/6/9, U2.6/17/21/26/33, Y1.2, U6.1–4, R21, LED1 K, LED2 K, JP1.2, JP2.2"),
     ("pi", "GPIO17", "J1.11, R1.1, R8.1"),
     ("pi", "GPIO27", "J1.13, R2.1"),
     ("pi", "GPIO22", "J1.15, R3.1"),
@@ -634,7 +634,7 @@ PARTS = [
     ("R25", "82 kΩ 0603 1 %", "C23254", "Basic"),
     ("R26", "20 kΩ 0603 1 %", "C4184", "Basic"),
     ("C1", "1 µF 50 V X7R 0805", "C28323", "Basic"),
-    ("C2, C3, C24, C27, C28", "1 µF 50 V X5R 0603", "C15849", "Basic"),
+    ("C2, C3, C24, C26–C28", "1 µF 50 V X5R 0603", "C15849", "Basic"),
     ("C4, C7", "100 pF C0G 0603", "C14858", "Basic"),
     ("C8–C12, C14, C15, C20", "100 nF 50 V X7R 0603", "C14663", "Basic"),
     ("C13, C25", "10 µF 25 V X5R 0805", "C15850", "Basic"),
@@ -692,7 +692,6 @@ def write_csv(path):
 CHECKS = [
     ("Y1 pinout", "The HSO321S datasheet is encrypted, so pin numbers follow the usual 3225 layout. Confirm before layout; tying pin 1 high is safe either way."),
     ("U3 stock", "LMR33640ADDAR (C2836966) is an Extended part. LCSC showed about 2,400 in stock, but one JLCPCB snapshot showed only 6 available to order. Check the live JLC page before ordering; pre-order or consign if it is short."),
-    ("U4 / U5 placement", "U5 has no input capacitor of its own: it shares C25 at U4's output. Place U5 within a few mm of U4 and C25."),
     ("Codec clocking", "The in-kernel dacberry400 overlay sets the codec PLL source to BCLK (clock id 2) while stating 12 MHz. Y1 feeds MCLK so a small custom overlay can select MCLK instead. First bring-up test: confirm 48 kHz playback is the right pitch."),
     ("IOVDD", "Runs at 3.3 V (3V3_PI) to match Pi logic. The dacberry400 overlay describes IOVDD as 1.8 V; that only names a regulator for the driver and doesn't change the hardware."),
     ("Connector footprints", "J2–J4 use KiCad's Phoenix MC 1,5/x-G-3,5 footprints, which the XY2500R-G copies. Check the hole positions and body outline against the Xinlaiya drawing, and keep the plug side at the board edge."),
