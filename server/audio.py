@@ -126,6 +126,33 @@ class _TxBuffer:
             self.draining = False
 
 
+class _TxMonitor:
+    """A copy of what actually went to the radio, at the wire rate, for recording our own side.
+
+    Filled by the audio thread as the sound card plays, emptied one RX frame at a time by the
+    event loop, so it stays in step with the received audio. It never holds more than a few
+    frames: if nobody reads it, the oldest audio is dropped.
+    """
+
+    def __init__(self, frame_bytes, frames=5):
+        self.lock = threading.Lock()
+        self.buf = bytearray()
+        self.cap = frame_bytes * frames
+
+    def put(self, x):
+        b = (np.clip(x, -1, 1) * 32767).astype("<i2").tobytes()
+        with self.lock:
+            self.buf += b
+            if len(self.buf) > self.cap:
+                del self.buf[:len(self.buf) - self.cap]
+
+    def take(self, n):
+        with self.lock:
+            out = bytes(self.buf[:n])
+            del self.buf[:n]
+        return out + bytes(n - len(out))  # pad with silence if the output fell behind
+
+
 # ---- real sound card ----------------------------------------------------------
 
 class SoundDeviceAudio:
@@ -142,6 +169,8 @@ class SoundDeviceAudio:
         self.decim = Decimator(self.m)
         self.interp = Interpolator(self.m)
         self.tx = _TxBuffer(self.dev_rate, a["tx_prebuffer_ms"])
+        self.tx_mon = _TxMonitor(self.frame * 2)
+        self.mon_decim = Decimator(self.m)
         self.on_rx = on_rx
         self.rx_dbfs = -120.0
         self._streams = []
@@ -182,7 +211,15 @@ class SoundDeviceAudio:
     def _out_cb(self, outdata, frames, t, status):
         if status:
             log.debug("output status: %s", status)
-        outdata[:, 0] = self.tx.pull(frames)
+        out = self.tx.pull(frames)
+        outdata[:, 0] = out
+        # What was sent, without tx_gain, so a radio fed at mic level still records at speech level.
+        g = self.tx_gain if self.tx_gain > 0 else 1.0
+        self.tx_mon.put(self.mon_decim(out) / g)
+
+    def take_tx_monitor(self, nbytes):
+        """The next nbytes of what was transmitted (int16 LE at the wire rate)."""
+        return self.tx_mon.take(nbytes)
 
     # called from the asyncio thread
     def push_tx(self, pcm):
@@ -223,6 +260,7 @@ class MockAudio:
         self.frame = self.rate * int(a["frame_ms"]) // 1000
         self.frame_s = int(a["frame_ms"]) / 1000
         self.tx = _TxBuffer(self.rate, a["tx_prebuffer_ms"])
+        self.tx_mon = _TxMonitor(self.frame * 2)
         self.on_rx = on_rx
         self.rx_dbfs = -120.0
         self._stop = threading.Event()
@@ -266,13 +304,16 @@ class MockAudio:
                     part = self._selcall[max(0, start): start + self.frame]
                     lo = max(0, -start)
                     y[lo: lo + len(part)] += part
+            self.tx_mon.put(self.tx.pull(self.frame))  # consume TX at real-time rate, keep a copy
             self.rx_dbfs = _dbfs(y)
             self.on_rx((np.clip(y, -1, 1) * 32767).astype("<i2").tobytes())
-            self.tx.pull(self.frame)  # consume TX at real-time rate
 
     def push_tx(self, pcm):
         if len(pcm) % 2 == 0:
             self.tx.push(np.frombuffer(pcm, "<i2").astype(np.float32) / 32768)
+
+    def take_tx_monitor(self, nbytes):
+        return self.tx_mon.take(nbytes)
 
     def drain(self, on=True):
         self.tx.draining = on

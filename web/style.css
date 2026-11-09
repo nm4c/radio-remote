@@ -224,6 +224,7 @@ button.linkish { background: none; border: none; color: var(--accent); padding: 
    those actions anyway; this just keeps them off the screen. */
 .listen-only #ptt, .listen-only #tuneForm, .listen-only #fxPanel, .listen-only #syncBlock,
 .listen-only #selcallPanel label, .listen-only #selcallHint, .listen-only #selcallPresets,
-.listen-only .clip-actions, .listen-only #recordBtn, .listen-only #clipList input,
+.listen-only .clip-actions, .listen-only #recordBtn, .listen-only #recordModeRow, .listen-only #clipList input,
 .listen-only #clipList button, .listen-only #clipsHint, .listen-only .sliders label:nth-child(2),
 .listen-only .micmeter { display: none !important; }
+.record-mode { font-size: 13px; color: var(--muted); }

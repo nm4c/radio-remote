@@ -216,8 +216,13 @@ class RemoteHead:
 
     def _broadcast_audio(self, pcm):
         owner = self.radio.ptt_owner
-        if self.recorder:
-            self.recorder.feed(pcm)
+        # One frame of what was sent to the radio, taken every frame so it stays in step.
+        sent = self.audio.take_tx_monitor(len(pcm))
+        if self.recorder and self.recorder.active:
+            keyed = owner is not None
+            # While we transmit the receiver is muted: record our side instead (record.include_tx).
+            self.recorder.feed(sent if keyed and self.recorder.include_tx else pcm,
+                               active=keyed or self._busy())
         if self.selcall_rx:
             if owner is None:
                 for digits in self.selcall_rx.feed(pcm):
@@ -334,6 +339,7 @@ class RemoteHead:
                     "max_files": int(self.cl["max_files"]),
                     "max_play_seconds": self._max_play_seconds(),
                     "record": bool(self.recorder),
+                    "record_mode": self.cfg["record"]["mode"],
                     "record_minutes": float(self.cfg["record"]["max_minutes"]),
                     "list": self.clips.list(),
                 } if self.clips else None,
@@ -471,7 +477,7 @@ class RemoteHead:
             return
         if kind == "record":
             if self.recorder:
-                self._record(c, bool(m.get("on")))
+                self._record(c, bool(m.get("on")), m.get("mode"))
             return
         if kind in ("clip_play", "clip_stop", "clip_delete"):
             if self.clips:
@@ -720,12 +726,12 @@ class RemoteHead:
 
     # ---- recording ------------------------------------------------------
 
-    def _record(self, c, on):
+    def _record(self, c, on, mode=None):
         try:
             if on:
                 if not self.recorder.active:
-                    self.audit(c, "record_start")
-                self.recorder.start(c.name)
+                    self.audit(c, "record_start", mode=mode or self.cfg["record"]["mode"])
+                self.recorder.start(c.name, mode)
             else:
                 if self.recorder.active:
                     log.info("%s stopped recording", c.name)
@@ -891,6 +897,8 @@ class RemoteHead:
                     log.error("pruning the audit log: %s", e)
             if tick % 2 == 0:  # 5 Hz meters
                 meter = {"type": "meter", "rx_dbfs": round(self.audio.rx_dbfs, 1), "busy": self._busy()}
+                if self.recorder and self.recorder.active:
+                    meter["rec_captured"] = round(self.recorder.active["frames"] / self.recorder.rate, 1)
                 rssi = self.radio.rssi
                 if rssi is not None:
                     meter["rssi"] = rssi
@@ -908,7 +916,7 @@ class RemoteHead:
         if self.recorder and self.recorder.was_recording:
             log.info("recording was on when the server stopped: carrying on")
             try:
-                self.recorder.start(self.recorder.marker.read_text().strip() or "restart")
+                self.recorder.start(*self.recorder.resume_info())
             except OSError as e:
                 log.error("can't resume recording: %s", e)
         app["watchdog"] = asyncio.create_task(self.watchdog())

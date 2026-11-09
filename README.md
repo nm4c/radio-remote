@@ -151,19 +151,32 @@ browser, where you can also save it.
 ## Recording
 
 Press the orange button on the radio (or **Record** in the Audio clips panel) to record the
-received audio. Press it again to stop. While recording, pressing any other control except the
+channel. Press it again to stop. While recording, pressing any other control except the
 volume knob also stops it, and that press does nothing else.
 
 - The display shows **REC**, and the panel shows the time so far and who started it.
-- The Pi records continuously, silence included, in parts of `record.max_minutes` (15). When a
-  part is full it joins the clip list as "Recording 08 Nov 14:05:00" and the next part starts with
-  no gap. Stopping finishes the part in progress.
+- **Two modes**, picked with the tick box under the record bar before you start (the orange
+  button uses the same setting; `record.mode` sets the default):
+  - **Continuous:** everything, silence included.
+  - **Only while the channel is active (VOX):** just the overs, back to back with a short gap
+    (`vox_gap_ms`, 0.3 s) instead of the silence between them. "Active" means the busy line, or
+    the RX level above `audio.busy_threshold_dbfs` without one, or us transmitting. Each over
+    keeps `vox_preroll_ms` (0.5 s) from before it started, so the first syllable isn't lost, and
+    recording runs on for `vox_hang_ms` (2 s) after it, so short pauses don't chop it up. The bar
+    shows how much has been captured.
+- **Both sides of the conversation.** While the radio is keyed its receiver is muted, so the
+  recording takes what we send instead: voice (after any voice effect), selcalls and clips,
+  copied from the sound card output in step with the received audio, at speech level whatever
+  `audio.tx_gain` is. Turn this off with `record.include_tx: false`.
+- Recordings are split into parts of `record.max_minutes` (15) of audio. When a part is full it
+  joins the clip list as "Recording 08 Nov 14:05:00" and the next part starts with no gap.
+  Stopping finishes the part in progress. In VOX mode a part is also finished after
+  `vox_close_idle_minutes` (10) of quiet, so the overs so far appear in the list.
 - It runs on the Pi, so it carries on with no one connected. It also carries on after a restart,
   and a part cut short by a power failure is recovered into the list.
 - Storage: about 115 MB an hour. Once recordings pass `record.keep_mb` (2000 MB, about 17
   hours), the oldest are deleted. Uploaded clips are never deleted automatically. Recording
   stops, with a notice, if the disk gets down to `record.min_free_mb`.
-- It records the receive audio only (after `audio.rx_gain`), not your own transmissions.
 - A recording can be played on air like any clip if it fits inside `ptt.max_tx_seconds`.
   Longer ones can't be picked, but you can still listen to and save them.
 
@@ -347,12 +360,12 @@ Messages marked * need the `control` role; from a `listen` account they're refus
 | → | \* `{"type":"channel","action":"tune","freq":439.125,"tx_freq":null,"tone":"91.5"}` (`sa818` only: VFO, channel 0) |
 | → | \* `{"type":"selcall","digits":"12345"}` key the radio and send a selcall (1-20 digits) |
 | → | \* `{"type":"voice_fx","preset":"vader"\|null}` switch this operator's voice effect on (a preset id from `hello.voice_fx`) or off; `state.fx` is the one on |
-| → | \* `{"type":"record","on":true\|false}` start or stop recording received audio |
+| → | \* `{"type":"record","on":true\|false,"mode":"continuous"\|"vox"}` start or stop recording (`mode` optional: `record.mode`) |
 | → | \* `{"type":"clip_play","id":"3f9c1a2b7d4e"}` key the radio and play a stored clip; `{"type":"clip_stop"}` stop the one on air (any operator); `{"type":"clip_delete","id":"…"}` |
 | → | \* binary: TX audio, int16 LE mono 16 kHz, 20 ms frames. Ignored unless you hold PTT. |
 | → | `{"type":"logout"}` end this session; `{"type":"change_password","old":"…","new":"…"}` (reply `{"type":"password","ok":…}`) |
 | ← | `{"type":"account","role":"…","display":"…"}` an administrator changed this account while connected |
-| ← | `auth`, `hello` (channel list, timing, `radio_type`, `can_sync`, `can_tune`, `band`), `state` (channel, PTT owner, TOT remaining, `info` = frequency/tones or null, `error`), `meter` (5 Hz, plus `rssi` / `rssi_dbm` on `sa818`), `notice`. `hello.selcall` holds the selcall settings and recent calls (null if off); `state.selcall_tx` is the number being sent, or null. `auth.token` authorises clip uploads; `hello.clips` holds the clip limits and `list` (null if off); `state.clip_tx` is `{"id","name"}` of the clip on air, or null. `state.recording` is `{"by","seconds"}` while recording, or null |
+| ← | `auth`, `hello` (channel list, timing, `radio_type`, `can_sync`, `can_tune`, `band`), `state` (channel, PTT owner, TOT remaining, `info` = frequency/tones or null, `error`), `meter` (5 Hz, plus `rssi` / `rssi_dbm` on `sa818`), `notice`. `hello.selcall` holds the selcall settings and recent calls (null if off); `state.selcall_tx` is the number being sent, or null. `auth.token` authorises clip uploads; `hello.clips` holds the clip limits and `list` (null if off); `state.clip_tx` is `{"id","name"}` of the clip on air, or null. `state.recording` is `{"by","mode","seconds","captured"}` while recording, or null, and `meter.rec_captured` updates the captured seconds; `hello.clips.record_mode` is the default mode |
 | ← | `{"type":"clips","list":[{"id","name","seconds","by","added","kind"}]}` the clip list changed (`kind`: `upload` or `rec`) |
 | ← | `{"type":"selcall","dir":"tx"\|"rx","digits":"12345","by":"name"\|null,"to_me":false,"t":1793869268.1}` a call sent or heard |
 | ← | binary: RX audio, same format (not sent once WebRTC audio is connected) |
@@ -387,7 +400,6 @@ kicadgen/    shared KiCad schematic generator used by both HATs
 ## Ideas for later
 
 - Pluggable control backends (CI-V / CAT serial) for radios that can report channel and RSSI
-- Recording only while the channel is busy (VOX-style), and recording our own transmissions too
 
 ## Licence
 

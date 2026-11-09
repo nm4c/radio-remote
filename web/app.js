@@ -681,6 +681,9 @@ function setupClips(cl) {
   if (!cl) return;
   $("#clipsInfo").textContent = `up to ${Math.round(cl.max_seconds)} s each`;
   $("#recordRow").hidden = !cl.record;
+  $("#recordModeRow").hidden = !cl.record;
+  const vox = store.get("recordVox");
+  $("#recordVox").checked = vox === null ? cl.record_mode === "vox" : vox === "1";
   S.clipSel = store.get("clip");
   setClipList(cl.list);
 }
@@ -817,7 +820,8 @@ function toggleRecord() {
     toast("Recording isn't set up on this remote.");
     return;
   }
-  send({ type: "record", on: !(S.server && S.server.recording) });
+  const on = !(S.server && S.server.recording);
+  send({ type: "record", on, mode: $("#recordVox").checked ? "vox" : "continuous" });
 }
 
 function clock(s) {
@@ -830,6 +834,7 @@ function clock(s) {
 function renderRecording() {
   if (!S.clips || !S.clips.record) return;
   const rec = S.server && S.server.recording;
+  $("#recordVox").disabled = !!rec; // the mode is set when a recording starts
   const row = $("#recordRow");
   row.classList.toggle("on", !!rec);
   $("#recordBtn").textContent = rec ? "Stop recording" : "Record";
@@ -839,7 +844,10 @@ function renderRecording() {
     return;
   }
   const t = S.recBase != null ? (performance.now() - S.recBase) / 1000 : rec.seconds;
-  $("#recordState").textContent = `Recording ${clock(t)}${rec.by ? ` · started by ${rec.by}` : ""}`;
+  // In VOX mode only the active parts are kept, so say how much has actually been captured.
+  const got = S.meter && S.meter.rec_captured != null ? S.meter.rec_captured : rec.captured;
+  const what = rec.mode === "vox" ? ` · only when active, ${clock(got || 0)} captured` : "";
+  $("#recordState").textContent = `Recording ${clock(t)}${what}${rec.by ? ` · started by ${rec.by}` : ""}`;
 }
 
 function showClips() {
@@ -1275,6 +1283,7 @@ function init() {
   $("#clipUpload").addEventListener("click", () => $("#clipFile").click());
   $("#recordBtn").addEventListener("click", toggleRecord);
   $("#fxToggle").addEventListener("click", toggleFx);
+  $("#recordVox").addEventListener("change", (e) => store.set("recordVox", e.target.checked ? "1" : "0"));
   $("#clipFile").addEventListener("change", (e) => {
     const files = [...e.target.files];
     e.target.value = ""; // so picking the same file again still fires change

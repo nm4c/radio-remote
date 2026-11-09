@@ -105,6 +105,12 @@ DEFAULTS = {
         "max_minutes": 15,        # each recording is split into parts this long
         "keep_mb": 2000,          # oldest recordings are deleted beyond this (about 17 hours)
         "min_free_mb": 300,       # recording stops if the disk gets this full
+        "mode": "continuous",     # default when recording starts: continuous, or vox (only when active)
+        "include_tx": True,       # while we transmit, record what we send (the receiver is muted then)
+        "vox_hang_ms": 2000,      # vox: keep recording this long after the channel goes quiet
+        "vox_preroll_ms": 500,    # vox: and include this much from before it got busy
+        "vox_gap_ms": 300,        # vox: silence put between overs
+        "vox_close_idle_minutes": 10,  # vox: finish the part (so it's listed) after this long quiet
     },
     "webrtc": {
         "enabled": True,
@@ -225,6 +231,13 @@ def _check_clips(cl, ptt):
 def _check_record(rec):
     if not 0.1 <= float(rec["max_minutes"]) <= 120:
         raise SystemExit("config: record.max_minutes must be 0.1-120")
+    if rec["mode"] not in ("continuous", "vox"):
+        raise SystemExit("config: record.mode must be continuous or vox")
+    for key, hi in (("vox_hang_ms", 30000), ("vox_preroll_ms", 5000), ("vox_gap_ms", 5000)):
+        if not 0 <= int(rec[key]) <= hi:
+            raise SystemExit(f"config: record.{key} must be 0-{hi}")
+    if not 0.5 <= float(rec["vox_close_idle_minutes"]) <= 120:
+        raise SystemExit("config: record.vox_close_idle_minutes must be 0.5-120")
     if float(rec["keep_mb"]) < 50:
         raise SystemExit("config: record.keep_mb must be at least 50")
     if float(rec["min_free_mb"]) < 0:
