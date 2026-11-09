@@ -2909,8 +2909,8 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "93403b26-4467-594e-a2b7-196d71c572d1")
-		(property "Reference" "J6"
+		(uuid "11c310fb-ce02-5677-86a7-9118ec5f8cc0")
+		(property "Reference" "J2"
 			(at 22.86 45.72 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -2930,7 +2930,7 @@
 				)
 			)
 		)
-		(property "Footprint" "TerminalBlock_Phoenix:TerminalBlock_Phoenix_PT-1,5-2-3.5-H_1x02_P3.50mm_Horizontal"
+		(property "Footprint" "Connector_Phoenix_MC:PhoenixContact_MC_1,5_2-G-3.5_1x02_P3.50mm_Horizontal"
 			(at 25.4 50.8 0)
 			(hide yes)
 			(show_name no)
@@ -2963,7 +2963,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C474892"
+		(property "LCSC" "C880572"
 			(at 25.4 50.8 0)
 			(hide yes)
 			(show_name no)
@@ -2975,15 +2975,15 @@
 			)
 		)
 		(pin "1"
-			(uuid "a2b049a2-135c-55f0-9268-ce3e6a198f5a")
+			(uuid "45f4bf86-e46f-5cf5-ab10-02656f28bc58")
 		)
 		(pin "2"
-			(uuid "3116cef4-5430-5dea-8f20-bffb492f5657")
+			(uuid "b9322553-f64f-5167-8da4-341bae9167da")
 		)
 		(instances
 			(project "pihat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55/3f334889-f2db-480c-9a92-0b877ffd5570"
-					(reference "J6")
+					(reference "J2")
 					(unit 1)
 				)
 			)

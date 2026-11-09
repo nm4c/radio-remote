@@ -115,7 +115,7 @@ def build(path, page):
     # radio ground arrives through the mic / accessory connectors
     s.power("RGND", (190.5, 120.65))
     s.flag((190.5, 120.65))
-    s.text("RGND enters through J2 / J3 / J9", (195.58, 121.92))
+    s.text("RGND enters through J3 / J4", (195.58, 121.92))
 
     # PTT indicator LED
     s.text("PTT INDICATOR", (17.78, 160.02), 1.5, bold=True)
@@ -143,7 +143,7 @@ def build(path, page):
         "= 4 mA; >= 2 mA sink at 50% CTR.",
         "",
         "D4: reverse protection for the",
-        "BUSY LED (J8 wired backwards).",
+        "BUSY LED (J4.5 / J4.6 swapped).",
         "",
         "GPIO23 uses the Pi's pull-up",
         "(config busy_pull_up: true).",

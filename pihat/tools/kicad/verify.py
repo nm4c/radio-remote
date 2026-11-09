@@ -15,7 +15,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 NET = os.path.join(os.environ.get("PIHAT_PROJ") or os.path.join(HERE, "..", ".."), "build", "pihat.net")
 
 POWER = {
-    "13V8_IN": "J6.1 F1.1",
+    "13V8_IN": "J2.1 F1.1",
     "VIN_F": "F1.2 D1.2",
     "VIN": "D1.1 D3.1 C16.1 C17.1 C18.1 C19.1 U3.2 U3.3",     # EN tied to VIN
     "VCC": "U3.6 C28.1",
@@ -26,7 +26,7 @@ POWER = {
     "+3.3VA": "U4.2 C25.1 U5.1 U5.3",
     "+1V8": "U5.5 C27.1",
     "LED": "R7.2 LED1.2",
-    "GND": "J6.2 D3.2 C16.2 C17.2 C18.2 C19.2 U3.1 U3.9 C28.2 C21.2 C22.2 C23.2 R26.2 "
+    "GND": "J2.2 D3.2 C16.2 C17.2 C18.2 C19.2 U3.1 U3.9 C28.2 C21.2 C22.2 C23.2 R26.2 "
            "U4.1 C24.2 C25.2 U5.2 C27.2 LED1.1",
 }
 CONTROL = {
@@ -59,17 +59,16 @@ ROOT = {
     "+3V3": "U6.8 R22.1 R23.1 C15.1 R24.1",
 }
 CONNECTORS = {
-    **{f"RJ{n}": f"J2.{n} J3.{n} J4.{n}" for n in range(1, 9)},
-    "R_PTT": "J5.1 J9.1",
-    "R_UP": "J5.2",
-    "R_DN": "J5.3",
-    "R_MIC": "J5.4",
-    "RGND": "J5.5 J5.6 J5.7 J5.8 J9.2 JP1.1 J2.SH J3.SH",
+    "R_MIC": "J3.1",
+    "RGND": "J3.2 J4.1 JP1.1",
+    "R_SPP": "J3.3",
+    "R_SPN": "J3.4",
+    "R_PTT": "J4.2",
+    "R_UP": "J4.3",
+    "R_DN": "J4.4",
+    "BUSY+": "J4.5",
+    "BUSY-": "J4.6",
     "GND": "JP1.2",
-    "BUSY+": "J8.1",
-    "BUSY-": "J8.2",
-    "R_SPP": "J7.1",
-    "R_SPN": "J7.2",
 }
 CODEC = {
     "I2C_SCL": "U2.8 J1.5",

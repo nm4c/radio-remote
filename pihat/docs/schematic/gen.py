@@ -194,8 +194,8 @@ def sheet_overview():
     block(330, 300, 230, 80, "U6 HAT ID EEPROM", ["AT24C32D @ 0x50 on ID_SD/ID_SC", "auto-loads the codec overlay"], "pi")
     block(700, 40, 170, 96, "Filters", ["ferrite + 100 pF", "on PTT and MIC"], "rd")
     block(700, 170, 170, 96, "Audio isolation", ["T1 TX: level in software", "T2 RX: −9.5 dB diff pad"], "rd")
-    block(930, 50, 160, 330, "Radio connectors", ["J2 RJ45 → radio mic", "J3 RJ45 ← original mic", "J4/J5 patch headers", "J7 speaker in", "J8 busy in", "J9 accessory PTT", "", "J6 13.8 V in"], "rd")
-    block(330, 410, 520, 44, "Power · J6 13.8 V → F1, D1, D3 → U3 LMR33640 → 5V0 → U4 3V3A → U5 1V8", [], "pwr")
+    block(930, 50, 160, 330, "Radio connectors", ["3.5 mm pluggable", "", "J3 audio, 4 way:", "  TX, TX ret, RX±", "", "J4 radio, 6 way:", "  GND, PTT, UP, DN,", "  BUSY±", "", "J2 13.8 V in, 2 way"], "rd")
+    block(330, 410, 520, 44, "Power · J2 13.8 V → F1, D1, D3 → U3 LMR33640 → 5V0 → U4 3V3A → U5 1V8", [], "pwr")
     # barrier
     s.add('<line x1="630" y1="30" x2="630" y2="395" class="barrier"/>')
     s.text(622, 392, "GND (Pi side)", "t-pi t-small", "end")
@@ -222,7 +222,7 @@ def sheet_overview():
 def sheet_power():
     s = Sheet(1120, 580, "RADIO REMOTE HAT · REV A · SHEET 3/7 · POWER")
     s.text(40, 52, "13.8 V INPUT PROTECTION + 5 V BUCK", "t-sec")
-    e = s.ic(60, 120, 70, "J6", "KF350-3.5-2P", [], [(1, "+13.8V"), (2, "GND")], top=30)
+    e = s.ic(60, 120, 70, "J2", "XY2500R-G 2 way", [], [(1, "+13.8V"), (2, "GND")], top=30)
     s.poly([(160, 170), (180, 170), (180, 190)]); s.gnd(180, 190)
     s.two("fuse", 160, 150, "r", ref="F1", val="1.5 A", lab="above")
     s.two("diode", 220, 150, "r", ref="D1", val="SS56", lab="above")
@@ -371,46 +371,35 @@ def sheet_control():
 
 # ================================================================= SHEET 4: radio connectors
 def sheet_connectors():
-    s = Sheet(1120, 630, "RADIO REMOTE HAT · REV A · SHEET 5/7 · RADIO CONNECTORS")
-    s.text(40, 52, "MIC CONNECTORS (WIRED PIN-FOR-PIN) + PATCH HEADERS", "t-sec")
-    rj = [(i, f"{i}", f"RJ{i}", "rd") for i in range(1, 9)]
-    s.ic(80, 90, 90, "J2", "RJ45 → radio mic socket", [], rj, pitch=20, top=24)
-    s.ic(80, 336, 90, "J3", "RJ45 ← original mic", [], rj, pitch=20, top=24)
-    # J4 header with flags on left, pin tips on right
-    s.ic(430, 90, 70, "J4", "1×8 · RJ45 pins", [(i, f"RJ{i}", f"RJ{i}", "rd") for i in range(1, 9)], [], pitch=24, top=24, rows=8)
-    tips4 = [(500, 114 + 24 * i) for i in range(8)]
-    for x, y in tips4: s.add(f'<circle cx="{x}" cy="{y}" r="4" class="tip"/>')
-    fn = [("R_PTT"), ("R_UP"), ("R_DN"), ("R_MIC"), ("RGND"), ("RGND"), ("RGND"), ("RGND")]
-    s.ic(680, 90, 70, "J5", "1×8 · functions", [], [(i + 1, n, n, "rd") for i, n in enumerate(fn)], pitch=24, top=24, rows=8)
-    tips5 = [(680, 114 + 24 * i) for i in range(8)]
-    for x, y in tips5: s.add(f'<circle cx="{x}" cy="{y}" r="4" class="tip"/>')
-    # example patch TK-880: RJ4->PTT, RJ6->MIC, RJ5->RGND (ME), RJ3->RGND (E)
-    for a, b in ((3, 0), (5, 3), (4, 4), (2, 5)):
-        (x1, y1), (x2, y2) = tips4[a], tips5[b]
-        s.add(f'<path d="M{x1+4} {y1} C{x1+80} {y1} {x2-80} {y2} {x2-4} {y2}" class="patch"/>')
-    s.text(590, 346, "Dupont jumpers, one set per radio", "t-note", "middle")
-    s.text(590, 360, "shown: Kenwood TK-880 mic jack", "t-note", "middle")
-    s.text(590, 374, "4 PTT → R_PTT · 6 MIC → R_MIC", "t-note", "middle")
-    s.text(590, 388, "5 ME, 3 E → RGND", "t-note", "middle")
-    s.text(590, 402, "(confirm numbering with a patch lead)", "t-note", "middle")
-    # terminals
-    s.text(860, 52, "SCREW TERMINALS", "t-sec")
-    s.ic(880, 90, 70, "J7", "speaker in", [], [(1, "SP+", "R_SPP", "rd"), (2, "SP−", "R_SPN", "rd")], top=24)
-    s.ic(880, 200, 70, "J8", "busy in", [], [(1, "B+", "BUSY+", "rd"), (2, "B−", "BUSY−", "rd")], top=24)
-    s.ic(880, 310, 70, "J9", "accessory", [], [(1, "PTT", "R_PTT", "rd"), (2, "GND", "RGND", "rd")], top=24)
-    s.text(860, 430, "J6 (13.8 V in) is on sheet 3.", "t-note")
-    s.text(860, 445, "J8 wiring: active-high busy → B+, B− to", "t-note")
-    s.text(860, 460, "radio GND. Open-collector busy → B+ to", "t-note")
-    s.text(860, 475, "radio +V, B− to the busy output.", "t-note")
+    s = Sheet(1120, 640, "RADIO REMOTE HAT · REV A · SHEET 5/7 · RADIO CONNECTORS")
+    s.text(40, 52, "PLUGGABLE TERMINAL HEADERS · XY2500R-G · 3.5 mm · right-angle, closed ends", "t-sec")
+    s.ic(140, 100, 90, "J3", "Audio · 4 way", [],
+         [(1, "TX", "R_MIC", "rd"), (2, "TX ret", "RGND", "rd"), (3, "RX+", "R_SPP", "rd"), (4, "RX−", "R_SPN", "rd")],
+         pitch=24, top=24)
+    notes3 = ("1 TX audio to the radio (mic or line input)", "2 TX audio return (radio ground)",
+              "3 RX audio + from the radio", "4 RX audio −",
+              "RX ± float on T2: either polarity, and safe on a", "bridged (BTL) speaker output.")
+    for k, t in enumerate(notes3):
+        s.text(420, 118 + 15 * k, t, "t-note")
+    s.ic(140, 300, 90, "J4", "Radio · 6 way", [],
+         [(1, "GND", "RGND", "rd"), (2, "PTT", "R_PTT", "rd"), (3, "UP", "R_UP", "rd"), (4, "DN", "R_DN", "rd"),
+          (5, "B+", "BUSY+", "rd"), (6, "B−", "BUSY−", "rd")], pitch=24, top=24)
+    notes4 = ("1 Radio ground", "2 PTT (the opto pulls it to ground)", "3 Channel UP", "4 Channel DOWN",
+              "5 BUSY +", "6 BUSY −",
+              "BUSY wiring: active-high busy output → 5, and 6 to radio ground.",
+              "Open-collector busy: 5 to radio +V, 6 to the busy output.")
+    for k, t in enumerate(notes4):
+        s.text(420, 318 + 15 * k, t, "t-note")
+    s.text(40, 530, "J2 (13.8 V in, 2 way) is on sheet 3. Mating plugs: 3.5 mm pluggable terminal plugs", "t-note")
+    s.text(40, 544, "(Phoenix MC 1,5/x-ST-3,5 style), 2, 4 and 6 way. Wire each radio to J3 / J4 with its own lead.", "t-note")
     # JP1
-    s.text(40, 570, "GROUND LINK", "t-sec")
-    s.rgnd(80, 597)
-    s.text(96, 614, "RGND", "t-rd t-small")
-    s.poly([(80, 597), (80, 588), (150, 588)])
-    s.two("jumper", 150, 588, "r", ref="JP1", val="open", lab="above")
-    s.poly([(210, 588), (240, 588), (240, 597)]); s.gnd(240, 597)
-    s.text(280, 592, "Solder jumper, open by default: keeps radio ground off the Pi ground.", "t-note")
-    s.text(280, 607, "The radio joins the two through its own supply lead. Close only for testing.", "t-note")
+    s.text(720, 530, "GROUND LINK", "t-sec")
+    s.rgnd(740, 579)
+    s.text(756, 596, "RGND", "t-rd t-small")
+    s.poly([(740, 579), (740, 570), (810, 570)])
+    s.two("jumper", 810, 570, "r", ref="JP1", val="open", lab="above")
+    s.poly([(870, 570), (900, 570), (900, 579)]); s.gnd(900, 579)
+    s.text(720, 612, "Open by default: the radio joins the grounds through its supply lead.", "t-note")
     return s
 
 
@@ -579,7 +568,7 @@ HEADER = [
 ]
 
 NETS = [
-    ("pwr", "13V8_IN", "J6.1, F1.1"),
+    ("pwr", "13V8_IN", "J2.1, F1.1"),
     ("pwr", "VIN_F", "F1.2, D1 A"),
     ("pwr", "VIN", "D1 K, D3 K, C16–C18, C19 +, U3.2 VIN, U3.3 EN"),
     ("pwr", "SW", "U3.8, C20.2, L1.1"),
@@ -590,7 +579,7 @@ NETS = [
     ("pwr", "3V3A", "U4.2 OUT, C25, U5.1 IN, U5.3 EN, U2.25, U2.18, U2.24, C8, C9, C10, C13"),
     ("pwr", "1V8", "U5.5 OUT, C27, U2.32 DVDD, C12"),
     ("pi", "3V3_PI", "J1.1, J1.17, U2.7 IOVDD, C11, Y1.4, Y1.1, C14, U6.8, C15, R22, R23, R24"),
-    ("pi", "GND", "J1 GND pins, J6.2, C16–C19, C21–C25, C27, C28, D3 A, R26, U3.1/9, U4.1, U5.2, U1.2/4/6/9, U2.6/17/21/26/33, Y1.2, U6.1–4, R21, LED1 K, LED2 K, JP1.2, JP2.2"),
+    ("pi", "GND", "J1 GND pins, J2.2, C16–C19, C21–C25, C27, C28, D3 A, R26, U3.1/9, U4.1, U5.2, U1.2/4/6/9, U2.6/17/21/26/33, Y1.2, U6.1–4, R21, LED1 K, LED2 K, JP1.2, JP2.2"),
     ("pi", "GPIO17", "J1.11, R1.1, R8.1"),
     ("pi", "GPIO27", "J1.13, R2.1"),
     ("pi", "GPIO22", "J1.15, R3.1"),
@@ -609,15 +598,14 @@ NETS = [
     ("pi", "HP_P / HP_N", "U2.19 / U2.20 → R14 / R15 → T1.1 / T1.3"),
     ("rd", "T1 secondary", "T1.6 → C1 → FB4 → R_MIC; T1.4 → RGND"),
     ("pi", "RX_P / RX_N", "C2 / C3 → U2.10 / U2.11"),
-    ("rd", "RGND", "U1.11/13/15, C4, C7, T1.4, J5.5–8, J9.2, JP1.1"),
-    ("rd", "R_PTT", "FB1.2, C4, J5.1, J9.1"),
-    ("rd", "R_UP", "U1.14 → JP3 ∥ R5 (not fitted), J5.2"),
-    ("rd", "R_DN", "U1.12 → JP4 ∥ R6 (not fitted), J5.3"),
-    ("rd", "R_MIC", "FB4.2, C7, J5.4"),
-    ("rd", "R_SPP / R_SPN", "J7.1 / J7.2 → T2.6 / T2.4"),
-    ("rd", "BUSY+", "J8.1, R4.1"),
-    ("rd", "BUSY−", "J8.2, U1.8 (K4), D4 A"),
-    ("rd", "RJ1 … RJ8", "J2.n, J3.n, J4.n (pin for pin)"),
+    ("rd", "RGND", "U1.11/13/15, C4, C7, T1.4, J3.2, J4.1, JP1.1"),
+    ("rd", "R_PTT", "FB1.2, C4, J4.2"),
+    ("rd", "R_UP", "U1.14 → JP3 ∥ R5 (not fitted), J4.3"),
+    ("rd", "R_DN", "U1.12 → JP4 ∥ R6 (not fitted), J4.4"),
+    ("rd", "R_MIC", "FB4.2, C7, J3.1"),
+    ("rd", "R_SPP / R_SPN", "J3.3 / J3.4 → T2.6 / T2.4"),
+    ("rd", "BUSY+", "J4.5, R4.1"),
+    ("rd", "BUSY−", "J4.6, U1.8 (K4), D4 A"),
 ]
 
 PARTS = [
@@ -654,9 +642,9 @@ PARTS = [
     ("C19", "100 µF 50 V electrolytic 8×10.2", "C72480", "Ext"),
     ("C21–C23", "22 µF 25 V X5R 1206", "C12891", "Basic"),
     ("J1", "2×20 female header 2.54 mm", "C2977589", "Ext · THT"),
-    ("J2, J3", "RJ45 8P8C shielded, no magnetics (Amphenol RJHSE5380)", "C464586", "Ext · THT"),
-    ("J4, J5", "1×8 male header 2.54 mm", "C492407", "Ext · THT"),
-    ("J6–J9", "KF350-3.5-2P screw terminal", "C474892", "Ext · THT"),
+    ("J2", "XY2500R-G-3.5-2P pluggable header, 3.5 mm, right-angle, closed", "C880572", "Ext · THT"),
+    ("J3", "XY2500R-G-3.5-4P pluggable header, 3.5 mm, right-angle, closed", "C880574", "Ext · THT"),
+    ("J4", "XY2500R-G-3.5-6P pluggable header, 3.5 mm, right-angle, closed", "C880576", "Ext · THT"),
     ("JP1–JP4, TP1", "PCB features only (solder jumpers; JP3/JP4 are closed by default; test pad)", "—", "—"),
 ]
 
@@ -666,8 +654,10 @@ FOOTPRINT = {
     "C160457": "Oscillator_SMD_3225-4Pin", "C840532": "Bourns_SM-LP-5001", "C167221": "L_7.0x6.6mm",
     "C65009": "D_SMA", "C224015": "D_SMB", "C2128": "D_SOD-323", "C18198333": "Fuse_1812", "C2286": "LED_0603",
     "C1002": "L_0603", "C28323": "C_0805", "C15850": "C_0805", "C50254": "C_1206", "C12891": "C_1206",
-    "C72480": "CP_Elec_8x10.2", "C2977589": "PinSocket_2x20_P2.54mm_Vertical", "C464586": "RJ45_Amphenol_RJHSE5380",
-    "C492407": "PinHeader_1x08_P2.54mm_Vertical", "C474892": "TerminalBlock_P3.50mm_1x02",
+    "C72480": "CP_Elec_8x10.2", "C2977589": "PinSocket_2x20_P2.54mm_Vertical",
+    "C880572": "PhoenixContact_MC_1,5_2-G-3.5_1x02_P3.50mm_Horizontal",
+    "C880574": "PhoenixContact_MC_1,5_4-G-3.5_1x04_P3.50mm_Horizontal",
+    "C880576": "PhoenixContact_MC_1,5_6-G-3.5_1x06_P3.50mm_Horizontal",
 }
 
 
@@ -705,7 +695,7 @@ CHECKS = [
     ("U4 / U5 placement", "U5 has no input capacitor of its own: it shares C25 at U4's output. Place U5 within a few mm of U4 and C25."),
     ("Codec clocking", "The in-kernel dacberry400 overlay sets the codec PLL source to BCLK (clock id 2) while stating 12 MHz. Y1 feeds MCLK so a small custom overlay can select MCLK instead. First bring-up test: confirm 48 kHz playback is the right pitch."),
     ("IOVDD", "Runs at 3.3 V (3V3_PI) to match Pi logic. The dacberry400 overlay describes IOVDD as 1.8 V; that only names a regulator for the driver and doesn't change the hardware."),
-    ("Mic-jack numbering", "RJ45 pin numbers versus each radio's numbering: confirm with a straight patch lead and a meter before setting the J4 → J5 jumpers."),
+    ("Connector footprints", "J2–J4 use KiCad's Phoenix MC 1,5/x-G-3,5 footprints, which the XY2500R-G copies. Check the hole positions and body outline against the Xinlaiya drawing, and keep the plug side at the board edge."),
     ("Isolation clearance", "Keep RGND copper and every radio-side net at least 2 mm from GND-side copper, including under U1 and T1/T2."),
 ]
 
@@ -715,7 +705,7 @@ def main():
         ("overview", "Block diagram", sheet_overview(), "Block diagram: Pi-side blocks on the left of the isolation barrier, radio-side filters and connectors on the right, power along the bottom.", "Everything left of the dashed barrier is on Pi ground (GND). Everything right of it is on radio ground (RGND). Only optocouplers and transformers cross it."),
         ("power", "Power", sheet_power(), "Power sheet: 13.8 V input through fuse, reverse diode and TVS into an LMR33640 buck making 5.10 V, then a TLV76133 3.3 V LDO and TPS7A2018 1.8 V LDO for the codec.", "The 5V0 rail powers the Pi through header pins 2 and 4. 3V3A is a quiet analog rail for the codec; the Pi's own 3V3 is used only for logic."),
         ("control", "Control", sheet_control(), "Control sheet: the TCMT4100 quad optocoupler with three Pi-driven channels for PTT, UP and DOWN, and one reversed channel bringing BUSY in.", "Channels 1–3 are driven from the Pi. Channel 4 is reversed: its LED sits on the radio side, so BUSY arrives isolated on GPIO23."),
-        ("connectors", "Radio connectors", sheet_connectors(), "Radio connectors sheet: two RJ45 jacks wired in parallel, a patch header pair for per-radio pin mapping, and screw terminals for speaker, busy and accessory PTT.", "J2 and J3 are joined pin for pin, so the original mic keeps working. Each radio gets its own short set of jumpers between J4 and J5."),
+        ("connectors", "Radio connectors", sheet_connectors(), "Radio connectors sheet: a 4-way pluggable header for TX and RX audio and a 6-way header for radio ground, PTT, UP, DOWN and BUSY, plus the ground-link jumper.", "All radio wiring goes through two 3.5 mm pluggable headers. Make up one lead per radio from its accessory connector."),
         ("codec", "Codec", sheet_codec(), "Codec sheet: TLV320AIC3104 with I2S and I2C straight to the Pi, 12 MHz master clock through 33 Ω, reset pull-down, decoupling, and unused pins marked no-connect.", "All 33 pins are shown so the KiCad symbol can be checked pin for pin. Crossed pins are no-connect."),
         ("audio", "Audio + ID EEPROM", sheet_audio(), "Audio isolation sheet: T1 drives the radio's TX audio input with the level set in software; T2 takes the radio's RX audio into the codec's differential input through a light pad; plus the HAT ID EEPROM.", "Both transformers sit across the barrier. TX audio leaves the codec differentially; RX audio arrives differentially, so neither speaker wire is ever grounded."),
     ]

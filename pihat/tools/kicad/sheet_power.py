@@ -153,12 +153,14 @@ def _tps54360_comp_feedback(s, G):
 
 
 def build(path, page, fuse=("1.5A 33V", "C18198333"), vin_global=False, buck="tps54360",
-          tvs=("SMBJ24A", "C123819"), u5_cin=True):
+          tvs=("SMBJ24A", "C123819"), u5_cin=True, power_in=None):
     """fuse: (value, LCSC) for F1. The SA818S board uses 2 A for a Pi 4 plus 1 W TX.
     vin_global: make VIN a global label (the SA818S board feeds its module supply from it).
     buck: "lmr33640" or "tps54360" (see the module notes). tvs: (value, LCSC) for D3; it must
     clamp below the buck's maximum input. u5_cin: a separate input cap at U5 (C26); without it
-    U5 shares C25 at U4's output, so place U5 next to U4."""
+    U5 shares C25 at U4's output, so place U5 next to U4.
+    power_in: (ref, value, footprint, LCSC) for the 13.8 V input connector; default J6, a 3.5 mm
+    screw terminal."""
     s = Sheet("Power", path, page)
     G = ("pwr", "GND")
 
@@ -167,19 +169,20 @@ def build(path, page, fuse=("1.5A 33V", "C18198333"), vin_global=False, buck="tp
 
     # ---- input: J6 -> F1 -> D1 -> VIN
     y = 50.8
-    s.symbol("Connector:Screw_Terminal_01x02", "J6", "13.8 V in", (25.4, y), mirror="y",
-             footprint="TerminalBlock_Phoenix:TerminalBlock_Phoenix_PT-1,5-2-3.5-H_1x02_P3.50mm_Horizontal",
-             lcsc="C474892", ref_at=(22.86, 45.72), val_at=(22.86, 43.18))
+    jref, jval, jfp, jlcsc = power_in or (
+        "J6", "13.8 V in", "TerminalBlock_Phoenix:TerminalBlock_Phoenix_PT-1,5-2-3.5-H_1x02_P3.50mm_Horizontal", "C474892")
+    s.symbol("Connector:Screw_Terminal_01x02", jref, jval, (25.4, y), mirror="y", footprint=jfp,
+             lcsc=jlcsc, ref_at=(22.86, 45.72), val_at=(22.86, 43.18))
     s.symbol("Device:Polyfuse", "F1", fuse[0], (49.53, y), rot=90, footprint="Fuse:Fuse_1812_4532Metric",
              lcsc=fuse[1], ref_at=(49.53, 46.99), val_at=(49.53, 55.88))
     s.symbol("Device:D_Schottky", "D1", "SS56", (68.58, y), rot=180, footprint="Diode_SMD:D_SMA",
              lcsc="C65009", ref_at=(68.58, 46.99), val_at=(68.58, 55.88))
-    chain(s, [s.p("J6.1"), (33.02, y), s.p("F1.1")])
+    chain(s, [s.p(f"{jref}.1"), (33.02, y), s.p("F1.1")])
     chain(s, [s.p("F1.2"), (55.88, y), s.p("D1.2")])
     s.label("13V8_IN", (33.02, y), (1, 0))
     s.label("VIN_F", (55.88, y), (1, 0))
     gn = (35.56, 55.88)
-    chain(s, [s.p("J6.2"), (35.56, s.p("J6.2")[1]), gn])
+    chain(s, [s.p(f"{jref}.2"), (35.56, s.p(f"{jref}.2")[1]), gn])
     s.power("GND", gn)
 
     # shunts on VIN (15.24 mm pitch leaves room for values)

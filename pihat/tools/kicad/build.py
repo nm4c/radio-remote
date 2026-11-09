@@ -29,7 +29,8 @@ import projlib  # noqa: E402
 # (sheet name, file, builder, box position on the root sheet)
 SHEETS = [
     ("Power", "power.kicad_sch",
-     lambda p, n: sheet_power.build(p, n, buck="lmr33640", tvs=("SMBJ22A", "C224015"), u5_cin=False), (210.82, 30.48)),
+     lambda p, n: sheet_power.build(p, n, buck="lmr33640", tvs=("SMBJ22A", "C224015"), u5_cin=False,
+                                    power_in=sheet_connectors.POWER_IN), (210.82, 30.48)),
     ("Control", "control.kicad_sch", sheet_control.build, (210.82, 53.34)),
     ("Radio connectors", "connectors.kicad_sch", sheet_connectors.build, (210.82, 76.2)),
     ("Codec", "codec.kicad_sch", lambda p, n: sheet_codec.build(p, n, i2s_series=False), (210.82, 99.06)),

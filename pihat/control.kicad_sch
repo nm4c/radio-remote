@@ -5264,7 +5264,7 @@
 			)
 		)
 	)
-	(text "RGND enters through J2 / J3 / J9"
+	(text "RGND enters through J3 / J4"
 		(exclude_from_sim no)
 		(at 195.58 121.92 0)
 		(effects
@@ -5273,7 +5273,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "d7db3c8c-e528-539c-bf6d-6f9eb1f5b09d")
+		(uuid "e7e6be11-f71b-5e4e-8304-12424dd4ee11")
 	)
 	(text "PTT INDICATOR"
 		(exclude_from_sim no)
@@ -5678,7 +5678,7 @@
 		)
 		(uuid "593acb0d-ccc7-57e4-ba84-52fd7bf1316e")
 	)
-	(text "BUSY LED (J8 wired backwards)."
+	(text "BUSY LED (J4.5 / J4.6 swapped)."
 		(exclude_from_sim no)
 		(at 17.78 83.82 0)
 		(effects
@@ -5687,7 +5687,7 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "d90e6dc6-b26d-55bd-a677-1349aedbfd90")
+		(uuid "fba7a3f3-4293-53b8-ab56-a96005019b57")
 	)
 	(text "GPIO23 uses the Pi's pull-up"
 		(exclude_from_sim no)

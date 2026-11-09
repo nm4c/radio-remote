@@ -16,8 +16,8 @@ so re-check before ordering.
 | **Extended** (≈ US$3 each, per order) | 17 |
 
 That's about US$51 in loading fees per order, not per board. To cut it:
-1. **Solder the through-hole connectors yourself:** J1 (Pi header), J2/J3 (RJ45), J4/J5 (patch
-   headers), J6–J9 (screw terminals). That's 4 fewer Extended parts, and the board qualifies for
+1. **Solder the through-hole connectors yourself:** J1 (Pi header) and J2–J4 (pluggable
+   headers). That's 4 fewer Extended parts, and the board qualifies for
    JLC's cheaper "Economic" assembly, which only does SMD parts.
 2. **Leave the power section off** (U3, L1, D1, D3, F1, C19, C28) if the Pi has its own supply. That's
    6 fewer Extended parts. The codec rails (U4, U5) are still needed and run from the Pi's 5 V.
@@ -38,8 +38,10 @@ That's about US$51 in loading fees per order, not per board. To cut it:
   level. The RX pad (R11/R12/R13, −9.5 dB) suits line-level RX audio; from a speaker output, fit
   R13 = 1 kΩ (−26 dB).
 - **Feedback from Basic values only:** 82 kΩ over 20 kΩ with the LMR33640's 1.0 V reference gives 5.10 V.
-- **Don't substitute an RJ45 with magnetics** (for example HR911105A). Its Ethernet transformers
-  block the DC on PTT and HOOK.
+- **Pluggable radio connectors:** Xinlaiya XY2500R-G, 3.5 mm pitch, right-angle with closed ends,
+  8 A / 300 V. J2 13.8 V in (2 way), J3 audio (4 way: TX, TX return, RX+, RX−), J4 radio (6 way:
+  ground, PTT, UP, DOWN, BUSY+, BUSY−). Each radio gets its own lead with mating 3.5 mm plugs
+  (Phoenix MC 1,5/x-ST-3,5 style).
 
 ## Still to do before ordering
 
@@ -49,5 +51,6 @@ See the "Before layout" checklist at the end of the schematic page. In short:
   available to order, so check the live page; pre-order or consign if it is short.
 - **U5 placement:** U5 shares C25 at U4's output instead of having its own input cap; keep them close.
 - **Codec clock:** confirm the clock setup at bring-up.
-- **Mic-jack numbering:** check each radio's mic-jack numbering before patching J4 → J5.
+- **Connector footprints:** J2–J4 use KiCad's Phoenix MC 1,5/x-G-3,5 footprints, which the
+  XY2500R-G copies. Check them against the Xinlaiya drawing and keep the plug side at the board edge.
 - **Isolation clearance:** keep radio-side copper ≥ 2 mm from Pi-side copper.
