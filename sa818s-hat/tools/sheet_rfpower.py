@@ -5,6 +5,7 @@ and a 2 A ferrite + local caps keep switching ripple off the module (the datashe
 for short range).
 """
 from schbuild import Sheet
+import sharedlib
 
 R0603 = "Resistor_SMD:R_0603_1608Metric"
 C0603 = "Capacitor_SMD:C_0603_1608Metric"
@@ -26,6 +27,7 @@ def build(path, page):
     for ref, x in zip(("C31", "C32"), xs):
         s.symbol("Device:C", ref, "2.2uF 50V", (x, 58.42), footprint=C1206, lcsc="C50254", conn={"2": G})
     s.symbol("Regulator_Switching:TPS54360DDA", "U7", "TPS54360BDDAR", (101.6, 55.88), lcsc="C524806",
+             footprint=sharedlib.fp("Package_SO:TI_SO-PowerPAD-8_ThermalVias"),
              ref_at=(101.6, 41.91), val_at=(101.6, 80.01), conn={"3": ("nc",)})
     chain(s, [(40.64, y)] + [(x, y) for x in xs] + [s.p("U7.2")])
     s.label("VIN", (40.64, y), (-1, 0), glob=True)
@@ -49,7 +51,7 @@ def build(path, page):
     chain(s, [c30r, (128.27, 45.72), swn])
     s.symbol("Device:D_Schottky", "D4", "SS56", (134.62, 59.69), rot=270, footprint="Diode_SMD:D_SMA",
              lcsc="C65009", ref_at=(137.795, 58.42), val_at=(137.795, 60.96), conn={"2": G})
-    s.symbol("Device:L", "L2", "6.8uH 5A", (146.05, sw[1]), rot=90, footprint="Inductor_SMD:L_Bourns_SRP7028A_7.3x6.6mm",
+    s.symbol("Device:L", "L2", "6.8uH 5A", (146.05, sw[1]), rot=90, footprint="Inductor_SMD:L_Changjiang_FXL0630",
              lcsc="C167221", ref_at=(146.05, 51.43), val_at=(146.05, 60.33))
     l_in, l_out = sorted([s.p("L2.1"), s.p("L2.2")])
     chain(s, [sw, (118.11, sw[1]), swn, (134.62, sw[1]), l_in])

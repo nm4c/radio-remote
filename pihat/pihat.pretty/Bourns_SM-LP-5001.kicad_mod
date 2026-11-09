@@ -116,4 +116,13 @@
 		(uuid "b83e4fcf-4a02-5fd1-af98-ee163103949b")
 	)
 	(embedded_fonts no)
+	(model "${KIPRJMOD}/../kicad-shared/3dmodels/Bourns_SM-LP-5001E.step"
+		(offset (xyz 0 0 0))
+		(scale
+			(xyz 1 1 1)
+		)
+		(rotate
+			(xyz 0 0 0)
+		)
+	)
 )

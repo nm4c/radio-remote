@@ -13,6 +13,7 @@ import uuid
 import os as _os, sys as _sys
 _sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "..", "..", "..", "kicadgen"))
 from sexp import Q, dump
+import sharedlib  # noqa: E402  (kicadgen)
 
 NS = uuid.UUID("0b6c5f1e-8f0a-4a3e-9c51-7d2e4b3a1f60")
 
@@ -152,7 +153,8 @@ def smlp5001_fp():
             line((-4.3, -4.6), (4.3, -4.6), "F.SilkS", 0.12, "silk_top"),
             line((-4.3, 4.6), (4.3, 4.6), "F.SilkS", 0.12, "silk_bot"),
             line((-7.7, -3.6), (-7.7, -3.1), "F.SilkS", 0.12, "pin1"),
-            rect((-7.75, -4.75), (7.75, 4.75), "F.CrtYd", 0.05, "crtyd")] + pads + [["embedded_fonts", "no"]]
+            rect((-7.75, -4.75), (7.75, 4.75), "F.CrtYd", 0.05, "crtyd")] + pads + [
+            ["embedded_fonts", "no"], sharedlib.model(sharedlib.TRANSFORMER)]
 
 
 def write_fp(dirpath):

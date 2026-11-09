@@ -651,7 +651,7 @@ PARTS = [
 FOOTPRINT = {
     "C2938669": "SOIC-16_4.4x10.3mm_P1.27mm", "C181753": "QFN-32-1EP_5x5mm_P0.5mm", "C2836966": "HSOP-8-1EP_3.9x4.9mm_P1.27mm",
     "C7527500": "SOT-223-3_TabPin2", "C963430": "SOT-23-5", "C60583": "SOIC-8_3.9x4.9mm_P1.27mm",
-    "C160457": "Oscillator_SMD_3225-4Pin", "C840532": "Bourns_SM-LP-5001", "C167221": "L_7.0x6.6mm",
+    "C160457": "Oscillator_SMD_3225-4Pin", "C840532": "Bourns_SM-LP-5001", "C167221": "L_Changjiang_FXL0630",
     "C65009": "D_SMA", "C224015": "D_SMB", "C2128": "D_SOD-323", "C18198333": "Fuse_1812", "C2286": "LED_0603",
     "C1002": "L_0603", "C28323": "C_0805", "C15850": "C_0805", "C50254": "C_1206", "C12891": "C_1206",
     "C72480": "CP_Elec_8x10.2", "C2977589": "PinSocket_2x20_P2.54mm_Vertical",

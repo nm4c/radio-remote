@@ -190,4 +190,13 @@
 		(uuid "39f7d102-7269-502f-962f-4c83331a145f")
 	)
 	(embedded_fonts no)
+	(model "${KIPRJMOD}/../kicad-shared/3dmodels/NiceRF_SA818S.step"
+		(offset (xyz 0 0 0))
+		(scale
+			(xyz 1 1 1)
+		)
+		(rotate
+			(xyz 0 0 0)
+		)
+	)
 )

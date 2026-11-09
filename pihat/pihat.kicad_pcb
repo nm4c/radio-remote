@@ -5296,6 +5296,17 @@
 			(uuid "b8ea543f-d743-4ebf-8440-2ad047b57da6")
 		)
 		(embedded_fonts no)
+		(model "${KIPRJMOD}/../kicad-shared/3dmodels/Bourns_SM-LP-5001E.step"
+			(offset
+				(xyz 0 0 0)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz 0 0 0)
+			)
+		)
 	)
 	(footprint "Capacitor_SMD:C_0603_1608Metric"
 		(layer "F.Cu")
@@ -14222,6 +14233,17 @@
 			(uuid "aff9e7cd-a94f-4e68-8fbc-e860e4f75212")
 		)
 		(embedded_fonts no)
+		(model "${KIPRJMOD}/../kicad-shared/3dmodels/Bourns_SM-LP-5001E.step"
+			(offset
+				(xyz 0 0 0)
+			)
+			(scale
+				(xyz 1 1 1)
+			)
+			(rotate
+				(xyz 0 0 0)
+			)
+		)
 	)
 	(footprint "Jumper:SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm"
 		(layer "F.Cu")

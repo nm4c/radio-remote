@@ -18,6 +18,7 @@ sys.path.insert(0, os.path.join(REPO, "kicadgen"))      # shared generator (sexp
 sys.path.insert(0, HERE)
 import kicadlib  # noqa: E402
 import schbuild  # noqa: E402
+import sharedlib  # noqa: E402
 from hatroot import check as kicad_check, ensure_sheet, globalize_root, refresh_embedded, renumber_root, root_eeprom, root_uuid  # noqa: E402
 import sheet_power  # noqa: E402
 import sheet_control  # noqa: E402
@@ -63,6 +64,7 @@ def build():
     schbuild.PROJECT = "pihat"
     kicadlib.PROJECT_LIBS["pihat"] = projlib.symbols
     projlib.write_all(PROJ)
+    sharedlib.build(PROJ)   # shared footprints with 3D models, in ../kicad-shared
     text = globalize_root(renumber_root(open(ROOT).read(), ROOT_RENAME, "U6"), GLOBAL_NETS | set(RENAME), RENAME)
     text = root_eeprom(text, root_uuid(text), ROOT_FIELDS, eeprom="U6", jumper="JP2", pullup="R24")
     text = refresh_embedded(text)

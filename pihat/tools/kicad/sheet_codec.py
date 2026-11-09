@@ -1,5 +1,6 @@
 """Sheet: Codec. TLV320AIC3104 I2S codec, 12 MHz MCLK oscillator, series resistors, reset pull-down, decoupling."""
 from schbuild import Sheet
+import sharedlib
 
 R0603 = "Resistor_SMD:R_0603_1608Metric"
 C0603 = "Capacitor_SMD:C_0603_1608Metric"
@@ -89,7 +90,7 @@ def build(path, page, hp_n=True, lib="pihat", i2s_series=True):
     # ---- 12 MHz master clock
     s.text("MASTER CLOCK  12 MHz", (17.78, 116.84), 1.5, bold=True)
     s.symbol("Oscillator:ASE-xxxMHz", "Y1", "12MHz 3.3V", (40.64, 137.16), lcsc="C160457",
-             footprint="Oscillator:Oscillator_SMD_Abracon_ASE-4Pin_3.2x2.5mm",
+             footprint=sharedlib.fp("Oscillator:Oscillator_SMD_Abracon_ASE-4Pin_3.2x2.5mm"),
              ref_at=(49.53, 128.27), val_at=(49.53, 130.81), ref_just="left", val_just="left",
              conn={"2": G, "3": ("label", "OSC_12M", 5.08)})
     en, vdd = s.p("Y1.1"), s.p("Y1.4")

@@ -16,6 +16,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "..", "kicadgen"))
 sys.path.insert(0, os.path.join(HERE, "..", "..", "pihat", "tools", "kicad"))
 from sexp import Q, dump  # noqa: E402
+import sharedlib  # noqa: E402  (kicadgen: shared footprints and 3D models)
 import projlib as pihat_lib  # noqa: E402  (TLV320AIC3104 symbol, prop/pin helpers)
 
 NS = uuid.UUID("5d1a8c3e-2b47-4f9a-a0d6-91e3c7b25f18")
@@ -89,6 +90,7 @@ def sa818s_fp():
         items.append(["pad", Q(num), "smd", "rect", ["at", x, y], ["size", w, h],
                       ["layers", Q("F.Cu"), Q("F.Paste"), Q("F.Mask")], ["uuid", U(f"fp/pad{num}")]])
     items.append(["embedded_fonts", "no"])
+    items.append(sharedlib.model(sharedlib.SA818S))   # LCSC C3001549 model, same pad origin
     return items
 
 

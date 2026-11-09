@@ -22,6 +22,7 @@ sys.path.insert(0, os.path.join(REPO, "pihat", "tools", "kicad"))   # shared pow
 sys.path.insert(0, HERE)
 import kicadlib  # noqa: E402
 import schbuild  # noqa: E402
+import sharedlib  # noqa: E402
 from hatroot import check as kicad_check, ensure_sheet, globalize_root, refresh_embedded, root_eeprom, root_uuid  # noqa: E402
 import sheet_power  # noqa: E402  (pihat)
 import sheet_codec  # noqa: E402  (pihat)
@@ -60,6 +61,7 @@ def build():
     schbuild.PROJECT = PROJECT
     kicadlib.PROJECT_LIBS["sa818s-hat"] = lib.symbols
     lib.write_all(PROJ)
+    sharedlib.build(PROJ)   # shared footprints with 3D models, in ../kicad-shared
     text = globalize_root(open(ROOT).read(), GLOBAL_NETS | set(RENAME), RENAME)
     text = root_eeprom(text, root_uuid(text), ROOT_FIELDS, eeprom="U1", jumper="JP1", pullup="R3")
     text = refresh_embedded(text)

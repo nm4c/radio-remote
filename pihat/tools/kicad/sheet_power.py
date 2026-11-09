@@ -6,6 +6,7 @@ Two 5 V bucks are available:
   tps54360  TI TPS54360 (SA818S HAT): 60 V, external catch diode and type II compensation.
 """
 from schbuild import Sheet
+import sharedlib
 
 R0603 = "Resistor_SMD:R_0603_1608Metric"
 C0603 = "Capacitor_SMD:C_0603_1608Metric"
@@ -42,7 +43,8 @@ def _boot_cap(s, boot, sw):
 
 
 def _inductor(s, sw):
-    s.symbol("Device:L", "L1", "6.8uH 5A", (214.63, sw[1]), rot=90, footprint="Inductor_SMD:L_Bourns_SRP7028A_7.3x6.6mm",
+    # Changjiang FXL0630-6R8-M: KiCad has its exact footprint and 3D model
+    s.symbol("Device:L", "L1", "6.8uH 5A", (214.63, sw[1]), rot=90, footprint="Inductor_SMD:L_Changjiang_FXL0630",
              lcsc="C167221", ref_at=(214.63, 52.07), val_at=(214.63, 59.69))
     return sorted([s.p("L1.1"), s.p("L1.2")])
 
@@ -50,6 +52,7 @@ def _inductor(s, sw):
 def _lmr33640(s, y, shunt_x, caps_in, vin_global, G):
     """LMR33640ADDA: EN tied to VIN, PG unused, 1 uF on VCC, boot cap, SW straight to L1."""
     s.symbol("Regulator_Switching:LMR33640ADDA", "U3", "LMR33640ADDAR", (170.18, 55.88), lcsc="C2836966",
+             footprint=sharedlib.fp("Package_SO:Texas_HSOP-8-1EP_3.9x4.9mm_P1.27mm_ThermalVias"),
              ref_at=(170.18, 41.91), val_at=(170.18, 74.93), conn={"4": ("nc",)})
     vin = s.p("U3.2")
     _vin_rail(s, y, shunt_x, caps_in, vin, vin_global)
@@ -79,6 +82,7 @@ def _lmr33640(s, y, shunt_x, caps_in, vin_global, G):
 def _tps54360(s, y, shunt_x, caps_in, vin_global, G):
     """TPS54360: RT resistor, external compensation, catch diode D2."""
     s.symbol("Regulator_Switching:TPS54360DDA", "U3", "TPS54360BDDAR", (170.18, 55.88), lcsc="C524806",
+             footprint=sharedlib.fp("Package_SO:TI_SO-PowerPAD-8_ThermalVias"),
              ref_at=(170.18, 41.91), val_at=(170.18, 80.01), conn={"3": ("nc",)})
     _vin_rail(s, y, shunt_x, caps_in, s.p("U3.2"), vin_global)
     # U3 grounds joined to one symbol
@@ -173,7 +177,7 @@ def build(path, page, fuse=("1.5A 33V", "C18198333"), vin_global=False, buck="tp
         "J6", "13.8 V in", "TerminalBlock_Phoenix:TerminalBlock_Phoenix_PT-1,5-2-3.5-H_1x02_P3.50mm_Horizontal", "C474892")
     s.symbol("Connector:Screw_Terminal_01x02", jref, jval, (25.4, y), mirror="y", footprint=jfp,
              lcsc=jlcsc, ref_at=(22.86, 45.72), val_at=(22.86, 43.18))
-    s.symbol("Device:Polyfuse", "F1", fuse[0], (49.53, y), rot=90, footprint="Fuse:Fuse_1812_4532Metric",
+    s.symbol("Device:Polyfuse", "F1", fuse[0], (49.53, y), rot=90, footprint=sharedlib.fp("Fuse:Fuse_1812_4532Metric"),
              lcsc=fuse[1], ref_at=(49.53, 46.99), val_at=(49.53, 55.88))
     s.symbol("Device:D_Schottky", "D1", "SS56", (68.58, y), rot=180, footprint="Diode_SMD:D_SMA",
              lcsc="C65009", ref_at=(68.58, 46.99), val_at=(68.58, 55.88))

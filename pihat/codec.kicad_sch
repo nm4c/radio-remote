@@ -3293,7 +3293,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Oscillator:Oscillator_SMD_Abracon_ASE-4Pin_3.2x2.5mm"
+		(property "Footprint" "radio-remote:Oscillator_SMD_Abracon_ASE-4Pin_3.2x2.5mm"
 			(at 40.64 137.16 0)
 			(hide yes)
 			(show_name no)

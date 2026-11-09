@@ -1863,7 +1863,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_SO:TI_SO-PowerPAD-8_ThermalVias"
+		(property "Footprint" "radio-remote:TI_SO-PowerPAD-8_ThermalVias"
 			(at 101.6 55.88 0)
 			(hide yes)
 			(show_name no)
@@ -2718,7 +2718,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Inductor_SMD:L_Bourns_SRP7028A_7.3x6.6mm"
+		(property "Footprint" "Inductor_SMD:L_Changjiang_FXL0630"
 			(at 146.05 55.88 0)
 			(hide yes)
 			(show_name no)
