@@ -26,15 +26,17 @@ python3 -m venv --system-site-packages "$DEST/.venv"
 chown -R radio:radio "$DEST"
 chmod 600 "$DEST/config.yaml"
 
+install -m 755 "$SRC/deploy/radio-users" /usr/local/bin/radio-users
 cp "$SRC/deploy/radio-remote.service" /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable radio-remote
 
 echo
 echo "Installed. Next:"
-echo "  1. sudo nano $DEST/config.yaml      (password, radio.type, sound card, channels)"
-echo "  2. sudo -u radio $DEST/.venv/bin/python -m sounddevice   (list sound cards)"
-echo "  3. sudo systemctl start radio-remote && journalctl -u radio-remote -f"
-echo "  4. sudo tailscale serve --bg 8080   (HTTPS so browsers allow the mic)"
+echo "  1. sudo nano $DEST/config.yaml      (radio.type, sound card, channels)"
+echo "  2. sudo radio-users add <your-callsign> --role control   (your login; more with --role listen)"
+echo "  3. sudo -u radio $DEST/.venv/bin/python -m sounddevice   (list sound cards)"
+echo "  4. sudo systemctl start radio-remote && journalctl -u radio-remote -f"
+echo "  5. sudo tailscale serve --bg 8080   (HTTPS so browsers allow the mic)"
 echo
 echo "To update later: sudo ./deploy/update.sh   (from a git clone of the repo)"

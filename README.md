@@ -47,6 +47,8 @@ There are two hardware modes, set with `radio.type` in `config.yaml`:
 - With the SA818S HAT: frequencies, repeater offsets and CTCSS/DCS per channel, a VFO for any
   frequency in the band, and an RSSI bar on the display.
 - Several operators can listen at once. Only one can transmit, and the others see who's on air.
+- Personal accounts with **control** (everything) or **listen** (hear only) roles, an audit log of
+  who did what, and login lockout. See [Accounts and security](#accounts-and-security).
 - Safety features:
   - Server-side transmit time-out (`max_tx_seconds`).
   - PTT drops if the browser goes quiet (network loss, closed tab, phone locked).
@@ -62,7 +64,8 @@ cd radio-remote
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp config.example.yaml config.yaml
-#  in config.yaml set: gpio.backend: mock, audio.backend: mock, password: something
+#  in config.yaml set: gpio.backend: mock, audio.backend: mock
+python -m server.users -c config.yaml add me --role control    # asks for a password
 python -m server -c config.yaml
 ```
 
@@ -214,11 +217,13 @@ also raises the level, so recheck deviation after a big change. Selcall tones ar
    sudo ./deploy/install.sh
    sudo nano /opt/radio-remote/config.yaml
    ```
-   Set `password`, `radio.type`, the channels (`channel.count` / `names` for an external radio,
+   Set `radio.type`, the channels (`channel.count` / `names` for an external radio,
    `channel.list` for the SA818S HAT; the SA818S HAT also needs the UART set up, see the `sa818:` section), and the sound card
    (`input_device` / `output_device`, for example `"USB Audio"`. List them with
    `/opt/radio-remote/.venv/bin/python -m sounddevice`).
-3. `sudo systemctl start radio-remote` and watch the log with `journalctl -u radio-remote -f`.
+3. Make your login: `sudo radio-users add <your-callsign> --role control` (see
+   [Accounts and security](#accounts-and-security)).
+4. `sudo systemctl start radio-remote` and watch the log with `journalctl -u radio-remote -f`.
 
 ### Updating
 
@@ -229,8 +234,9 @@ sudo ./deploy/update.sh            # git pull, copy the code to /opt/radio-remot
 sudo ./deploy/update.sh --no-pull  # deploy the clone as it is, without pulling
 ```
 
-It copies only `server/`, `web/` and `requirements.txt`, so `config.yaml`, `state.json`, `tls/`,
-the audio clips and the Python venv are left alone. It reinstalls Python packages only when `requirements.txt`
+It copies only `server/`, `web/` and `requirements.txt` (and installs `radio-users`), so
+`config.yaml`, `state.json`, the account database `radio.db`, `tls/`, the audio clips and the
+Python venv are left alone. It reinstalls Python packages only when `requirements.txt`
 changed, reloads systemd only when the service file changed, and prints the log if the service
 fails to come back up. New config options get their defaults until you add them to `config.yaml`
 (see `config.example.yaml`).
@@ -262,6 +268,60 @@ Things to know:
 - **No hardware PTT.** A web page can't use the volume or headset buttons, so it's the
   on-screen button only.
 
+## Accounts and security
+
+Each operator logs in with their own username and password. Their display name (callsign) is
+what other operators see and what the audit log records. Accounts live in `radio.db` (SQLite,
+readable only by the `radio` user), managed with `radio-users` on the Pi:
+
+```bash
+sudo radio-users add vk3abc --role control --name "VK3ABC"   # asks for the password
+sudo radio-users add visitor --role listen
+sudo radio-users list                    # accounts, roles, last login
+sudo radio-users passwd vk3abc           # new password; ends that user's sessions
+sudo radio-users role visitor control    # promote / demote
+sudo radio-users disable visitor         # block logins, disconnect now
+sudo radio-users sessions                # devices kept logged in
+sudo radio-users logout vk3abc           # end all of a user's sessions
+sudo radio-users log --days 1            # the audit log
+```
+
+Changes apply within about 5 seconds, also to operators who are connected: a disabled account
+is disconnected, and a demoted one loses PTT straight away.
+
+| Role | Can |
+|---|---|
+| `control` | Everything: PTT, channels, tune/sync, selcalls, clips (upload, play, delete), recording, voice effects |
+| `listen` | Hear the radio, see the channel, signal, who's transmitting, selcalls heard and the clip list, and listen to or save clips and recordings. The page hides the controls and never asks for the microphone; the server refuses those actions anyway. |
+
+**Audit log.** Every login (and failed login), logout and disconnect; every transmission with its
+duration, channel and kind (voice, voice effect, selcall, clip); channel changes, tune and sync;
+selcalls; clip uploads, plays, stops and deletes; recording start and stop; voice effect changes;
+refused actions from listen accounts; password and account changes. Kept for
+`server.audit_days` (365). Read it with `sudo radio-users log`.
+
+**Passwords and sessions.**
+- Passwords are stored as scrypt hashes, never in plain text, and must be at least 8 characters.
+- "Keep me logged in" stores a random session token in the browser, never the password.
+  Only a hash of the token is kept on the Pi. It lasts `server.session_days` (30) after its last
+  use. Without the tick, the browser forgets it when the page closes.
+- **Log out** in Settings ends the session on the Pi too. **Disconnect** keeps you logged in.
+- Changing your password (Settings) logs out your other devices.
+
+**Protection.**
+- Five failed logins lock that address, and that username, for 15 minutes. A wrong username and
+  a wrong password give the same answer and take the same time, so accounts can't be guessed.
+- Strict security headers: only this server's own scripts and styles, and the page can't be
+  framed by another site (so nobody can trick a click on PTT). The WebSocket refuses pages from
+  other sites.
+- Use HTTPS: `tailscale serve` (above) or your own certificate. Without it, passwords cross the
+  network in the clear, and the server warns about that at start-up.
+
+**Upgrading from the shared password.** If `server.password` is still set the first time the new
+version starts, it becomes a `control` account called `operator`, so everyone can still get in.
+Make personal accounts, then `sudo radio-users delete operator` and remove `password` from
+`config.yaml`.
+
 ## Channel tracking
 
 Mic-line button emulation can't read the channel back from the radio, so the Pi **tracks the
@@ -271,32 +331,39 @@ re-sync. No buttons are pressed.
 
 ## Protocol (for building other clients)
 
-WebSocket at `/ws`. The first message must be
-`{"type":"auth","password":"…","name":"VK2XYZ"}`.
+WebSocket at `/ws`. The first message must log in, with a password or an earlier session token:
+`{"type":"auth","username":"vk3abc","password":"…","remember":true}` or
+`{"type":"auth","session":"…"}`. The reply is
+`{"type":"auth","ok":true,"name":"VK3ABC","username":"vk3abc","role":"control"|"listen","token":"…","session":"…"|null}`
+(`session`: a new token after a password login) or `{"ok":false,"code":"login"|"session"|"locked","error":"…"}`.
+Messages marked * need the `control` role; from a `listen` account they're refused with a notice.
 
 | Direction | Message |
 |---|---|
-| → | `{"type":"ptt","on":true\|false}` |
-| → | `{"type":"ptt_hold"}` every `hold_interval_ms` while transmitting |
-| → | `{"type":"channel","action":"up"\|"down"}` |
-| → | `{"type":"channel","action":"goto"\|"sync","channel":5}` (`sync` only for `buttons`) |
-| → | `{"type":"channel","action":"tune","freq":439.125,"tx_freq":null,"tone":"91.5"}` (`sa818` only: VFO, channel 0) |
-| → | `{"type":"selcall","digits":"12345"}` key the radio and send a selcall (1-20 digits) |
-| → | `{"type":"voice_fx","preset":"vader"\|null}` switch this operator's voice effect on (a preset id from `hello.voice_fx`) or off; `state.fx` is the one on |
-| → | `{"type":"record","on":true\|false}` start or stop recording received audio |
-| → | `{"type":"clip_play","id":"3f9c1a2b7d4e"}` key the radio and play a stored clip; `{"type":"clip_stop"}` stop the one on air (any operator); `{"type":"clip_delete","id":"…"}` |
-| → | binary: TX audio, int16 LE mono 16 kHz, 20 ms frames. Ignored unless you hold PTT. |
+| → | \* `{"type":"ptt","on":true\|false}` |
+| → | \* `{"type":"ptt_hold"}` every `hold_interval_ms` while transmitting |
+| → | \* `{"type":"channel","action":"up"\|"down"}` |
+| → | \* `{"type":"channel","action":"goto"\|"sync","channel":5}` (`sync` only for `buttons`) |
+| → | \* `{"type":"channel","action":"tune","freq":439.125,"tx_freq":null,"tone":"91.5"}` (`sa818` only: VFO, channel 0) |
+| → | \* `{"type":"selcall","digits":"12345"}` key the radio and send a selcall (1-20 digits) |
+| → | \* `{"type":"voice_fx","preset":"vader"\|null}` switch this operator's voice effect on (a preset id from `hello.voice_fx`) or off; `state.fx` is the one on |
+| → | \* `{"type":"record","on":true\|false}` start or stop recording received audio |
+| → | \* `{"type":"clip_play","id":"3f9c1a2b7d4e"}` key the radio and play a stored clip; `{"type":"clip_stop"}` stop the one on air (any operator); `{"type":"clip_delete","id":"…"}` |
+| → | \* binary: TX audio, int16 LE mono 16 kHz, 20 ms frames. Ignored unless you hold PTT. |
+| → | `{"type":"logout"}` end this session; `{"type":"change_password","old":"…","new":"…"}` (reply `{"type":"password","ok":…}`) |
+| ← | `{"type":"account","role":"…","display":"…"}` an administrator changed this account while connected |
 | ← | `auth`, `hello` (channel list, timing, `radio_type`, `can_sync`, `can_tune`, `band`), `state` (channel, PTT owner, TOT remaining, `info` = frequency/tones or null, `error`), `meter` (5 Hz, plus `rssi` / `rssi_dbm` on `sa818`), `notice`. `hello.selcall` holds the selcall settings and recent calls (null if off); `state.selcall_tx` is the number being sent, or null. `auth.token` authorises clip uploads; `hello.clips` holds the clip limits and `list` (null if off); `state.clip_tx` is `{"id","name"}` of the clip on air, or null. `state.recording` is `{"by","seconds"}` while recording, or null |
 | ← | `{"type":"clips","list":[{"id","name","seconds","by","added","kind"}]}` the clip list changed (`kind`: `upload` or `rec`) |
 | ← | `{"type":"selcall","dir":"tx"\|"rx","digits":"12345","by":"name"\|null,"to_me":false,"t":1793869268.1}` a call sent or heard |
 | ← | binary: RX audio, same format (not sent once WebRTC audio is connected) |
-
-Clips are uploaded over HTTP: `POST /clips?name=Net%20opening` with header `X-Radio-Token: <auth.token>`
-and a mono 16-bit WAV body at `wire_rate`. The reply is the new clip's entry, or `{"error":"…"}`.
-`GET /clips/<id>.wav?token=<auth.token>` returns a clip's audio.
 | → | `{"type":"rtc_offer","sdp":"…"}` complete SDP (non-trickle): one sendrecv Opus audio track, your mic out, radio in |
 | ← | `{"type":"rtc_answer","sdp":"…"}` or `{"type":"rtc_failed","text":"…"}` |
 | → | `{"type":"rtc_close"}` give up on WebRTC and go back to WebSocket audio |
+
+Clips are uploaded over HTTP (control accounts): `POST /clips?name=Net%20opening` with header
+`X-Radio-Token: <auth.token>` and a mono 16-bit WAV body at `wire_rate`. The reply is the new
+clip's entry, or `{"error":"…"}`. `GET /clips/<id>.wav?token=<auth.token>` returns a clip's audio
+(any account). The token lasts as long as that WebSocket connection.
 
 ## Layout
 
@@ -304,7 +371,8 @@ and a mono 16-bit WAV body at `wire_rate`. The reply is the new clip's entry, or
 server/   main.py (web + WebSocket + safety watchdog), radio.py (PTT, channels, button radio),
           sa818.py (SA818S module over UART), rtc.py (WebRTC audio), audio.py (sound card, resampling),
           selcall.py (selcall tones: encoder and decoder), clips.py (stored audio clips),
-          recorder.py (recording received audio into the clip list),
+          recorder.py (recording received audio into the clip list), auth.py (accounts, sessions,
+          audit log), users.py (the radio-users tool),
           eq.py (TX tone control), voicefx.py (voice effects)
 web/      index.html, app.js, worklet.js (AudioWorklet capture/playback), style.css,
           control-head/ (control head SVGs and their input handling, control_head.js)
@@ -319,7 +387,6 @@ kicadgen/    shared KiCad schematic generator used by both HATs
 ## Ideas for later
 
 - Pluggable control backends (CI-V / CAT serial) for radios that can report channel and RSSI
-- Per-user accounts and audit log of who transmitted when
 - Recording only while the channel is busy (VOX-style), and recording our own transmissions too
 
 ## Licence

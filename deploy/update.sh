@@ -38,6 +38,7 @@ echo "== copying code to $DEST"
 rsync -a --delete --exclude __pycache__ --exclude .DS_Store --itemize-changes \
   "$SRC/server" "$SRC/web" "$SRC/requirements.txt" "$DEST/" | grep -v '^\.' || true
 chown -R radio:radio "$DEST"
+install -m 755 "$SRC/deploy/radio-users" /usr/local/bin/radio-users
 
 if (( reqs_changed )); then
   echo "== requirements.txt changed: installing Python packages"
