@@ -18,3 +18,7 @@ fp-info-cache
 pihat/build/
 sa818s-hat/build/
 sa818s-hat/.history/
+
+# KiCad Fabrication Toolkit output (regenerate from the board before ordering)
+*/production/
+*/fabrication-toolkit-options.json
