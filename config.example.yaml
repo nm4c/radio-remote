@@ -14,8 +14,16 @@ radio:
 server:
   host: 0.0.0.0
   port: 8080
-  # Shared password for operators. CHANGE THIS.
-  password: "change-me"
+  # Operators log in with their own accounts, made with `sudo radio-users add <name>` (see README,
+  # "Accounts and security"). Roles: control (everything) or listen (hear only).
+  # Upgrading from a version with one shared password? If server.password is still set when the
+  # account database is empty, it becomes a control account called "operator". Make personal
+  # accounts, then delete the password line.
+  # password: "old-shared-password"
+  db_file: radio.db        # accounts, "keep me logged in" sessions and the audit log (SQLite)
+  session_days: 30         # how long "keep me logged in" lasts after the last use
+  audit_days: 365          # audit log retention (0 = keep forever)
+  allowed_origins: []      # extra page origins allowed to open the WebSocket; normally none
   # Optional TLS (browsers only allow microphone access over HTTPS or localhost).
   # Easiest alternative: `sudo tailscale serve --bg 8080` – see README.
   tls_cert: null

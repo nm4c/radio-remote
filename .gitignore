@@ -22,3 +22,7 @@ sa818s-hat/.history/
 # KiCad Fabrication Toolkit output (regenerate from the board before ordering)
 */production/
 */fabrication-toolkit-options.json
+
+# Operator accounts, sessions and the audit log
+radio.db
+radio.db-*

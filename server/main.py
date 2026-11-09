@@ -18,6 +18,7 @@ from aiohttp import WSMsgType, web
 from .audio import create_audio
 from .config import load
 from . import clips, rtc, selcall, voicefx
+from .auth import LoginLimiter, UserDB, AuthError, check_password, hash_password, verify_password
 from .eq import TxEq
 from .recorder import Recorder
 from .radio import RadioError, create_radio
@@ -26,6 +27,12 @@ log = logging.getLogger("server")
 WEB_DIR = Path(__file__).resolve().parent.parent / "web"
 AUDIO_QUEUE_LIMIT = 25  # frames (~0.5 s) before we start dropping RX audio for a slow client
 SELCALL_LOG = 20        # recent selcalls (sent and received) kept for operators who join later
+PENDING_PER_IP = 8      # WebSocket connections from one address that haven't logged in yet
+AUTH_RECHECK_S = 5      # how often connected operators are re-checked against the user database
+
+# Messages only 'control' accounts may send. Everything else a 'listen' account sends is ignored.
+CONTROL_MESSAGES = {"ptt", "ptt_hold", "channel", "selcall", "voice_fx", "record",
+                    "clip_play", "clip_stop", "clip_delete"}
 
 
 class Client:
@@ -37,6 +44,8 @@ class Client:
         self.remote = remote
         self.name = f"Operator {self.id}"
         self.authed = False
+        self.user = None          # the account row once logged in
+        self.session = None       # hash of this login's session token (see auth.UserDB)
         self.token = secrets.token_urlsafe(18)  # authorises this operator's clip uploads (HTTP)
         self.fx = None  # voice effect preset this operator has switched on, or None
         self.last_hold = 0.0
@@ -45,6 +54,14 @@ class Client:
         self.rtc = None  # RtcPeer once the browser has set up WebRTC audio
         self.tx_open = False  # accepting this operator's WebRTC mic audio (PTT held, or just released)
         self.sender = asyncio.create_task(self._send_loop())
+
+    @property
+    def control(self):
+        return bool(self.user) and self.user["role"] == "control"
+
+    @property
+    def username(self):
+        return self.user["username"] if self.user else None
 
     def send_json(self, obj):
         self.queue.put_nowait(json.dumps(obj))
@@ -73,6 +90,12 @@ class RemoteHead:
         self.clients = set()
         self.loop = None
         self.radio = create_radio(cfg, self.broadcast_state)
+        srv = cfg["server"]
+        self.db = UserDB(srv["db_file"], srv["session_days"])
+        self.limiter = LoginLimiter()
+        self.pending = {}         # ip -> WebSocket connections not yet logged in
+        self._tx = None           # the transmission in progress, for the audit log
+        self._migrate_password()
         self.audio = create_audio(cfg, self._on_rx_audio)
         self._tasks = set()
         self._ptt_gen = 0
@@ -110,6 +133,30 @@ class RemoteHead:
         self.recorder = None
         if self.clips and cfg["record"]["enabled"]:
             self.recorder = Recorder(self.clips, int(cfg["audio"]["wire_rate"]), cfg["record"], self._record_changed)
+
+    def _migrate_password(self):
+        """First start with the user database: the old shared server.password becomes a
+        'control' account called 'operator', so an existing install keeps working."""
+        pw = str(self.cfg["server"].get("password") or "")
+        if self.db.count() or not pw or pw == "change-me":
+            if not self.db.count():
+                log.warning("no operator accounts yet: create one with  sudo radio-users add <name>")
+            return
+        try:
+            self.db.add("operator", check_password(pw), "control", "Operator")
+        except AuthError as e:
+            log.warning("couldn't turn server.password into an account (%s): create one with radio-users", e)
+            return
+        self.db.log("user_added", "migration", None, username="operator", role="control")
+        log.warning("created account 'operator' (control) from server.password. Make personal accounts "
+                    "with radio-users, then remove server.password from the config.")
+
+    def audit(self, c, event, **detail):
+        """Write to the audit log as operator c (or the system, when c is None)."""
+        try:
+            self.db.log(event, c.username if c else None, c.remote if c else None, **detail)
+        except Exception as e:  # the radio must keep working even if the log can't be written
+            log.error("audit log: %s", e)
 
     # ---- helpers -------------------------------------------------------
 
@@ -226,17 +273,41 @@ class RemoteHead:
 
     # ---- WebSocket -------------------------------------------------------
 
+    def _origin_ok(self, request):
+        """Refuse WebSocket connections opened by pages on other sites (cross-site WebSocket
+        hijacking). Browsers always send Origin; other clients may leave it out."""
+        origin = request.headers.get("Origin")
+        if not origin:
+            return True
+        allowed = {f"{p}://{request.host}" for p in ("http", "https")} | set(self.cfg["server"]["allowed_origins"] or [])
+        return origin.rstrip("/") in allowed
+
     async def ws_handler(self, request):
+        ip = request.remote
+        if not self._origin_ok(request):
+            log.warning("refused WebSocket from %s: origin %s", ip, request.headers.get("Origin"))
+            raise web.HTTPForbidden(text="cross-origin WebSocket refused")
+        if self.pending.get(ip, 0) >= PENDING_PER_IP:
+            raise web.HTTPTooManyRequests(text="too many connections waiting to log in")
         ws = web.WebSocketResponse(heartbeat=10, max_msg_size=64 * 1024)
         await ws.prepare(request)
-        c = Client(ws, request.remote)
+        c = Client(ws, ip)
+        c.agent = request.headers.get("User-Agent", "")
         self.clients.add(c)
+        self.pending[ip] = self.pending.get(ip, 0) + 1
         try:
-            if not await self._authenticate(c):
+            try:
+                ok = await self._authenticate(c)
+            finally:
+                self.pending[ip] -= 1
+                if not self.pending[ip]:
+                    del self.pending[ip]
+            if not ok:
                 return ws
-            log.info("%s connected from %s", c.name, c.remote)
+            log.info("%s (%s, %s) connected from %s", c.name, c.username, c.user["role"], c.remote)
             c.send_json({
                 "type": "hello",
+                "user": {"username": c.username, "display": c.name, "role": c.user["role"]},
                 "radio_name": str(self.cfg["radio"]["name"]),
                 "channels": self.radio.channel_list(),
                 "radio_type": self.radio.kind,
@@ -271,7 +342,7 @@ class RemoteHead:
 
             async for msg in ws:
                 if msg.type == WSMsgType.BINARY:
-                    if self.radio.ptt_owner == c.id and not (c.rtc and c.rtc.ready):
+                    if c.control and self.radio.ptt_owner == c.id and not (c.rtc and c.rtc.ready):
                         self.audio.push_tx(self._voice(msg.data))
                 elif msg.type == WSMsgType.TEXT:
                     self._handle(c, msg.data)
@@ -287,36 +358,101 @@ class RemoteHead:
                 self._spawn(self._rtc_close(c))
             if c.authed:
                 log.info("%s disconnected", c.name)
+                self.audit(c, "disconnect")
                 self.broadcast_state()
         return ws
 
     async def _authenticate(self, c):
+        """The first message logs in, with a username and password or a session token:
+            {"type": "auth", "username": "...", "password": "...", "remember": true}
+            {"type": "auth", "session": "<token from an earlier login>"}
+        Success answers with the account and a session token for reconnecting; the browser
+        keeps the token (not the password), in localStorage only if 'remember' was ticked."""
         try:
             msg = await c.ws.receive(timeout=10)
             data = json.loads(msg.data) if msg.type == WSMsgType.TEXT else {}
-        except (asyncio.TimeoutError, ValueError):
+            if not isinstance(data, dict) or data.get("type") != "auth":
+                data = {}
+        except (asyncio.TimeoutError, ValueError, TypeError):
             data = {}
-        password = str(data.get("password", ""))
-        expected = str(self.cfg["server"]["password"])
-        if data.get("type") != "auth" or not hmac.compare_digest(password.encode(), expected.encode()):
-            log.warning("failed login from %s", c.remote)
+
+        async def refuse(text, code="login"):
             await asyncio.sleep(1.0)  # slow down guessing
-            c.send_json({"type": "auth", "ok": False, "error": "Wrong password"})
+            c.send_json({"type": "auth", "ok": False, "code": code, "error": text})
             await asyncio.sleep(0.2)
             await c.ws.close()
             return False
-        name = str(data.get("name") or "").strip()[:24]
-        if name:
-            c.name = name
+
+        if data.get("session"):
+            user, session = self.db.resume_session(str(data["session"]))
+            if not user:
+                self.audit(c, "session_refused")
+                return await refuse("Your login has expired. Please log in again.", "session")
+            token = None
+        else:
+            username = str(data.get("username") or "").strip().lower()[:32]
+            wait = self.limiter.blocked(c.remote, username)
+            if wait:
+                self.db.log("login_blocked", username or None, c.remote)
+                return await refuse(f"Too many failed logins. Try again in {int(wait // 60) + 1} min.", "locked")
+            user, stored = self.db.hash_for(username)
+            # scrypt is slow on purpose: run it off the event loop so the radio stays responsive
+            ok = await asyncio.get_running_loop().run_in_executor(
+                None, verify_password, str(data.get("password") or "")[:256], stored)
+            if not (ok and user and user["active"]):
+                self.limiter.failed(c.remote, username)
+                self.db.log("login_failed", username or None, c.remote,
+                            reason="disabled" if (ok and user) else "bad password")
+                log.warning("failed login for %r from %s", username, c.remote)
+                return await refuse("Wrong username or password")
+            self.limiter.succeeded(c.remote, username)
+            self.db.mark_login(user)
+            token, session = self.db.new_session(user, c.remote, c.agent, bool(data.get("remember")))
+        c.user, c.session, c.name = user, session, user["display"]
         c.authed = True
-        c.send_json({"type": "auth", "ok": True, "name": c.name, "token": c.token})
+        self.audit(c, "login", via="session" if token is None else "password")
+        c.send_json({"type": "auth", "ok": True, "name": c.name, "username": c.username,
+                     "role": user["role"], "token": c.token, "session": token})
         return True
+
+    async def _account_message(self, c, kind, m):
+        """Messages every operator may send about their own account."""
+        if kind == "logout":
+            self.db.end_session(c.session)
+            self.audit(c, "logout")
+            await c.ws.close()
+        elif kind == "change_password":
+            loop = asyncio.get_running_loop()
+            ok = await loop.run_in_executor(None, verify_password, str(m.get("old") or "")[:256],
+                                            self.db.get(user_id=c.user["id"])["pw_hash"])
+            if not ok:
+                self.audit(c, "password_change_failed")
+                await asyncio.sleep(1.0)
+                return c.send_json({"type": "password", "ok": False, "error": "Current password is wrong"})
+            try:
+                new = check_password(m.get("new"))
+            except AuthError as e:
+                return c.send_json({"type": "password", "ok": False, "error": str(e).capitalize()})
+            pw_hash = await loop.run_in_executor(None, hash_password, new)
+            self.db.set_pw_hash(c.user["id"], pw_hash, keep_session=c.session)
+            self.audit(c, "password_changed")
+            c.send_json({"type": "password", "ok": True})
 
     def _handle(self, c, text):
         try:
             m = json.loads(text)
             kind = m.get("type")
         except (ValueError, AttributeError):
+            return
+
+        if kind in ("logout", "change_password"):
+            self._spawn(self._account_message(c, kind, m))
+            return
+        if kind in CONTROL_MESSAGES and not c.control:
+            if kind != "ptt_hold":
+                self.audit(c, "denied", action=kind)
+                c.send_json({"type": "notice", "level": "warn", "code": "ptt_denied" if kind == "ptt" else "denied",
+                             "text": "Listen-only account: you can't transmit or change the radio"})
             return
 
         if kind == "rtc_offer" and self.rtc_ok and isinstance(m.get("sdp"), str):
@@ -362,6 +498,7 @@ class RemoteHead:
                 elif action == "sync":
                     self.radio.sync(int(m["channel"]))
                     log.info("%s synced channel to %s", c.name, self.radio.channel)
+                    self.audit(c, "channel_sync", channel=self.radio.channel)
                     return
                 else:
                     return
@@ -370,13 +507,20 @@ class RemoteHead:
             except RadioError as e:
                 c.send_json({"type": "notice", "level": "warn", "text": str(e)})
                 return
-            self._spawn(self._channel(c, coro))
+            self._spawn(self._channel(c, coro, action, m))
 
-    async def _channel(self, c, coro):
+    async def _channel(self, c, coro, action=None, m=None):
         try:
             await coro
         except RadioError as e:
             c.send_json({"type": "notice", "level": "warn", "text": str(e)})
+            return
+        if action == "tune":
+            info = self.radio.channel_info() or {}
+            self.audit(c, "tune", freq=m.get("freq"), tx_freq=m.get("tx_freq"), tone=m.get("tone"), **{
+                k: v for k, v in info.items() if k in ("freq",)})
+        elif action:
+            self.audit(c, "channel", channel=self.radio.channel, name=self.radio.channel_name(self.radio.channel))
 
     def _voice(self, pcm):
         """An operator's live voice on its way to the radio: their effect, then the tone control."""
@@ -392,6 +536,7 @@ class RemoteHead:
             # Switched while talking: takes effect straight away.
             self.tx_fx = voicefx.VoiceFx(preset, int(self.cfg["audio"]["wire_rate"])) if preset else None
         log.info("%s voice effect: %s", c.name, preset or "off")
+        self.audit(c, "voice_fx", preset=preset or "off")
         c.send_json(self.state_for(c))
 
     def _ptt_on(self, c):
@@ -543,6 +688,7 @@ class RemoteHead:
             # Any operator may stop a clip, like anyone in the room could pull the plug.
             if self.clip_tx and self.radio.ptt_owner is not None:
                 log.info("%s stopped clip %r", c.name, self.clip_tx["name"])
+                self.audit(c, "clip_stop", clip=self.clip_tx["name"])
                 self.clip_tx["stopped_by"] = c.name
                 self._ptt_gen += 1  # ends _transmit's wait; it then leaves the unkeying to us
                 self.radio.unkey()
@@ -555,6 +701,7 @@ class RemoteHead:
                 return refuse("Can't delete a clip while it is playing")
             clip = self.clips.delete(clip_id)
             log.info("%s deleted clip %r", c.name, clip["name"])
+            self.audit(c, "clip_delete", clip=clip["name"])
             self._clips_changed()
             return
         busy = self._on_air()  # clip_play
@@ -576,10 +723,13 @@ class RemoteHead:
     def _record(self, c, on):
         try:
             if on:
+                if not self.recorder.active:
+                    self.audit(c, "record_start")
                 self.recorder.start(c.name)
             else:
                 if self.recorder.active:
                     log.info("%s stopped recording", c.name)
+                    self.audit(c, "record_stop")
                 self.recorder.stop()
         except OSError as e:
             c.send_json({"type": "notice", "level": "warn", "text": f"Can't record: {e}"})
@@ -632,6 +782,9 @@ class RemoteHead:
         c = next((x for x in self._authed() if hmac.compare_digest(x.token, token)), None)
         if c is None:
             return web.json_response({"error": "Not logged in (reload the page)"}, status=403)
+        if not c.control:
+            self.audit(c, "denied", action="clip_upload")
+            return web.json_response({"error": "Listen-only account: you can't add clips"}, status=403)
         if not self.clips:
             return web.json_response({"error": "Clips are turned off on this radio"}, status=404)
         if request.content_length and request.content_length > self.clips.max_bytes:
@@ -645,8 +798,62 @@ class RemoteHead:
             clip = self.clips.add(request.query.get("name", ""), bytes(data), c.name)
         except clips.ClipError as e:
             return web.json_response({"error": str(e)}, status=400)
+        self.audit(c, "clip_upload", clip=clip["name"], seconds=clip["seconds"])
         self._clips_changed()
         return web.json_response(clip)
+
+    # ---- audit: transmissions, account changes ----------------------------
+
+    def _track_tx(self):
+        """One audit entry per transmission, whoever or whatever unkeys it (release, time-out,
+        lost connection, end of a selcall or clip): who, what, how long, which channel."""
+        owner = self.radio.ptt_owner
+        cur = self._tx
+        if cur and cur["owner"] != owner:
+            try:
+                self.db.log("tx", cur["user"], cur["ip"], kind=cur["kind"],
+                            seconds=round(time.monotonic() - cur["t0"], 1), channel=cur["channel"],
+                            **({"what": cur["what"]} if cur["what"] else {}))
+            except Exception as e:
+                log.error("audit log: %s", e)
+            self._tx = cur = None
+        if owner is not None and not cur:
+            c = self._client(owner)
+            kind, what = "voice", None
+            if self.selcall_tx:
+                kind, what = "selcall", self.selcall_tx
+            elif self.clip_tx:
+                kind, what = "clip", self.clip_tx["name"]
+            elif c and c.fx:
+                what = f"voice effect {c.fx}"
+            self._tx = {"owner": owner, "user": c.username if c else None, "ip": c.remote if c else None,
+                        "kind": kind, "what": what, "t0": time.monotonic(), "channel": self.radio.channel}
+
+    def _recheck_accounts(self):
+        """Apply radio-users changes to connected operators: disabled or deleted accounts and
+        ended sessions are disconnected; role changes take effect at once."""
+        for c in list(self._authed()):
+            try:
+                u = self.db.get(user_id=c.user["id"])
+                gone = not u or not u["active"] or not self.db.session_valid(c.session)
+            except Exception as e:
+                log.error("checking accounts: %s", e)
+                return
+            if gone:
+                log.info("%s: account disabled or logged out elsewhere: disconnecting", c.name)
+                c.send_json({"type": "notice", "level": "error", "code": "logged_out",
+                             "text": "You have been logged out"})
+                if self.radio.ptt_owner == c.id:
+                    self.radio.unkey("account disabled")
+                    self.audio.clear_tx()
+                self._spawn(c.ws.close())
+            elif u["role"] != c.user["role"] or u["display"] != c.user["display"]:
+                if u["role"] != "control" and self.radio.ptt_owner == c.id:
+                    self.radio.unkey("account changed to listen-only")
+                    self.audio.clear_tx()
+                c.user, c.name = u, u["display"]
+                c.send_json({"type": "account", "role": u["role"], "display": u["display"]})
+                self.broadcast_state()
 
     # ---- watchdog / meters ----------------------------------------------
 
@@ -674,6 +881,14 @@ class RemoteHead:
                     if c:
                         c.send_json({"type": "notice", "level": "error", "code": "ptt_dropped",
                                      "text": f"PTT released: {reason}"})
+            self._track_tx()
+            if tick % (AUTH_RECHECK_S * 10) == 0:
+                self._recheck_accounts()
+            if tick % 36000 == 1:  # hourly
+                try:
+                    self.db.prune(self.cfg["server"]["audit_days"])
+                except Exception as e:
+                    log.error("pruning the audit log: %s", e)
             if tick % 2 == 0:  # 5 Hz meters
                 meter = {"type": "meter", "rx_dbfs": round(self.audio.rx_dbfs, 1), "busy": self._busy()}
                 rssi = self.radio.rssi
@@ -724,9 +939,35 @@ async def _index(request):
     return web.FileResponse(WEB_DIR / "index.html", headers={"Cache-Control": "no-cache"})
 
 
+@web.middleware
+async def security_headers(request, handler):
+    """Headers on every response: a strict content policy (only this server's own scripts and
+    styles, nothing inline), no framing by other sites (stops clickjacking the PTT button), no
+    content sniffing, no referrer, and the microphone allowed for this page only."""
+    try:
+        resp = await handler(request)
+    except web.HTTPException as e:
+        resp = e
+    host = request.host
+    resp.headers.setdefault("Content-Security-Policy", "; ".join((
+        "default-src 'self'", "script-src 'self'", "style-src 'self'", "img-src 'self' data: blob:",
+        "media-src 'self' blob:", f"connect-src 'self' ws://{host} wss://{host}", "font-src 'self'",
+        "object-src 'none'", "base-uri 'none'", "form-action 'self'", "frame-ancestors 'none'")))
+    resp.headers.setdefault("X-Frame-Options", "DENY")
+    resp.headers.setdefault("X-Content-Type-Options", "nosniff")
+    resp.headers.setdefault("Referrer-Policy", "no-referrer")
+    resp.headers.setdefault("Permissions-Policy", "microphone=(self), camera=(), geolocation=()")
+    resp.headers.setdefault("Cross-Origin-Opener-Policy", "same-origin")
+    if request.secure:
+        resp.headers.setdefault("Strict-Transport-Security", "max-age=31536000")
+    if isinstance(resp, web.HTTPException):
+        raise resp
+    return resp
+
+
 def build_app(cfg):
     head = RemoteHead(cfg)
-    app = web.Application()
+    app = web.Application(middlewares=[security_headers])
     app.router.add_get("/", _index)
     app.router.add_get("/ws", head.ws_handler)
     app.router.add_post("/clips", head.clip_upload)
@@ -748,10 +989,10 @@ def main():
     logging.getLogger("aiohttp.access").setLevel(logging.WARNING)
 
     cfg = load(args.config)
-    if cfg["server"]["password"] == "change-me":
-        log.warning("*** server.password is still 'change-me' - set a real password in %s ***", args.config)
-
     s = cfg["server"]
+    if not (s["tls_cert"] and s["tls_key"]) and s["host"] not in ("127.0.0.1", "localhost", "::1"):
+        log.warning("no TLS: passwords and audio cross the network unencrypted unless a proxy such as "
+                    "'tailscale serve' adds HTTPS in front of this server")
     ssl_ctx = None
     if s["tls_cert"] and s["tls_key"]:
         ssl_ctx = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)

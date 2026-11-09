@@ -19,6 +19,10 @@ DEFAULTS = {
         "tls_cert": None,
         "tls_key": None,
         "state_file": "state.json",
+        "db_file": "radio.db",      # operator accounts, sessions and the audit log (SQLite)
+        "allowed_origins": [],      # extra page origins allowed to open the WebSocket (e.g. a proxy's)
+        "session_days": 30,         # "keep me logged in" lasts this long after last use
+        "audit_days": 365,          # audit log entries older than this are deleted
     },
     "gpio": {
         "backend": "gpiozero",
@@ -128,8 +132,11 @@ def load(path):
     with path.open() as f:
         cfg = _merge(DEFAULTS, yaml.safe_load(f) or {})
 
-    if not cfg["server"]["password"]:
-        raise SystemExit("config: server.password must be set")
+    srv = cfg["server"]
+    if not 1 <= float(srv["session_days"]) <= 365:
+        raise SystemExit("config: server.session_days must be 1-365")
+    if float(srv["audit_days"]) < 0:
+        raise SystemExit("config: server.audit_days can't be negative (0 = keep forever)")
     a = cfg["audio"]
     if int(a["device_rate"]) % int(a["wire_rate"]):
         raise SystemExit("config: audio.device_rate must be a multiple of audio.wire_rate")
@@ -154,7 +161,7 @@ def load(path):
     _check_record(cfg["record"])
 
     # Resolve the state file and clip folder relative to the config file.
-    for section, key in (("server", "state_file"), ("clips", "dir")):
+    for section, key in (("server", "state_file"), ("server", "db_file"), ("clips", "dir")):
         p = Path(cfg[section][key])
         if not p.is_absolute():
             p = path.resolve().parent / p
