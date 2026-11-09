@@ -23,15 +23,22 @@
   <!-- Login -->
   <section id="login" class="panel login">
     <h1>Connect to radio</h1>
+    <!-- Kept logged in on this device: one tap reconnects (the tap also starts the audio). -->
+    <div class="resume" id="resumeBox" hidden>
+      <p>Logged in as <strong id="resumeName"></strong></p>
+      <button type="button" class="primary" id="resumeBtn">Connect</button>
+      <button type="button" class="linkish" id="switchUser">Use a different account</button>
+    </div>
     <form id="loginForm" autocomplete="on">
-      <label>Your name / callsign
-        <input id="name" name="name" maxlength="24" required autocomplete="nickname">
+      <label>Username
+        <input id="username" name="username" maxlength="32" required autocomplete="username"
+               autocapitalize="none" autocorrect="off" spellcheck="false">
       </label>
       <label>Password
         <input id="password" name="password" type="password" required autocomplete="current-password">
       </label>
-      <label class="check"><input id="remember" type="checkbox"> Remember password on this device</label>
-      <button type="submit" class="primary">Connect</button>
+      <label class="check"><input id="remember" type="checkbox"> Keep me logged in on this device</label>
+      <button type="submit" class="primary">Log in</button>
       <p class="error" id="loginError" hidden></p>
       <p class="hint" id="secureHint" hidden>
         This page is not served over HTTPS, so the browser will block the microphone.
@@ -143,7 +150,23 @@
         </div>
         <p class="ops">Connected operators: <span id="operators">—</span></p>
         <p class="ops">Audio: <span id="audioInfo">—</span></p>
-        <button id="logout" class="danger">Disconnect</button>
+        <div class="account">
+          <p class="ops">Logged in as <strong id="acctName">—</strong> · <span id="acctRole">—</span></p>
+          <form id="pwForm" class="pwform" autocomplete="on">
+            <input id="pwUser" name="username" autocomplete="username" hidden>
+            <label>Current password
+              <input id="pwOld" type="password" autocomplete="current-password" required>
+            </label>
+            <label>New password (8 or more characters)
+              <input id="pwNew" type="password" autocomplete="new-password" minlength="8" required>
+            </label>
+            <button type="submit">Change password</button>
+          </form>
+          <div class="row">
+            <button id="disconnectBtn">Disconnect</button>
+            <button id="logout" class="danger">Log out</button>
+          </div>
+        </div>
       </div>
     </details>
   </main>

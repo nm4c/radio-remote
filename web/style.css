@@ -209,3 +209,21 @@ button.danger { color: var(--tx); }
   .tune { grid-template-columns: 1fr 1fr; }
   .tune label:first-child { grid-column: 1 / -1; }
 }
+
+/* ---- accounts ---- */
+.resume { display: grid; gap: 10px; margin-bottom: 16px; }
+.resume p { margin: 0; }
+button.linkish { background: none; border: none; color: var(--accent); padding: 4px 0; justify-self: start; }
+.account { display: grid; gap: 10px; border-top: 1px solid var(--line); padding-top: 12px; }
+.pwform { display: grid; gap: 8px; }
+.pwform label { display: grid; gap: 4px; color: var(--muted); font-size: 13px; }
+.pwform input { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+.account .row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* Listen-only accounts: hide everything that transmits or changes the radio. The server refuses
+   those actions anyway; this just keeps them off the screen. */
+.listen-only #ptt, .listen-only #tuneForm, .listen-only #fxPanel, .listen-only #syncBlock,
+.listen-only #selcallPanel label, .listen-only #selcallHint, .listen-only #selcallPresets,
+.listen-only .clip-actions, .listen-only #recordBtn, .listen-only #clipList input,
+.listen-only #clipList button, .listen-only #clipsHint, .listen-only .sliders label:nth-child(2),
+.listen-only .micmeter { display: none !important; }

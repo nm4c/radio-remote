@@ -44,6 +44,10 @@ const S = {
   clipSel: null,       // id of the clip this operator picked for the Play key
   clipBusy: false,     // converting or uploading files
   recBase: null,       // performance.now() when the current recording started (from state.recording)
+  role: null,          // "control" or "listen", from the server after login
+  account: null,       // {username, display}
+  session: null,       // session token for reconnecting (the password itself is never kept)
+  remember: false,     // keep the session in localStorage ("Keep me logged in")
   fxList: null,        // voice effect presets from the server (null = effects off)
   fxSel: null,         // preset this operator picked for the P / P1 key
   fxShown: null,       // "Voice: Vader" on the head's bottom line for a moment: {text, until}
@@ -73,6 +77,10 @@ function setStatus(state, text) {
 function showLogin(error) {
   $("#head").hidden = true;
   $("#login").hidden = false;
+  const saved = store.get("session");
+  $("#resumeBox").hidden = !saved;
+  $("#loginForm").hidden = !!saved;
+  $("#resumeName").textContent = store.get("sessionUser") || "";
   $("#loginError").hidden = !error;
   $("#loginError").textContent = error || "";
 }
@@ -107,7 +115,8 @@ async function setupAudio() {
     S.rtcRxGain.connect(ctx.destination);
     await resumed;
   }
-  await setupMic();
+  // The microphone is asked for after login, and only for accounts that can transmit
+  // (applyRole), so a listen-only account never triggers the browser's mic prompt.
   updateAudioHint();
 }
 
@@ -387,7 +396,20 @@ function showSync() {
   $("#syncBlock").scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
+// Listen-only accounts can turn the volume knob, open Settings and scroll to the channel list;
+// everything else on the head would change the radio, so it only explains why nothing happens.
+function headAllowedForListener(e) {
+  if (e.control === "volume_knob" || e.control === "menu") return true;
+  const key = /^softkey_(\d)$/.exec(e.control);
+  const k = key && headSoftkeys()[Number(key[1]) - 1];
+  return !!k && (k.label === "Setup" || k.label === "Chans");
+}
+
 function onHeadEvent(e) {
+  if (S.role !== "control" && ["press", "step", "activate"].includes(e.action) && !headAllowedForListener(e)) {
+    listenOnlyToast();
+    return;
+  }
   // Recording: the orange button toggles it, and any other control (bar volume) stops it. That
   // press only stops the recording, so a stray tap can't also change channel or transmit.
   if (S.server && S.server.recording && e.control !== "volume_knob" && e.control !== "emergency"
@@ -812,7 +834,8 @@ function renderRecording() {
   row.classList.toggle("on", !!rec);
   $("#recordBtn").textContent = rec ? "Stop recording" : "Record";
   if (!rec) {
-    $("#recordState").textContent = `Not recording. Press the orange button to record what the radio hears, in ${Number(S.clips.record_minutes.toFixed(1))} minute parts.`;
+    $("#recordState").textContent = S.role !== "control" ? "Not recording."
+      : `Not recording. Press the orange button to record what the radio hears, in ${Number(S.clips.record_minutes.toFixed(1))} minute parts.`;
     return;
   }
   const t = S.recBase != null ? (performance.now() - S.recBase) / 1000 : rec.seconds;
@@ -957,18 +980,48 @@ function handle(m) {
       if (!m.ok) {
         S.authed = false;
         S.manualClose = true;
-        store.set("password", null);
+        S.creds = null;
+        if (m.code === "session") forgetSession(); // expired or ended elsewhere
         showLogin(m.error || "Login failed");
         return;
       }
       S.authed = true;
       S.token = m.token;
       S.reconnectDelay = 1000;
-      setStatus("online", `Online · ${m.name}`);
+      if (m.session) {
+        // A fresh login: from now on reconnect with the session token, never the password.
+        S.session = m.session;
+        S.creds = { session: m.session };
+        if (S.remember) { store.set("session", m.session); store.set("sessionUser", m.name); }
+      } else if (store.get("session")) {
+        store.set("sessionUser", m.name);
+      }
+      $("#password").value = "";
+      S.account = { username: m.username, display: m.name };
+      S.role = m.role;
       $("#login").hidden = true;
       $("#head").hidden = false;
+      applyRole();
       keepAwake(true);
       updateAudioHint();
+      break;
+    case "account":
+      // An administrator changed this account while it was connected.
+      S.account.display = m.display;
+      if (m.role !== S.role) {
+        S.role = m.role;
+        if (m.role !== "control") pttRelease(false);
+        toast(m.role === "control" ? "Your account now has full control" : "Your account is now listen-only");
+      }
+      applyRole();
+      break;
+    case "password":
+      if (m.ok) {
+        toast("Password changed. Other devices have been logged out.", "warn");
+        $("#pwForm").reset();
+      } else {
+        toast(m.error || "Couldn't change the password", "error");
+      }
       break;
     case "hello":
       S.channels = m.channels;
@@ -1014,6 +1067,12 @@ function handle(m) {
       break;
     case "notice":
       toast(m.text, m.level);
+      if (m.code === "logged_out") {
+        S.manualClose = true;
+        S.authed = false;
+        forgetSession();
+        showLogin(m.text);
+      }
       if (m.code === "ptt_denied" || m.code === "ptt_dropped") pttRelease();
       if (S.pending && S.pending.sent) cancelPendingChannel(); // e.g. the channel change was refused
       break;
@@ -1024,6 +1083,7 @@ function handle(m) {
 function pttPress() {
   wakeAudio(); // a PTT press is a user gesture, so iOS will let us restart audio here
   if (S.pttWanted || !S.authed || !S.ws) return;
+  if (S.role !== "control") { listenOnlyToast(); return; }
   if (!S.micOk) { toast("No microphone – can't transmit"); return; }
   if (!micLive()) { toast("Restarting microphone. Press PTT again."); return; }
   const st = S.server;
@@ -1144,7 +1204,7 @@ function render() {
 
   $("#tuneForm").querySelector("button").disabled = busyRadio;
   for (const b of $("#channelGrid").children) {
-    b.disabled = busyRadio;
+    b.disabled = busyRadio || S.role !== "control";
     b.classList.toggle("current", Number(b.dataset.ch) === st.channel);
   }
   $("#operators").textContent = st.operators.join(", ") || "—";
@@ -1159,22 +1219,32 @@ function totText() {
 
 // ---------- init ----------
 function init() {
-  $("#name").value = store.get("name") || "";
-  const saved = store.get("password");
-  if (saved) { $("#password").value = saved; $("#remember").checked = true; }
+  // Earlier versions kept the password itself here. Remove it: sessions replace it.
+  store.set("password", null);
+  store.set("name", null);
   $("#secureHint").hidden = window.isSecureContext;
   $("#iosNote").hidden = !IS_IOS;
+  showLogin();
 
   $("#loginForm").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const name = $("#name").value.trim();
-    const password = $("#password").value;
-    store.set("name", name);
-    store.set("password", $("#remember").checked ? password : null);
-    S.creds = { name, password };
+    S.remember = $("#remember").checked;
+    S.creds = { username: $("#username").value.trim(), password: $("#password").value, remember: S.remember };
     $("#loginError").hidden = true;
     await setupAudio(); // needs this click (user gesture)
     connect();
+  });
+  $("#resumeBtn").addEventListener("click", async () => {
+    S.remember = true;
+    S.creds = { session: store.get("session") };
+    $("#loginError").hidden = true;
+    await setupAudio(); // needs this tap (user gesture)
+    connect();
+  });
+  $("#switchUser").addEventListener("click", () => { forgetSession(); showLogin(); $("#username").focus(); });
+  $("#pwForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    send({ type: "change_password", old: $("#pwOld").value, new: $("#pwNew").value });
   });
 
   $("#syncBtn").addEventListener("click", () => {
@@ -1194,7 +1264,8 @@ function init() {
     if (S.txNode) S.txNode.port.postMessage({ gain: g });
     if (S.txGain) S.txGain.gain.value = g;
   });
-  $("#logout").addEventListener("click", disconnect);
+  $("#disconnectBtn").addEventListener("click", disconnect);
+  $("#logout").addEventListener("click", logout);
   // Selcall number: digits only (phones may offer other characters on the numeric keypad).
   $("#selcallDigits").addEventListener("input", (e) => {
     const clean = e.target.value.replace(/\D/g, "");
@@ -1215,7 +1286,44 @@ function init() {
   loadHead();
 }
 
-// Settings → Disconnect, or holding the head's power button.
+// ---------- account ----------
+let lastListenToast = -Infinity;
+function listenOnlyToast() {
+  if (performance.now() - lastListenToast < 2500) return;
+  lastListenToast = performance.now();
+  toast("Listen-only account: you can't transmit or change the radio");
+}
+
+// Show or hide the controls for this account's role, and fetch the mic if it may transmit.
+function applyRole() {
+  const control = S.role === "control";
+  document.body.classList.toggle("listen-only", !control);
+  const name = S.account ? S.account.display : "";
+  setStatus("online", `Online · ${name}${control ? "" : " (listening)"}`);
+  $("#acctName").textContent = S.account ? `${name} (${S.account.username})` : "—";
+  $("#acctRole").textContent = control ? "full control" : "listen only";
+  $("#pwUser").value = S.account ? S.account.username : "";
+  $("#clipEmpty").textContent = control ? "No clips yet. Upload an MP3 to add one." : "No clips yet.";
+  if (control && !micLive()) setupMic();
+  render();
+  updateHead();
+}
+
+function forgetSession() {
+  store.set("session", null);
+  store.set("sessionUser", null);
+  S.session = null;
+}
+
+// Settings → Log out: ends the session on the server too, so this device must log in again.
+function logout() {
+  send({ type: "logout" });
+  forgetSession();
+  S.creds = null;
+  disconnect();
+}
+
+// Settings → Disconnect, or holding the head's power button. Stays logged in.
 function disconnect() {
   S.manualClose = true;
   S.authed = false;
