@@ -16,6 +16,11 @@ to sit centred on its footprint's origin at z = 0, so footprints use them with n
 | `NiceRF_SA818S.step` | NiceRF SA818S-U transceiver module | C3001549 | 35.6 × 19 × 3.2 |
 | `PTC_1812_4.5x3.2x1.0mm.step` | 1812 PTC fuse (F1) | C18198333 | 4.5 × 3.2 × 1.0 |
 | `Oscillator_3225_HSO321S.step` | HSO321S 12 MHz oscillator, 3225 (Y1) | C160457 | 3.2 × 2.5 × 0.9 |
+| `Xinlaiya_XY2500V-F-3.5-{2,4,6}P.step` | XY2500V-F vertical pluggable headers (J2–J4) | C880554 / C880556 / C880558 | (3.5 n + 1) × 7 × 9.1 |
+
+The XY2500V STEP files are the exception to "no offset": as LCSC ships them they sit 10.5 mm
+low and 7.1 mm off front-to-back, so their footprints apply (row centre, 7.1, 10.5) mm (the footprint origin is pin 1). That was measured
+against LCSC's own VRML of the same parts in edge-on renders, to about 0.05 mm.
 
 ## `radio-remote.pretty/`
 
@@ -28,6 +33,7 @@ fixed. Regenerated from the installed KiCad library on every build, so don't edi
 | `Oscillator_SMD_Abracon_ASE-4Pin_3.2x2.5mm` | `3dmodels/Oscillator_3225_HSO321S.step` (KiCad has none) |
 | `Texas_HSOP-8-1EP_3.9x4.9mm_P1.27mm_ThermalVias` | KiCad's `Texas_HTSOP-8-1EP_…_ThermalVias.step` (the stock footprint names a renamed file) |
 | `TI_SO-PowerPAD-8_ThermalVias` | KiCad's `TI_SO-PowerPAD-8.step` (same problem) |
+| `Xinlaiya_XY2500V-F-3.5_1x0{2,4,6}_P3.50mm_Vertical` | Generated (not a copy): pins and body from LCSC's footprint for the exact parts, pin 1 square, model as above |
 
 The FXL0630 inductors (L1, and L2 on the SA818S board) use KiCad's own
 `Inductor_SMD:L_Changjiang_FXL0630`, the footprint and model for that exact part.

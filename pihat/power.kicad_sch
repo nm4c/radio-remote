@@ -2930,7 +2930,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Connector_Phoenix_MC:PhoenixContact_MC_1,5_2-G-3.5_1x02_P3.50mm_Horizontal"
+		(property "Footprint" "radio-remote:Xinlaiya_XY2500V-F-3.5_1x02_P3.50mm_Vertical"
 			(at 25.4 50.8 0)
 			(hide yes)
 			(show_name no)
@@ -2963,7 +2963,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C880572"
+		(property "LCSC" "C880554"
 			(at 25.4 50.8 0)
 			(hide yes)
 			(show_name no)

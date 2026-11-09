@@ -1,14 +1,20 @@
 """Sheet: Radio connectors. Two pluggable terminal headers (audio, radio control) and the JP1 ground link.
 
-All board connectors are Xinlaiya XY2500R-G, 3.5 mm pitch, right-angle, closed ends, 8 A / 300 V
-(a copy of the Phoenix MC 1,5/x-G-3,5, whose KiCad footprints they use). The 13.8 V input, J2,
-is drawn on the Power sheet. Wire each radio's accessory connector to J3 and J4 with a short lead.
+All board connectors are Xinlaiya XY2500V-F, 3.5 mm pitch, vertical, closed ends, 8 A / 300 V, so
+the plugs go in from above (through the HAT opening). Footprints and 3D models are in the shared
+library (kicadgen/sharedlib.py). The 13.8 V input, J2, is drawn on the Power sheet. Wire each radio's accessory connector to J3 and J4 with a short lead.
 """
 from schbuild import Sheet
+import sharedlib
 
-FP = "Connector_Phoenix_MC:PhoenixContact_MC_1,5_{n}-G-3.5_1x0{n}_P3.50mm_Horizontal"
-LCSC = {2: "C880572", 4: "C880574", 6: "C880576"}   # XY2500R-G-3.5-{2,4,6}P
-POWER_IN = ("J2", "13.8 V in", FP.format(n=2), LCSC[2])  # for sheet_power.build(power_in=...)
+LCSC = {2: "C880554", 4: "C880556", 6: "C880558"}   # XY2500V-F-3.5-{2,4,6}P
+
+
+def fp(n):
+    return f"{sharedlib.LIB}:{sharedlib.xy2500v_name(n)}"
+
+
+POWER_IN = ("J2", "13.8 V in", fp(2), LCSC[2])  # for sheet_power.build(power_in=...)
 
 # Pin assignments, pin 1 first. RGND is the radio's ground.
 AUDIO = ["R_MIC", "RGND", "R_SPP", "R_SPN"]
@@ -21,10 +27,10 @@ def chain(s, pts):
 
 
 def header(s, ref, value, pins, at):
-    """An XY2500R-G header with global labels (or RGND symbols) on its pins."""
+    """An XY2500V-F header with global labels (or RGND symbols) on its pins."""
     n = len(pins)
     x, y = at
-    s.symbol(f"Connector_Generic:Conn_01x0{n}", ref, value, at, mirror="y", footprint=FP.format(n=n),
+    s.symbol(f"Connector_Generic:Conn_01x0{n}", ref, value, at, mirror="y", footprint=fp(n),
              lcsc=LCSC[n], ref_at=(x, y - 3.81 - 1.27 * n), val_at=(x, y + 3.81 + 1.27 * n),
              conn={str(i + 1): ("pwr", "RGND", 5.08) if net == "RGND" else ("glabel", net, 5.08)
                    for i, net in enumerate(pins)})
@@ -32,7 +38,7 @@ def header(s, ref, value, pins, at):
 
 def build(path, page):
     s = Sheet("Radio connectors", path, page)
-    s.text("RADIO CONNECTORS  (XY2500R-G, 3.5 mm pluggable)", (17.78, 30.48), 2.0, bold=True)
+    s.text("RADIO CONNECTORS  (XY2500V-F, 3.5 mm pluggable, vertical)", (17.78, 30.48), 2.0, bold=True)
 
     s.text("J3  AUDIO", (40.64, 45.72), 1.5, bold=True)
     header(s, "J3", "Audio", AUDIO, (50.8, 58.42))
@@ -60,7 +66,7 @@ def build(path, page):
     )):
         s.text(t, (78.74, 97.79 + i * 3.81))
 
-    s.text("Mating plugs: 3.5 mm pluggable terminal plugs (Phoenix MC 1,5/x-ST-3,5 style), 2, 4 and 6 way.",
+    s.text("Mating plugs: 3.5 mm pluggable terminal plugs (Xinlaiya XY2500F / Phoenix MC 1,5/x-ST-3,5 style), 2, 4, 6 way.",
            (17.78, 140.97))
     s.text("The 13.8 V input J2 is on the Power sheet.", (17.78, 144.78))
 

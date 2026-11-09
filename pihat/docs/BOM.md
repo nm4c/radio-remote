@@ -38,10 +38,10 @@ That's about US$51 in loading fees per order, not per board. To cut it:
   level. The RX pad (R11/R12/R13, −9.5 dB) suits line-level RX audio; from a speaker output, fit
   R13 = 1 kΩ (−26 dB).
 - **Feedback from Basic values only:** 82 kΩ over 20 kΩ with the LMR33640's 1.0 V reference gives 5.10 V.
-- **Pluggable radio connectors:** Xinlaiya XY2500R-G, 3.5 mm pitch, right-angle with closed ends,
-  8 A / 300 V. J2 13.8 V in (2 way), J3 audio (4 way: TX, TX return, RX+, RX−), J4 radio (6 way:
-  ground, PTT, UP, DOWN, BUSY+, BUSY−). Each radio gets its own lead with mating 3.5 mm plugs
-  (Phoenix MC 1,5/x-ST-3,5 style).
+- **Pluggable radio connectors:** Xinlaiya XY2500V-F, 3.5 mm pitch, vertical with closed ends,
+  8 A / 300 V, so the plugs go in from above through the HAT opening. J2 13.8 V in (2 way), J3
+  audio (4 way: TX, TX return, RX+, RX−), J4 radio (6 way: ground, PTT, UP, DOWN, BUSY+, BUSY−).
+  Each radio gets its own lead with mating 3.5 mm plugs (XY2500F / Phoenix MC 1,5/x-ST-3,5 style).
 
 ## Still to do before ordering
 
@@ -50,6 +50,6 @@ See the "Before layout" checklist at the end of the schematic page. In short:
 - **U3 stock:** LMR33640ADDAR (C2836966) is Extended. One JLCPCB snapshot showed very few
   available to order, so check the live page; pre-order or consign if it is short.
 - **Codec clock:** confirm the clock setup at bring-up.
-- **Connector footprints:** J2–J4 use KiCad's Phoenix MC 1,5/x-G-3,5 footprints, which the
-  XY2500R-G copies. Check them against the Xinlaiya drawing and keep the plug side at the board edge.
+- **Connector footprints:** J2–J4 use footprints made from LCSC's data for the exact XY2500V-F
+  parts (1.4 mm drills). Leave room above them for the plugs and wires.
 - **Isolation clearance:** keep radio-side copper ≥ 2 mm from Pi-side copper.

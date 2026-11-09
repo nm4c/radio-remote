@@ -222,7 +222,7 @@ def sheet_overview():
 def sheet_power():
     s = Sheet(1120, 580, "RADIO REMOTE HAT · REV A · SHEET 3/7 · POWER")
     s.text(40, 52, "13.8 V INPUT PROTECTION + 5 V BUCK", "t-sec")
-    e = s.ic(60, 120, 70, "J2", "XY2500R-G 2 way", [], [(1, "+13.8V"), (2, "GND")], top=30)
+    e = s.ic(60, 120, 70, "J2", "XY2500V-F 2 way", [], [(1, "+13.8V"), (2, "GND")], top=30)
     s.poly([(160, 170), (180, 170), (180, 190)]); s.gnd(180, 190)
     s.two("fuse", 160, 150, "r", ref="F1", val="1.5 A", lab="above")
     s.two("diode", 220, 150, "r", ref="D1", val="SS56", lab="above")
@@ -372,7 +372,7 @@ def sheet_control():
 # ================================================================= SHEET 4: radio connectors
 def sheet_connectors():
     s = Sheet(1120, 640, "RADIO REMOTE HAT · REV A · SHEET 5/7 · RADIO CONNECTORS")
-    s.text(40, 52, "PLUGGABLE TERMINAL HEADERS · XY2500R-G · 3.5 mm · right-angle, closed ends", "t-sec")
+    s.text(40, 52, "PLUGGABLE TERMINAL HEADERS · XY2500V-F · 3.5 mm · vertical, closed ends", "t-sec")
     s.ic(140, 100, 90, "J3", "Audio · 4 way", [],
          [(1, "TX", "R_MIC", "rd"), (2, "TX ret", "RGND", "rd"), (3, "RX+", "R_SPP", "rd"), (4, "RX−", "R_SPN", "rd")],
          pitch=24, top=24)
@@ -391,7 +391,7 @@ def sheet_connectors():
     for k, t in enumerate(notes4):
         s.text(420, 318 + 15 * k, t, "t-note")
     s.text(40, 530, "J2 (13.8 V in, 2 way) is on sheet 3. Mating plugs: 3.5 mm pluggable terminal plugs", "t-note")
-    s.text(40, 544, "(Phoenix MC 1,5/x-ST-3,5 style), 2, 4 and 6 way. Wire each radio to J3 / J4 with its own lead.", "t-note")
+    s.text(40, 544, "(XY2500F / Phoenix MC 1,5/x-ST-3,5 style), 2, 4 and 6 way, plugged in from above. One lead per radio.", "t-note")
     # JP1
     s.text(720, 530, "GROUND LINK", "t-sec")
     s.rgnd(740, 579)
@@ -642,9 +642,9 @@ PARTS = [
     ("C19", "100 µF 50 V electrolytic 8×10.2", "C72480", "Ext"),
     ("C21–C23", "22 µF 25 V X5R 1206", "C12891", "Basic"),
     ("J1", "2×20 female header 2.54 mm", "C2977589", "Ext · THT"),
-    ("J2", "XY2500R-G-3.5-2P pluggable header, 3.5 mm, right-angle, closed", "C880572", "Ext · THT"),
-    ("J3", "XY2500R-G-3.5-4P pluggable header, 3.5 mm, right-angle, closed", "C880574", "Ext · THT"),
-    ("J4", "XY2500R-G-3.5-6P pluggable header, 3.5 mm, right-angle, closed", "C880576", "Ext · THT"),
+    ("J2", "XY2500V-F-3.5-2P pluggable header, 3.5 mm, vertical, closed", "C880554", "Ext · THT"),
+    ("J3", "XY2500V-F-3.5-4P pluggable header, 3.5 mm, vertical, closed", "C880556", "Ext · THT"),
+    ("J4", "XY2500V-F-3.5-6P pluggable header, 3.5 mm, vertical, closed", "C880558", "Ext · THT"),
     ("JP1–JP4, TP1", "PCB features only (solder jumpers; JP3/JP4 are closed by default; test pad)", "—", "—"),
 ]
 
@@ -655,9 +655,9 @@ FOOTPRINT = {
     "C65009": "D_SMA", "C224015": "D_SMB", "C2128": "D_SOD-323", "C18198333": "Fuse_1812", "C2286": "LED_0603",
     "C1002": "L_0603", "C28323": "C_0805", "C15850": "C_0805", "C50254": "C_1206", "C12891": "C_1206",
     "C72480": "CP_Elec_8x10.2", "C2977589": "PinSocket_2x20_P2.54mm_Vertical",
-    "C880572": "PhoenixContact_MC_1,5_2-G-3.5_1x02_P3.50mm_Horizontal",
-    "C880574": "PhoenixContact_MC_1,5_4-G-3.5_1x04_P3.50mm_Horizontal",
-    "C880576": "PhoenixContact_MC_1,5_6-G-3.5_1x06_P3.50mm_Horizontal",
+    "C880554": "Xinlaiya_XY2500V-F-3.5_1x02_P3.50mm_Vertical",
+    "C880556": "Xinlaiya_XY2500V-F-3.5_1x04_P3.50mm_Vertical",
+    "C880558": "Xinlaiya_XY2500V-F-3.5_1x06_P3.50mm_Vertical",
 }
 
 
@@ -694,7 +694,7 @@ CHECKS = [
     ("U3 stock", "LMR33640ADDAR (C2836966) is an Extended part. LCSC showed about 2,400 in stock, but one JLCPCB snapshot showed only 6 available to order. Check the live JLC page before ordering; pre-order or consign if it is short."),
     ("Codec clocking", "The in-kernel dacberry400 overlay sets the codec PLL source to BCLK (clock id 2) while stating 12 MHz. Y1 feeds MCLK so a small custom overlay can select MCLK instead. First bring-up test: confirm 48 kHz playback is the right pitch."),
     ("IOVDD", "Runs at 3.3 V (3V3_PI) to match Pi logic. The dacberry400 overlay describes IOVDD as 1.8 V; that only names a regulator for the driver and doesn't change the hardware."),
-    ("Connector footprints", "J2–J4 use KiCad's Phoenix MC 1,5/x-G-3,5 footprints, which the XY2500R-G copies. Check the hole positions and body outline against the Xinlaiya drawing, and keep the plug side at the board edge."),
+    ("Connector footprints", "J2–J4 use footprints made from LCSC's data for the exact XY2500V-F parts (1.4 mm drills, 2.2 mm pads). Plugs go in from above, so leave room above them in the case opening."),
     ("Isolation clearance", "Keep RGND copper and every radio-side net at least 2 mm from GND-side copper, including under U1 and T1/T2."),
 ]
 
@@ -704,7 +704,7 @@ def main():
         ("overview", "Block diagram", sheet_overview(), "Block diagram: Pi-side blocks on the left of the isolation barrier, radio-side filters and connectors on the right, power along the bottom.", "Everything left of the dashed barrier is on Pi ground (GND). Everything right of it is on radio ground (RGND). Only optocouplers and transformers cross it."),
         ("power", "Power", sheet_power(), "Power sheet: 13.8 V input through fuse, reverse diode and TVS into an LMR33640 buck making 5.10 V, then a TLV76133 3.3 V LDO and TPS7A2018 1.8 V LDO for the codec.", "The 5V0 rail powers the Pi through header pins 2 and 4. 3V3A is a quiet analog rail for the codec; the Pi's own 3V3 is used only for logic."),
         ("control", "Control", sheet_control(), "Control sheet: the TCMT4100 quad optocoupler with three Pi-driven channels for PTT, UP and DOWN, and one reversed channel bringing BUSY in.", "Channels 1–3 are driven from the Pi. Channel 4 is reversed: its LED sits on the radio side, so BUSY arrives isolated on GPIO23."),
-        ("connectors", "Radio connectors", sheet_connectors(), "Radio connectors sheet: a 4-way pluggable header for TX and RX audio and a 6-way header for radio ground, PTT, UP, DOWN and BUSY, plus the ground-link jumper.", "All radio wiring goes through two 3.5 mm pluggable headers. Make up one lead per radio from its accessory connector."),
+        ("connectors", "Radio connectors", sheet_connectors(), "Radio connectors sheet: a 4-way pluggable header for TX and RX audio and a 6-way header for radio ground, PTT, UP, DOWN and BUSY, plus the ground-link jumper.", "All radio wiring goes through two vertical 3.5 mm pluggable headers, plugged in from above through the HAT opening. Make up one lead per radio from its accessory connector."),
         ("codec", "Codec", sheet_codec(), "Codec sheet: TLV320AIC3104 with I2S and I2C straight to the Pi, 12 MHz master clock through 33 Ω, reset pull-down, decoupling, and unused pins marked no-connect.", "All 33 pins are shown so the KiCad symbol can be checked pin for pin. Crossed pins are no-connect."),
         ("audio", "Audio + ID EEPROM", sheet_audio(), "Audio isolation sheet: T1 drives the radio's TX audio input with the level set in software; T2 takes the radio's RX audio into the codec's differential input through a light pad; plus the HAT ID EEPROM.", "Both transformers sit across the barrier. TX audio leaves the codec differentially; RX audio arrives differentially, so neither speaker wire is ever grounded."),
     ]
