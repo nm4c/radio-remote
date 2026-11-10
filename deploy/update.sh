@@ -23,6 +23,9 @@ if [[ "${1:-}" != "--no-pull" ]]; then
   owner="$(stat -c %U "$SRC")"
   echo "== git pull (as $owner)"
   sudo -u "$owner" git -C "$SRC" pull --ff-only
+  # The pull may have changed this script, but bash keeps running the old copy it opened.
+  # Start again with the new one, so new install steps run on this update, not the next.
+  exec "$SRC/deploy/update.sh" --no-pull
 fi
 
 command -v rsync >/dev/null || apt-get install -y rsync
