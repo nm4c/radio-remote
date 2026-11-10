@@ -146,7 +146,8 @@ message.
 
 The files are kept in `clips.dir` (`/opt/radio-remote/clips` on an install), as WAV files with
 a `clips.json` list. `update.sh` leaves them alone. **Listen** next to a clip plays it in the
-browser, where you can also save it.
+browser, where you can also save it. **Rename** gives a clip or recording a new name (up to
+40 characters) for everyone; the file on the Pi keeps its ID, so nothing else changes.
 
 ## Recording
 
@@ -361,7 +362,7 @@ Messages marked * need the `control` role; from a `listen` account they're refus
 | → | \* `{"type":"selcall","digits":"12345"}` key the radio and send a selcall (1-20 digits) |
 | → | \* `{"type":"voice_fx","preset":"vader"\|null}` switch this operator's voice effect on (a preset id from `hello.voice_fx`) or off; `state.fx` is the one on |
 | → | \* `{"type":"record","on":true\|false,"mode":"continuous"\|"vox"}` start or stop recording (`mode` optional: `record.mode`) |
-| → | \* `{"type":"clip_play","id":"3f9c1a2b7d4e"}` key the radio and play a stored clip; `{"type":"clip_stop"}` stop the one on air (any operator); `{"type":"clip_delete","id":"…"}` |
+| → | \* `{"type":"clip_play","id":"3f9c1a2b7d4e"}` key the radio and play a stored clip; `{"type":"clip_stop"}` stop the one on air (any operator); `{"type":"clip_delete","id":"…"}`; `{"type":"clip_rename","id":"…","name":"…"}` (uploads and recordings, up to 40 characters) |
 | → | \* binary: TX audio, int16 LE mono 16 kHz, 20 ms frames. Ignored unless you hold PTT. |
 | → | `{"type":"logout"}` end this session; `{"type":"change_password","old":"…","new":"…"}` (reply `{"type":"password","ok":…}`) |
 | ← | `{"type":"account","role":"…","display":"…"}` an administrator changed this account while connected |

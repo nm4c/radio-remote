@@ -33,10 +33,10 @@ class ClipError(ValueError):
     """A clip was refused; the message is shown to the operator."""
 
 
-def clean_name(name):
+def clean_name(name, fallback="Clip"):
     """A clip name fit for display: printable characters only, trimmed, NAME_MAX at most."""
     text = "".join(ch for ch in str(name or "") if unicodedata.category(ch)[0] not in "CZ" or ch == " ")
-    return " ".join(text.split())[:NAME_MAX] or "Clip"
+    return " ".join(text.split())[:NAME_MAX].strip() or fallback
 
 
 class ClipStore:
@@ -165,6 +165,18 @@ class ClipStore:
             total -= sizes[c["id"]]
             gone.append(self.delete(c["id"]))
         return gone
+
+    def rename(self, clip_id, name):
+        """Give a clip (upload or recording) a new name. Returns (old name, the clip)."""
+        clip = self.get(clip_id)
+        if not clip:
+            raise ClipError("That clip has been deleted")
+        new = clean_name(name, None)
+        if not new:
+            raise ClipError("Type a name for the clip")
+        old, clip["name"] = clip["name"], new
+        self._save_index()
+        return old, clip
 
     def delete(self, clip_id):
         clip = self.get(clip_id)

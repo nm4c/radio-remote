@@ -737,6 +737,16 @@ function renderClips() {
     listen.rel = "noopener";
     listen.textContent = "Listen";
     listen.setAttribute("aria-label", `Listen to ${c.name}`);
+    const ren = document.createElement("button");
+    ren.type = "button";
+    ren.textContent = "Rename";
+    ren.setAttribute("aria-label", `Rename ${c.name}`);
+    ren.addEventListener("click", () => {
+      const name = prompt(`New name for “${c.name}” (up to ${S.clips.name_max || 40} characters):`, c.name);
+      if (name === null) return; // cancelled
+      if (!name.trim()) { toast("Type a name for the clip"); return; }
+      if (name.trim() !== c.name) send({ type: "clip_rename", id: c.id, name: name.trim() });
+    });
     const del = document.createElement("button");
     del.type = "button";
     del.textContent = "Delete";
@@ -745,7 +755,7 @@ function renderClips() {
     del.addEventListener("click", () => {
       if (confirm(`Delete the clip “${c.name}” for everyone?`)) send({ type: "clip_delete", id: c.id });
     });
-    li.append(label, listen, del);
+    li.append(label, listen, ren, del);
     return li;
   }));
 }

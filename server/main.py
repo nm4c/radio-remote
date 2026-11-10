@@ -32,7 +32,7 @@ AUTH_RECHECK_S = 5      # how often connected operators are re-checked against t
 
 # Messages only 'control' accounts may send. Everything else a 'listen' account sends is ignored.
 CONTROL_MESSAGES = {"ptt", "ptt_hold", "channel", "selcall", "voice_fx", "record",
-                    "clip_play", "clip_stop", "clip_delete"}
+                    "clip_play", "clip_stop", "clip_delete", "clip_rename"}
 
 
 class Client:
@@ -336,6 +336,7 @@ class RemoteHead:
                 "voice_fx": voicefx.preset_list() if self.fx_on else None,
                 "clips": {
                     "max_seconds": self.cl["max_seconds"],
+                    "name_max": clips.NAME_MAX,
                     "max_files": int(self.cl["max_files"]),
                     "max_play_seconds": self._max_play_seconds(),
                     "record": bool(self.recorder),
@@ -479,9 +480,9 @@ class RemoteHead:
             if self.recorder:
                 self._record(c, bool(m.get("on")), m.get("mode"))
             return
-        if kind in ("clip_play", "clip_stop", "clip_delete"):
+        if kind in ("clip_play", "clip_stop", "clip_delete", "clip_rename"):
             if self.clips:
-                self._clip_message(c, kind, m.get("id"))
+                self._clip_message(c, kind, m.get("id"), m.get("name"))
             return
         if kind == "ptt_hold":
             c.last_hold = time.monotonic()
@@ -686,7 +687,7 @@ class RemoteHead:
         for c in self._authed():
             c.send_json({"type": "clips", "list": self.clips.list()})
 
-    def _clip_message(self, c, kind, clip_id):
+    def _clip_message(self, c, kind, clip_id, name=None):
         def refuse(text):
             c.send_json({"type": "notice", "level": "warn", "text": text})
 
@@ -702,6 +703,19 @@ class RemoteHead:
             return
         if not isinstance(clip_id, str) or not self.clips.get(clip_id):
             return refuse("That clip has been deleted")
+        if kind == "clip_rename":
+            try:
+                old, clip = self.clips.rename(clip_id, name)
+            except clips.ClipError as e:
+                return refuse(str(e))
+            if old != clip["name"]:
+                if self.clip_tx and self.clip_tx["id"] == clip_id:
+                    self.clip_tx["name"] = clip["name"]
+                    self.broadcast_state()
+                log.info("%s renamed clip %r to %r", c.name, old, clip["name"])
+                self.audit(c, "clip_rename", clip=old, to=clip["name"])
+                self._clips_changed()
+            return
         if kind == "clip_delete":
             if self.clip_tx and self.clip_tx["id"] == clip_id:
                 return refuse("Can't delete a clip while it is playing")

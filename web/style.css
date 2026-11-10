@@ -157,7 +157,7 @@ button.danger { color: var(--tx); }
 .selcall-log li.me .num { color: var(--lcd-fg); font-weight: 700; }
 .clip-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; max-height: 16em; overflow-y: auto; }
 .clip-list:empty, .clip-empty[hidden] { display: none; }
-.clip-list li { display: grid; grid-template-columns: auto 1fr auto auto auto; gap: 10px; align-items: center;
+.clip-list li { display: grid; grid-template-columns: auto 1fr auto auto auto auto; gap: 10px; align-items: center;
   padding: 4px 6px; border-radius: 8px; }
 .clip-list li:hover { background: var(--panel-2); }
 .clip-list li.on { background: var(--panel-2); outline: 1px solid var(--line); }
