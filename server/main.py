@@ -968,6 +968,11 @@ async def security_headers(request, handler):
     resp.headers.setdefault("Cross-Origin-Opener-Policy", "same-origin")
     if request.secure:
         resp.headers.setdefault("Strict-Transport-Security", "max-age=31536000")
+    if request.path.startswith("/static/"):
+        # Check with us each time (a cheap 304 when unchanged). Without this, browsers guess a
+        # freshness from the file's age and can keep last week's app.js after an update, which
+        # then doesn't match the new page.
+        resp.headers.setdefault("Cache-Control", "no-cache")
     if isinstance(resp, web.HTTPException):
         raise resp
     return resp
