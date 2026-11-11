@@ -3878,7 +3878,7 @@
 				)
 			)
 		)
-		(property "Value" "SMA edge"
+		(property "Value" "SMA vertical"
 			(at 266.7 93.98 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3888,7 +3888,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Connector_Coaxial:SMA_Samtec_SMA-J-P-H-ST-EM1_EdgeMount"
+		(property "Footprint" "radio-remote:Kinghelm_KH-SMAK-SMT_SMA_Vertical"
 			(at 266.7 101.6 0)
 			(hide yes)
 			(show_name no)
@@ -3921,7 +3921,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C5199907"
+		(property "LCSC" "C22371060"
 			(at 266.7 101.6 0)
 			(hide yes)
 			(show_name no)

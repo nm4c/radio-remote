@@ -12,6 +12,7 @@ Low-pass: Chebyshev 0.1 dB, 7th order, fc 500 MHz, built from stock values
 about -50 dB at 952 MHz (2nd harmonic of 476) and -80 dB at the 3rd.
 """
 from schbuild import Sheet
+import sharedlib
 
 R0603 = "Resistor_SMD:R_0603_1608Metric"
 C0603 = "Capacitor_SMD:C_0603_1608Metric"
@@ -91,8 +92,10 @@ def build(path, page):
         s.wire((x, uy), s.p(f"{caps[nodes.index(x)][0]}.1"))
     for x in nodes[:-1]:
         s.junction((x, uy))
-    s.symbol("Connector:Conn_Coaxial", "J3", "SMA edge", (nodes[-1] + 30.48, uy), lcsc="C5199907",
-             footprint="Connector_Coaxial:SMA_Samtec_SMA-J-P-H-ST-EM1_EdgeMount",
+    # J3: vertical SMD SMA (Kinghelm KH-SMAK-SMT), so it can sit right at the filter output and the
+    # antenna screws on through the top of the case. Brace the barrel in the case: SMD pads carry it.
+    s.symbol("Connector:Conn_Coaxial", "J3", "SMA vertical", (nodes[-1] + 30.48, uy), lcsc="C22371060",
+             footprint=f"{sharedlib.LIB}:{sharedlib.KH_SMAK}",
              ref_at=(nodes[-1] + 30.48, uy - 5.08), val_at=(nodes[-1] + 30.48, uy - 7.62))
     s.wire((nodes[-1], uy), s.p("J3.1"))
     s.junction((nodes[-1], uy))

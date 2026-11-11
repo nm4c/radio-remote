@@ -5,14 +5,16 @@ small on the fab layer in its middle. This keeps one, on the silkscreen, in the 
 text's size but never smaller than 0.5 mm high and 0.1 mm stroke (the board's min_text_height is
 set to match). Footprints without a fab reference keep theirs; T1/T2 are centred on the part.
 
-Run after Update PCB from Schematic adds parts, with KiCad closed (it edits pihat.kicad_pcb):
+Run after Update PCB from Schematic adds parts, with KiCad closed (it edits the board file):
     /Applications/KiCad/KiCad.app/Contents/Frameworks/Python.framework/Versions/3.9/bin/python3 centre_refs.py
+    ... centre_refs.py ../../../sa818s-hat/sa818s-hat.kicad_pcb      (the SA818S HAT)
 """
 import os
+import sys
 
 import pcbnew
 
-PCB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "pihat.kicad_pcb")
+PCB = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "pihat.kicad_pcb")
 MIN_H, MIN_W = pcbnew.FromMM(0.5), pcbnew.FromMM(0.1)
 CENTRE = {"T1", "T2"}  # no fab reference in their footprint: centre on the body
 

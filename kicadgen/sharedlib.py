@@ -102,6 +102,33 @@ def xy2500v(n):
     return "".join(out)
 
 
+KH_SMAK = "Kinghelm_KH-SMAK-SMT_SMA_Vertical"
+KH_SMAK_MODEL = f"{MODELS}/Kinghelm_KH-SMAK-SMT.step"
+
+
+def kh_smak_smt():
+    """Kinghelm KH-SMAK-SMT (LCSC C22371060): SMA jack, vertical, surface mount. 50 ohm, DC-6 GHz,
+    PTFE. Pads as LCSC's footprint: 1.6 mm round centre pad, four 1.4 mm square ground pads on a
+    5.08 mm square; body 6.5 x 6.5 mm, 10 mm tall."""
+    out = [f'(footprint "{KH_SMAK}"\n\t(version 20260206)\n\t(generator "radio_remote_sharedlib")\n'
+           '\t(layer "F.Cu")\n\t(descr "Kinghelm KH-SMAK-SMT SMA jack, vertical, SMD, 50 ohm DC-6 GHz (LCSC C22371060)")\n'
+           '\t(tags "SMA vertical SMD Kinghelm")\n',
+           _text("Reference", "REF**", 0, -4.6, "F.SilkS", 1),
+           _text("Value", KH_SMAK, 0, 4.6, "F.Fab", 1),
+           '\t(attr smd)\n',
+           _rect(-3.5, -3.5, 3.5, 3.5, "F.SilkS", 0.12),
+           _rect(-3.25, -3.25, 3.25, 3.25, "F.Fab", 0.1),
+           _rect(-3.75, -3.75, 3.75, 3.75, "F.CrtYd", 0.05),
+           _text(None, "${REFERENCE}", 0, 0, "F.Fab", 0.8)]
+    out.append('\t(pad "1" smd circle\n\t\t(at 0 0)\n\t\t(size 1.6 1.6)\n\t\t(layers "F.Cu" "F.Paste" "F.Mask")\n\t)\n')
+    for x, y in ((-2.54, -2.54), (2.54, -2.54), (-2.54, 2.54), (2.54, 2.54)):
+        out.append(f'\t(pad "2" smd rect\n\t\t(at {x:g} {y:g})\n\t\t(size 1.4 1.4)\n'
+                   '\t\t(layers "F.Cu" "F.Paste" "F.Mask")\n\t)\n')
+    # LCSC's STEP is drawn thread-down: turned 180 degrees about X it stands on the pads (checked in renders)
+    out.append('\t(embedded_fonts no)\n' + _model_text(KH_SMAK_MODEL, rotate=(180, 0, 0)) + ')\n')
+    return "".join(out)
+
+
 def fp(stock):
     """The shared-library footprint ID to use instead of a stock one with a broken model."""
     return f"{LIB}:{stock.split(':', 1)[1]}"
@@ -141,6 +168,8 @@ def write_footprints():
     for n in XY2500V_PINS:
         with open(os.path.join(out, f"{xy2500v_name(n)}.kicad_mod"), "w") as f:
             f.write(xy2500v(n))
+    with open(os.path.join(out, f"{KH_SMAK}.kicad_mod"), "w") as f:
+        f.write(kh_smak_smt())
 
 
 def register(proj):
@@ -158,7 +187,7 @@ def register(proj):
 def check_models():
     """Every model the shared footprints point at must exist. Returns the missing ones."""
     missing = []
-    for path in [_model_of(e)[0] for e in FIXED.values()] + [TRANSFORMER, SA818S] + [
+    for path in [_model_of(e)[0] for e in FIXED.values()] + [TRANSFORMER, SA818S, KH_SMAK_MODEL] + [
             f"{MODELS}/Xinlaiya_XY2500V-F-3.5-{n}P.step" for n in XY2500V_PINS]:
         real = path.replace("${KIPRJMOD}/..", REPO).replace(STOCK3D, os.path.join(KICAD, "3dmodels"))
         if not os.path.exists(real):
