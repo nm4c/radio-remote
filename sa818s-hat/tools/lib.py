@@ -94,8 +94,35 @@ def sa818s_fp():
     return items
 
 
+def tps7a94():
+    """TI TPS7A9401DSCR: 1 A ultra-low-noise, high-PSRR LDO, WSON-10 3 x 3 mm (DSC). Pins per datasheet
+    SBVS336C: 1, 2 IN; 3 EN_UV; 4 PG; 5 FB_PG; 6 GND; 7 NR/SS; 8 SNS; 9, 10 OUT; 11 thermal pad (GND)."""
+    name = "TPS7A94"
+    st = ["stroke", ["width", 0.254], ["type", "default"]]
+    L, R = -15.24, 15.24
+    pins = [pin("power_in", L, 5.08, 0, "IN", 1), pin("passive", L, 5.08, 0, "IN", 2, hidden=True),
+            pin("input", L, 0, 0, "EN_UV", 3), pin("input", L, -5.08, 0, "FB_PG", 5),
+            pin("power_out", R, 5.08, 180, "OUT", 9), pin("passive", R, 5.08, 180, "OUT", 10, hidden=True),
+            pin("input", R, 0, 180, "SNS", 8), pin("passive", R, -5.08, 180, "NR/SS", 7),
+            pin("open_collector", R, -7.62, 180, "PG", 4),
+            pin("power_in", -1.27, -15.24, 90, "GND", 6), pin("passive", 1.27, -15.24, 90, "EP", 11)]
+    # pins 2 and 10 are hidden and stacked on 1 and 9: a wire to that point connects both
+    return ["symbol", Q(name), ["pin_names", ["offset", 1.016]],
+            ["exclude_from_sim", "no"], ["in_bom", "yes"], ["on_board", "yes"],
+            prop("Reference", "U", (0, 12.7)),
+            prop("Value", name, (0, 15.24)),
+            prop("Footprint", sharedlib.fp("Package_SON:Texas_DSC0010J_ThermalVias"), (0, 0), True),
+            prop("Datasheet", "https://www.ti.com/lit/ds/symlink/tps7a94.pdf", (0, 0), True),
+            prop("Description", "1 A ultra-low-noise (0.46 uVrms) high-PSRR LDO, 0-5.5 V set by one resistor, WSON-10",
+                 (0, 0), True),
+            ["symbol", Q(f"{name}_0_1"),
+             ["rectangle", ["start", -10.16, 7.62], ["end", 10.16, -10.16], st, ["fill", ["type", "background"]]]],
+            ["symbol", Q(f"{name}_1_1")] + pins,
+            ["embedded_fonts", "no"]]
+
+
 def symbols():
-    return {"SA818S": sa818s(), "TLV320AIC3104": pihat_lib.aic3104()}
+    return {"SA818S": sa818s(), "TLV320AIC3104": pihat_lib.aic3104(), "TPS7A94": tps7a94()}
 
 
 def write_all(proj):

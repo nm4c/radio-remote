@@ -1,5 +1,8 @@
 """Sheet: Power. 13.8 V input protection, 5 V buck, TLV76133 3.3VA and TPS7A2018 1V8 rails.
 
+With supply="pi" (SA818S HAT) there is no 13.8 V input or buck: the board runs from the Pi's 5 V
+(header pins 2 and 4, Pi powered from its USB-C socket), and this sheet has only the codec rails and LED.
+
 Two 5 V bucks are available:
   lmr33640  TI LMR33640ADDA (Pi HAT): synchronous, internally compensated, 400 kHz. No catch
             diode, compensation network or frequency resistor; 36 V max, so a 22 V TVS.
@@ -157,16 +160,32 @@ def _tps54360_comp_feedback(s, G):
 
 
 def build(path, page, fuse=("1.5A 33V", "C18198333"), vin_global=False, buck="tps54360",
-          tvs=("SMBJ24A", "C123819"), u5_cin=True, power_in=None):
+          tvs=("SMBJ24A", "C123819"), u5_cin=True, power_in=None, supply="vin", codec_ldo="tlv76133"):
     """fuse: (value, LCSC) for F1. The SA818S board uses 2 A for a Pi 4 plus 1 W TX.
     vin_global: make VIN a global label (the SA818S board feeds its module supply from it).
     buck: "lmr33640" or "tps54360" (see the module notes). tvs: (value, LCSC) for D3; it must
     clamp below the buck's maximum input. u5_cin: a separate input cap at U5 (C26); without it
     U5 shares C25 at U4's output, so place U5 next to U4.
     power_in: (ref, value, footprint, LCSC[, dnp]) for the 13.8 V input connector; default J6, a
-    3.5 mm screw terminal. dnp=True marks it Do Not Populate (hand-soldered)."""
+    3.5 mm screw terminal. dnp=True marks it Do Not Populate (hand-soldered).
+    supply: "vin" (13.8 V input and 5 V buck, the HAT powers the Pi) or "pi" (no input or buck:
+    the HAT takes 5 V from the Pi, which is powered from its own USB-C socket).
+    codec_ldo: U4 for the codec's +3.3VA, "tlv76133" or "tps7a2033" (7 uVrms, high PSRR; SA818S HAT)."""
     s = Sheet("Power", path, page)
     G = ("pwr", "GND")
+    if supply == "pi":
+        s.text("5 V FROM THE PI  (header pins 2 and 4; power the Pi from its USB-C socket)", (17.78, 38.1), 2.0, bold=True)
+        s.text("This board has no power input of its own. Use the official 5.1 V 3 A Pi supply:", (17.78, 45.72))
+        s.text("Pi 4 up to about 1.3 A + SA818S 0.75 A on TX + codec under 50 mA = about 2.1 A.", (17.78, 49.53))
+        s.power("+5V", (35.56, 60.96)); s.wire((35.56, 60.96), (50.8, 60.96)); s.flag((50.8, 60.96))
+        _codec_rails_and_led(s, G, u5_cin, codec_ldo)
+        s.text("NOTES", (17.78, 162.56), 1.5, bold=True)
+        for i, t in enumerate((
+                "+5V comes from the Pi (J1 pins 2 and 4). Nothing here feeds power back into the Pi.",
+                "+3.3VA is a quiet analog rail for the codec (AVDD, DRVDD). +1V8 feeds the codec core (DVDD).",
+                "The SA818S has its own regulator from +5V on the RF power sheet.")):
+            s.text(t, (17.78, 166.37 + i * 3.81))
+        return s
 
     s.text("13.8 V INPUT PROTECTION", (17.78, 38.1), 2.0, bold=True)
     s.text("5 V BUCK  (back-powers the Pi via header pins 2 and 4)", (152.4, 38.1), 2.0, bold=True)
@@ -221,40 +240,7 @@ def build(path, page, fuse=("1.5A 33V", "C18198333"), vin_global=False, buck="tp
     else:
         _tps54360_comp_feedback(s, G)
 
-    # ---- codec rails
-    s.text("CODEC RAILS", (17.78, 127.0), 2.0, bold=True)
-    y2 = 139.7
-    s.symbol("Regulator_Linear:TLV76133DCY", "U4", "TLV76133DCYR", (60.96, y2), lcsc="C7527500",
-             ref_at=(60.96, 129.54), val_at=(60.96, 132.08), conn={"1": G})
-    s.symbol("Device:C", "C24", "1uF", (43.18, y2 + 3.81), footprint=C0603, lcsc="C15849", conn={"2": G})
-    chain(s, [(35.56, y2), s.p("C24.1"), s.p("U4.3")])
-    s.power("+5V", (35.56, y2)); s.junction(s.p("C24.1"))
-    s.symbol("Regulator_Linear:TPS7A20xxxDBV", "U5", "TPS7A2018PDBVR", (111.76, y2 + 2.54), lcsc="C963430",
-             ref_at=(111.76, 129.54), val_at=(111.76, 132.08), conn={"2": G, "4": ("nc",)})
-    s.symbol("Device:C", "C25", "10uF", (73.66, y2 + 3.81), footprint=C0805, lcsc="C15850", conn={"2": G})
-    if u5_cin:
-        s.symbol("Device:C", "C26", "1uF", (88.9, y2 + 3.81), footprint=C0603, lcsc="C15849", conn={"2": G})
-    vo, u5in, u5en = s.p("U4.2"), s.p("U5.1"), s.p("U5.3")
-    chain(s, [vo, (73.66, y2), (81.28, y2), (88.9, y2), (99.06, y2), u5in])
-    for x in ((73.66, 81.28, 88.9, 99.06) if u5_cin else (73.66, 81.28, 99.06)):
-        s.junction((x, y2))
-    s.power("+3.3VA", (81.28, y2))
-    chain(s, [u5en, (99.06, u5en[1]), (99.06, y2)])
-    s.symbol("Device:C", "C27", "1uF", (129.54, y2 + 3.81), footprint=C0603, lcsc="C15849", conn={"2": G})
-    chain(s, [s.p("U5.5"), (129.54, y2), (137.16, y2)])
-    s.junction((129.54, y2))
-    s.power("+1V8", (137.16, y2))
-
-    # ---- power LED
-    s.text("POWER LED", (172.72, 127.0), 2.0, bold=True)
-    s.symbol("Device:R", "R7", "1k", (186.69, y2), rot=90, footprint=R0603, lcsc="C21190",
-             ref_at=(186.69, 135.89), val_at=(186.69, 143.51))
-    s.symbol("Device:LED", "LED1", "red", (199.39, y2), rot=180, footprint="LED_SMD:LED_0603_1608Metric",
-             lcsc="C2286", ref_at=(199.39, 134.62), val_at=(199.39, 143.51))
-    r7a, r7b = sorted([s.p("R7.1"), s.p("R7.2")])
-    chain(s, [(177.8, y2), r7a]); s.power("+5V", (177.8, y2))
-    s.wire(r7b, s.p("LED1.2"))
-    chain(s, [s.p("LED1.1"), (208.28, y2)]); s.power("GND", (208.28, y2)); s.flag((208.28, y2))
+    _codec_rails_and_led(s, G, u5_cin, codec_ldo)
 
     # ---- notes
     s.text("NOTES", (17.78, 162.56), 1.5, bold=True)
@@ -279,3 +265,51 @@ def build(path, page, fuse=("1.5A 33V", "C18198333"), vin_global=False, buck="tp
     for i, t in enumerate(notes):
         s.text(t, (17.78, 166.37 + i * 3.81))
     return s
+
+
+def _codec_rails_and_led(s, G, u5_cin, codec_ldo="tlv76133"):
+    # ---- codec rails
+    s.text("CODEC RAILS", (17.78, 127.0), 2.0, bold=True)
+    y2 = 139.7
+    if codec_ldo == "tps7a2033":
+        # TPS7A2033: same family and pinout as U5 (1 IN, 2 GND, 3 EN, 4 NC, 5 OUT); EN tied to IN
+        s.symbol("Regulator_Linear:TPS7A20xxxDBV", "U4", "TPS7A2033PDBVR", (60.96, y2 + 2.54), lcsc="C2862740",
+                 ref_at=(60.96, 129.54), val_at=(60.96, 132.08), conn={"2": G, "4": ("nc",)})
+        s.symbol("Device:C", "C24", "1uF", (43.18, y2 + 3.81), footprint=C0603, lcsc="C15849", conn={"2": G})
+        chain(s, [(35.56, y2), s.p("C24.1"), (50.8, y2), s.p("U4.1")])
+        chain(s, [s.p("U4.3"), (50.8, s.p("U4.3")[1]), (50.8, y2)])
+        s.junction((50.8, y2))
+        vo_pin = "U4.5"
+    else:
+        s.symbol("Regulator_Linear:TLV76133DCY", "U4", "TLV76133DCYR", (60.96, y2), lcsc="C7527500",
+                 ref_at=(60.96, 129.54), val_at=(60.96, 132.08), conn={"1": G})
+        s.symbol("Device:C", "C24", "1uF", (43.18, y2 + 3.81), footprint=C0603, lcsc="C15849", conn={"2": G})
+        chain(s, [(35.56, y2), s.p("C24.1"), s.p("U4.3")])
+        vo_pin = "U4.2"
+    s.power("+5V", (35.56, y2)); s.junction(s.p("C24.1"))
+    s.symbol("Regulator_Linear:TPS7A20xxxDBV", "U5", "TPS7A2018PDBVR", (111.76, y2 + 2.54), lcsc="C963430",
+             ref_at=(111.76, 129.54), val_at=(111.76, 132.08), conn={"2": G, "4": ("nc",)})
+    s.symbol("Device:C", "C25", "10uF", (73.66, y2 + 3.81), footprint=C0805, lcsc="C15850", conn={"2": G})
+    if u5_cin:
+        s.symbol("Device:C", "C26", "1uF", (88.9, y2 + 3.81), footprint=C0603, lcsc="C15849", conn={"2": G})
+    vo, u5in, u5en = s.p(vo_pin), s.p("U5.1"), s.p("U5.3")
+    chain(s, [vo, (73.66, y2), (81.28, y2), (88.9, y2), (99.06, y2), u5in])
+    for x in ((73.66, 81.28, 88.9, 99.06) if u5_cin else (73.66, 81.28, 99.06)):
+        s.junction((x, y2))
+    s.power("+3.3VA", (81.28, y2))
+    chain(s, [u5en, (99.06, u5en[1]), (99.06, y2)])
+    s.symbol("Device:C", "C27", "1uF", (129.54, y2 + 3.81), footprint=C0603, lcsc="C15849", conn={"2": G})
+    chain(s, [s.p("U5.5"), (129.54, y2), (137.16, y2)])
+    s.junction((129.54, y2))
+    s.power("+1V8", (137.16, y2))
+
+    # ---- power LED
+    s.text("POWER LED", (172.72, 127.0), 2.0, bold=True)
+    s.symbol("Device:R", "R7", "1k", (186.69, y2), rot=90, footprint=R0603, lcsc="C21190",
+             ref_at=(186.69, 135.89), val_at=(186.69, 143.51))
+    s.symbol("Device:LED", "LED1", "red", (199.39, y2), rot=180, footprint="LED_SMD:LED_0603_1608Metric",
+             lcsc="C2286", ref_at=(199.39, 134.62), val_at=(199.39, 143.51))
+    r7a, r7b = sorted([s.p("R7.1"), s.p("R7.2")])
+    chain(s, [(177.8, y2), r7a]); s.power("+5V", (177.8, y2))
+    s.wire(r7b, s.p("LED1.2"))
+    chain(s, [s.p("LED1.1"), (208.28, y2)]); s.power("GND", (208.28, y2)); s.flag((208.28, y2))

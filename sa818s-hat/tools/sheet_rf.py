@@ -17,6 +17,7 @@ R0603 = "Resistor_SMD:R_0603_1608Metric"
 C0603 = "Capacitor_SMD:C_0603_1608Metric"
 C1206 = "Capacitor_SMD:C_1206_3216Metric"
 L0603 = "Inductor_SMD:L_0603_1608Metric"
+C0402 = "Capacitor_SMD:C_0402_1005Metric"
 
 
 def chain(s, pts):
@@ -45,6 +46,12 @@ def build(path, page):
     mid = (vb[0], c40[1])
     s.junction(mid)
     s.wire(mid, c40)
+    # C45: RF bypass. 100 nF is inductive at 450 MHz; 100 pF C0G in 0603 self-resonates near 600 MHz,
+    # so it shorts the transmitter's RF on VBAT where the 100 nF can't.
+    s.symbol("Device:C", "C45", "100pF C0G", (vb[0] - 27.94, vb[1] - 1.27), footprint=C0603, lcsc="C14858",
+             conn={"2": G}, fields_dir="left")
+    c45 = s.p("C45.1")
+    s.wire((vb[0], c45[1]), c45)
     # grounds
     gs = [s.p(f"U6.{n}") for n in (9, 10, 19, 20)]
     yg = gs[0][1] + 2.54
@@ -62,10 +69,13 @@ def build(path, page):
     s.text("2nd harmonic -50 dB, 3rd -80 dB (simulated)", (184.15, 82.55))
     ant = s.p("U6.12")
     nodes = [ant[0] + 7.62, ant[0] + 22.86, ant[0] + 38.1, ant[0] + 53.34]
-    caps = [("C41", "6.8pF C0G", "C1679"), ("C42", "12pF C0G", "C38523"), ("C43", "12pF C0G", "C38523"), ("C44", "6.8pF C0G", "C1679")]
+    # Filter caps chosen for accuracy (RF review, Nov 2026): 6.8 pF +/-0.1 pF Murata GCM1555C1H6R8BA16D
+    # (0402: the only +/-0.1 pF part at LCSC, and lower parasitics), 12 pF +/-1% Yageo CC0603FRNPO9BN120.
+    caps = [("C41", "6.8pF", "C354360", C0402), ("C42", "12pF", "C519482", C0603),
+            ("C43", "12pF", "C519482", C0603), ("C44", "6.8pF", "C354360", C0402)]
     inds = [("L3", "22nH 2%", "C162643"), ("L4", "24nH 2%", "C162644"), ("L5", "22nH 2%", "C162643")]
-    for x, (ref, val, lcsc) in zip(nodes, caps):
-        s.symbol("Device:C", ref, val, (x, uy + 3.81), footprint=C0603, lcsc=lcsc, conn={"2": G},
+    for x, (ref, val, lcsc, cfp) in zip(nodes, caps):
+        s.symbol("Device:C", ref, val, (x, uy + 3.81), footprint=cfp, lcsc=lcsc, conn={"2": G},
                  ref_at=(x + 2.54, uy + 5.08), val_at=(x + 2.54, uy + 7.62), ref_just="left", val_just="left")
     pts = [ant]
     for i, (ref, val, lcsc) in enumerate(inds):
@@ -81,17 +91,26 @@ def build(path, page):
         s.wire((x, uy), s.p(f"{caps[nodes.index(x)][0]}.1"))
     for x in nodes[:-1]:
         s.junction((x, uy))
-    s.symbol("Connector:Conn_Coaxial", "J3", "SMA edge", (nodes[-1] + 12.7, uy), lcsc="C5199907",
+    s.symbol("Connector:Conn_Coaxial", "J3", "SMA edge", (nodes[-1] + 30.48, uy), lcsc="C5199907",
              footprint="Connector_Coaxial:SMA_Samtec_SMA-J-P-H-ST-EM1_EdgeMount",
-             ref_at=(nodes[-1] + 12.7, uy - 5.08), val_at=(nodes[-1] + 12.7, uy - 7.62))
+             ref_at=(nodes[-1] + 30.48, uy - 5.08), val_at=(nodes[-1] + 30.48, uy - 7.62))
     s.wire((nodes[-1], uy), s.p("J3.1"))
     s.junction((nodes[-1], uy))
+    # L6: static bleed from the antenna to ground, NOT FITTED until the module's ANT pin is checked for DC
+    # (a shunt inductor would short any bias the module puts on it). 220 nH is 620 ohm at 450 MHz: ~0.02 dB.
+    lx = nodes[-1] + 12.7
+    s.symbol("Device:L", "L6", "220nH DNP", (lx, uy + 6.35), footprint=L0603, dnp=True, in_bom=False,
+             fields={"MPN": "Coilcraft 0603CS-R22XGLU (220 nH 2%, SRF 900 MHz)"}, conn={"2": G},
+             ref_at=(lx + 2.54, uy + 7.62), val_at=(lx + 2.54, uy + 10.16), ref_just="left", val_just="left")
+    s.wire((lx, uy), s.p("L6.1")); s.junction((lx, uy))
     sh = s.p("J3.2")
     s.wire(sh, (sh[0], sh[1] + 2.54)); s.power("GND", (sh[0], sh[1] + 2.54))
     for i, t in enumerate((
         "50 ohm coplanar waveguide ANT -> J3, keep it short.",
         "Filter in a straight line, ground vias at each cap.",
         "Shield can over U6 + filter if the Pi desenses RX.",
+        "L6 (DNP): fit only if U6 pin 12 shows 0 V DC (RX and TX).",
+        "C41/C44 6.8 pF +/-0.1 pF C0G 0402; C42/C43 12 pF +/-1% C0G 0603.",
     )):
         s.text(t, (184.15, 119.38 + i * 3.81))
 

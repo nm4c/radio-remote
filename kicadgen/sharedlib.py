@@ -43,6 +43,9 @@ FIXED = {
     "Package_SO:Texas_HSOP-8-1EP_3.9x4.9mm_P1.27mm_ThermalVias":
         f"{STOCK3D}/Package_SO.3dshapes/Texas_HTSOP-8-1EP_3.9x4.9mm_P1.27mm_EP2.95x4.9mm_Mask2.4x3.1mm_ThermalVias.step",
     "Package_SO:TI_SO-PowerPAD-8_ThermalVias": f"{STOCK3D}/Package_SO.3dshapes/TI_SO-PowerPAD-8.step",
+    # TI DSC (WSON-10 3 x 3 mm, TPS7A9401DSCR on the SA818S HAT): the footprint names a model KiCad
+    # doesn't ship. LCSC C5220127's model sits on KiCad's pads as drawn (checked in top and edge-on renders).
+    "Package_SON:Texas_DSC0010J_ThermalVias": f"{MODELS}/TI_WSON-10_DSC.step",
 }
 
 
@@ -110,22 +113,29 @@ def model(path):
     return ["model", Q(path), ["offset", ["xyz", 0, 0, 0]], ["scale", ["xyz", 1, 1, 1]], ["rotate", ["xyz", 0, 0, 0]]]
 
 
-def _model_text(path, offset=(0, 0, 0)):
+def _model_text(path, offset=(0, 0, 0), rotate=(0, 0, 0)):
     ox, oy, oz = offset
+    rx, ry, rz = rotate
     return (f'\t(model "{path}"\n\t\t(offset\n\t\t\t(xyz {ox:g} {oy:g} {oz:g})\n\t\t)\n\t\t(scale\n\t\t\t(xyz 1 1 1)\n'
-            f'\t\t)\n\t\t(rotate\n\t\t\t(xyz 0 0 0)\n\t\t)\n\t)\n')
+            f'\t\t)\n\t\t(rotate\n\t\t\t(xyz {rx:g} {ry:g} {rz:g})\n\t\t)\n\t)\n')
+
+
+def _model_of(entry):
+    """FIXED values are a model path, or (path, rotation) for a model drawn turned."""
+    return entry if isinstance(entry, tuple) else (entry, (0, 0, 0))
 
 
 def write_footprints():
     """Copy each stock footprint in FIXED into radio-remote.pretty with its model replaced."""
     out = os.path.join(SHARED, f"{LIB}.pretty")
     os.makedirs(out, exist_ok=True)
-    for stock, path in FIXED.items():
+    for stock, entry in FIXED.items():
+        path, rot = _model_of(entry)
         lib, name = stock.split(":", 1)
         text = open(os.path.join(KICAD, "footprints", f"{lib}.pretty", f"{name}.kicad_mod")).read()
         text = re.sub(r'\t\(model ".*?"\n.*?\n\t\)\n', "", text, flags=re.S)   # drop stock model(s)
         i = text.rstrip().rindex(")")
-        text = text[:i] + _model_text(path) + text[i:]
+        text = text[:i] + _model_text(path, rotate=rot) + text[i:]
         with open(os.path.join(out, f"{name}.kicad_mod"), "w") as f:
             f.write(text)
     for n in XY2500V_PINS:
@@ -148,7 +158,7 @@ def register(proj):
 def check_models():
     """Every model the shared footprints point at must exist. Returns the missing ones."""
     missing = []
-    for path in list(FIXED.values()) + [TRANSFORMER, SA818S] + [
+    for path in [_model_of(e)[0] for e in FIXED.values()] + [TRANSFORMER, SA818S] + [
             f"{MODELS}/Xinlaiya_XY2500V-F-3.5-{n}P.step" for n in XY2500V_PINS]:
         real = path.replace("${KIPRJMOD}/..", REPO).replace(STOCK3D, os.path.join(KICAD, "3dmodels"))
         if not os.path.exists(real):

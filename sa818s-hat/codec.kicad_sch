@@ -3098,7 +3098,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "33R"
+		(property "Value" "100R"
 			(at 25.4 77.47 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3142,7 +3142,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C23140"
+		(property "LCSC" "C22775"
 			(at 22.86 76.2 0)
 			(hide yes)
 			(show_name no)
@@ -4927,7 +4927,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10uF"
+		(property "Value" "10uF X7R 16V"
 			(at 132.08 167.64 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4971,7 +4971,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C15850"
+		(property "LCSC" "C95841"
 			(at 129.54 166.37 0)
 			(hide yes)
 			(show_name no)

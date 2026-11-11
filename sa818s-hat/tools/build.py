@@ -32,11 +32,36 @@ import sheet_audio  # noqa: E402
 import lib  # noqa: E402
 
 PROJECT = "sa818s-hat"
+
+
+def retune(sheet, parts):
+    """Change value, footprint and LCSC of parts on a sheet shared with the pihat board, for this board
+    only (RF/noise review, Nov 2026): {ref: (value, footprint, lcsc)}."""
+    left = dict(parts)
+    for node in sheet.items:
+        if not (isinstance(node, list) and node and node[0] == "symbol"):
+            continue
+        props = {str(p[1]): p for p in node if isinstance(p, list) and p and p[0] == "property"}
+        ref = str(props["Reference"][2]) if "Reference" in props else None
+        if ref not in left:
+            continue
+        val, fp, lcsc = left.pop(ref)
+        props["Value"][2] = schbuild.Q(val)
+        props["Footprint"][2] = schbuild.Q(fp)
+        if "LCSC" in props:
+            props["LCSC"][2] = schbuild.Q(lcsc)
+        else:
+            node.insert(node.index(props["Footprint"]) + 1, schbuild.prop("LCSC", lcsc, (0, 0), hide=True))
+    assert not left, f"retune: not found {sorted(left)}"
+    return sheet
 SHEETS = [
-    ("Power", "power.kicad_sch", lambda p, n: sheet_power.build(p, n, fuse=("2A 33V", "C18198343"), vin_global=True), (210.82, 30.48)),
+    ("Power", "power.kicad_sch", lambda p, n: retune(sheet_power.build(p, n, supply="pi", codec_ldo="tps7a2033"), {
+        "C25": ("10uF X7R 16V", "Capacitor_SMD:C_0805_2012Metric", "C95841")}), (210.82, 30.48)),
     ("RF power", "rfpower.kicad_sch", sheet_rfpower.build, (210.82, 53.34)),
     ("Transceiver", "transceiver.kicad_sch", sheet_rf.build, (210.82, 76.2)),
-    ("Codec", "codec.kicad_sch", lambda p, n: sheet_codec.build(p, n, hp_n=False, lib="sa818s-hat"), (210.82, 99.06)),
+    ("Codec", "codec.kicad_sch", lambda p, n: retune(sheet_codec.build(p, n, hp_n=False, lib="sa818s-hat"), {
+        "C13": ("10uF X7R 16V", "Capacitor_SMD:C_0805_2012Metric", "C95841"),
+        "R16": ("100R", "Resistor_SMD:R_0603_1608Metric", "C22775")}), (210.82, 99.06)),
     ("Audio", "audio.kicad_sch", sheet_audio.build, (210.82, 121.92)),
 ]
 

@@ -58,7 +58,9 @@ class Sheet:
 
     # ------------------------------------------------------------ symbols
     def symbol(self, lib_id, ref, value, at, rot=0, mirror=None, footprint="", lcsc="",
-               datasheet="", conn=None, ref_at=None, val_at=None, fields_dir="right", dnp=False, in_bom=True, unit=1, ref_just=None, val_just=None):
+               datasheet="", conn=None, ref_at=None, val_at=None, fields_dir="right", dnp=False, in_bom=True, unit=1, ref_just=None, val_just=None,
+               fields=None):
+        """fields: extra hidden properties, e.g. {"MPN": "..."} for a part chosen by manufacturer number."""
         if lib_id not in self.libs:
             self.libs[lib_id] = load_symbol(lib_id)
         sym = self.libs[lib_id]
@@ -97,6 +99,8 @@ class Sheet:
         node.append(prop("Description", desc, (x, y), hide=True))
         if lcsc:
             node.append(prop("LCSC", lcsc, (x, y), hide=True))
+        for name, val in (fields or {}).items():
+            node.append(prop(name, val, (x, y), hide=True))
         for num in pdefs:
             node.append(["pin", Q(num), ["uuid", U(self._k("pin", ref, unit, num))]])
         node.append(["instances", ["project", Q(PROJECT), ["path", Q(self.path), ["reference", Q(ref)], ["unit", unit]]]])

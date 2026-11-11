@@ -474,7 +474,7 @@
 				)
 			)
 		)
-		(property "Value" "1uF"
+		(property "Value" "0.47uF C0G"
 			(at 55.88 59.69 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -484,7 +484,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
+		(property "Footprint" "Capacitor_SMD:C_1206_3216Metric"
 			(at 55.88 55.88 0)
 			(hide yes)
 			(show_name no)
@@ -517,7 +517,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C15849"
+		(property "LCSC" "C6049896"
 			(at 55.88 55.88 0)
 			(hide yes)
 			(show_name no)
@@ -587,7 +587,7 @@
 				)
 			)
 		)
-		(property "Value" "10k"
+		(property "Value" "10k 0.1%"
 			(at 71.12 59.69 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -630,7 +630,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25804"
+		(property "LCSC" "C95204"
 			(at 71.12 55.88 0)
 			(hide yes)
 			(show_name no)
@@ -689,7 +689,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "330R"
+		(property "Value" "330R 0.5%"
 			(at 86.36 63.5 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -733,7 +733,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C23138"
+		(property "LCSC" "C723588"
 			(at 83.82 62.23 0)
 			(hide yes)
 			(show_name no)
@@ -857,7 +857,7 @@
 				)
 			)
 		)
-		(property "Value" "1uF"
+		(property "Value" "0.47uF C0G"
 			(at 96.52 59.69 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -867,7 +867,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
+		(property "Footprint" "Capacitor_SMD:C_1206_3216Metric"
 			(at 96.52 55.88 0)
 			(hide yes)
 			(show_name no)
@@ -900,7 +900,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C15849"
+		(property "LCSC" "C6049896"
 			(at 96.52 55.88 0)
 			(hide yes)
 			(show_name no)
@@ -1032,7 +1032,7 @@
 				)
 			)
 		)
-		(property "Value" "1uF"
+		(property "Value" "0.47uF C0G"
 			(at 55.88 105.41 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -1042,7 +1042,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
+		(property "Footprint" "Capacitor_SMD:C_1206_3216Metric"
 			(at 55.88 101.6 0)
 			(hide yes)
 			(show_name no)
@@ -1075,7 +1075,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C15849"
+		(property "LCSC" "C6049896"
 			(at 55.88 101.6 0)
 			(hide yes)
 			(show_name no)
@@ -1145,7 +1145,7 @@
 				)
 			)
 		)
-		(property "Value" "10k"
+		(property "Value" "10k 0.1%"
 			(at 71.12 105.41 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -1188,7 +1188,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25804"
+		(property "LCSC" "C95204"
 			(at 71.12 101.6 0)
 			(hide yes)
 			(show_name no)
@@ -1247,7 +1247,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10k"
+		(property "Value" "10k 0.1%"
 			(at 86.36 109.22 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -1291,7 +1291,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25804"
+		(property "LCSC" "C95204"
 			(at 83.82 107.95 0)
 			(hide yes)
 			(show_name no)
@@ -1467,7 +1467,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "1uF"
+		(property "Value" "0.47uF C0G"
 			(at 58.42 132.08 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -1478,7 +1478,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Capacitor_SMD:C_0603_1608Metric"
+		(property "Footprint" "Capacitor_SMD:C_1206_3216Metric"
 			(at 55.88 130.81 0)
 			(hide yes)
 			(show_name no)
@@ -1511,7 +1511,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C15849"
+		(property "LCSC" "C6049896"
 			(at 55.88 130.81 0)
 			(hide yes)
 			(show_name no)

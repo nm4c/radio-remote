@@ -8,11 +8,11 @@ experimental use.
 | Block | What's on the board |
 |---|---|
 | Transceiver | SA818S-U, frequency, CTCSS/DCS and squelch set over UART (9600 8N1, GPIO14/15) |
-| Harmonic filter | 7th-order Chebyshev low-pass, fc 500 MHz: −0.6 to −1.1 dB from 400–480 MHz, about −50 dB at 2nd harmonic of 476 MHz, −80 dB at the 3rd (simulated with real inductor Q) |
-| Antenna | Edge-mount SMA (Samtec SMA-J-P-H-ST-EM1) |
+| Harmonic filter | 7th-order Chebyshev low-pass, fc 500 MHz: −0.6 to −1.1 dB from 400–480 MHz, about −50 dB at 2nd harmonic of 476 MHz, −80 dB at the 3rd (simulated with real inductor Q). Murata LQW18AN wirewound 2 % inductors, C0G capacitors at ±0.1 pF / ±1 % |
+| Antenna | Edge-mount SMA (Samtec SMA-J-P-H-ST-EM1). Footprint for a 220 nH static-bleed inductor (L6, not fitted) |
 | Control | PTT via MOSFET (boots in receive), high/low power via open-drain MOSFET, power-down on GPIO27, busy from the module's AudioON on GPIO23 |
-| Audio | Codec headphone out → −30 dB → MIC_IN; AF_OUT → −6 dB → codec input. Direct, no transformers (shared ground) |
-| Power | 13.8 V in, 5 V / 3.5 A buck for the Pi, **separate** 4.2 V buck + 2 A ferrite for the module, codec rails as on the pihat |
+| Audio | Codec headphone out → −30 dB → MIC_IN; AF_OUT → −6 dB → codec input. Direct, no transformers (shared ground). C0G coupling capacitors and thin-film resistors |
+| Power | **From the Pi's 5 V only** (power the Pi from its USB-C socket; no input of its own). Module: TPS7A94 ultra-low-noise LDO at 4.2 V, then a ferrite + polymer-tantalum pi-filter. Codec: TPS7A2033 (3.3 V analog) and TPS7A2018 (1.8 V) |
 | ID EEPROM | AT24C32D, write-protected by default (R3 pull-up), JP1 to write |
 
 ## GPIO use
@@ -39,12 +39,23 @@ The Pi 4's main UART is normally used by Bluetooth. Add `dtoverlay=disable-bt` (
 
 ## Before layout
 
+- **Power budget** (official 5.1 V 3 A Pi supply): Pi 4 up to about 1.3 A, module 0.65–0.75 A on transmit at
+  high power, codec and the rest under 50 mA: about 2.1 A. Power-hungry USB devices on the Pi can tip it over.
 - **SA818S footprint:** pad positions agree between two independent footprints (one derived from LCSC/EasyEDA)
   and the datasheet drawing. Print it 1:1 and check a module against it before ordering.
 - **RF layout:** 50 Ω grounded coplanar waveguide from the module's ANT pad through the filter to the SMA,
   short and straight, with ground vias beside every filter capacitor and a solid ground plane under the module.
   Leave room for a shield can over the module and filter.
-- **Supplies:** keep the 4.2 V buck and its inductor away from the module. Place C38/C39/C40 at the VBAT pad.
+- **Supplies:** place C38/C39/C40/C45 at the module's VBAT pad (C45, 100 pF, nearest the pin). U7 (TPS7A94):
+  C31/C32 at IN and C33/C35 at OUT with their grounds together at U7's GND pin, no vias in between; SNS
+  (pin 8) Kelvin to C33; thermal pad to a large ground area (about 0.6 W while transmitting).
+- **12 MHz codec clock:** its 37th–39th harmonics are 444, 456 and 468 MHz (and 432 MHz). Keep Y1 and the
+  MCLK trace (R16, 100 Ω to slow the edges) away from the module and the RF path, with ground pour around them.
+  Avoid channels within a few kHz of those frequencies. If they're audible on receive, fit the shield can.
+- **L6 (not fitted):** before fitting, measure U6 pin 12 for DC with the module receiving and transmitting into a
+  dummy load. Fit it only if it reads 0 V.
+- **R31 (28.0k 0.1 % thin film, sets 4.2 V):** no LCSC listing was found. Pick an equivalent at JLC or fit it by
+  hand (Yageo RT0603BRD0728KL).
 - **Check harmonics** on a spectrum analyser after the first build, before connecting an antenna.
 - **SMA stock:** about 340 at JLC when checked (Nov 2026).
 - **Frequency range:** this module revision is specified to 470 MHz. NiceRF's current page says 480 MHz.
