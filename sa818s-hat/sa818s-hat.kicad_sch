@@ -2572,7 +2572,7 @@
 		)
 		(uuid "36e2c557-2c2a-4fba-9b6f-1167ab8ec281")
 	)
-	(text "ID_SD and ID_SC PINS:\nThese pins are reserved for HAT ID EEPROM.\n\nAt boot time this I2C interface will be\ninterrogated to look for an EEPROM\nthat identifes the attached board and\nallows automagic setup of the GPIOs\n(and optionally, Linux drivers).\n\nR3 holds WP high: write-protected.\nBridge JP1 (or ground TP1) to write it.\n\nDO NOT USE these pins for anything other\nthan attaching an I2C ID EEPROM. Leave\nunconnected if ID EEPROM not required."
+	(text "ID_SD and ID_SC PINS:\nThese pins are reserved for HAT ID EEPROM.\n\nAt boot time this I2C interface will be\ninterrogated to look for an EEPROM\nthat identifes the attached board and\nallows automagic setup of the GPIOs\n(and optionally, Linux drivers).\n\nR3 holds WP high: write-protected.\nGround TP1 to write it.\n\nDO NOT USE these pins for anything other\nthan attaching an I2C ID EEPROM. Leave\nunconnected if ID EEPROM not required."
 		(exclude_from_sim no)
 		(at 16.51 193.04 0)
 		(effects
@@ -2826,16 +2826,6 @@
 			(type solid)
 		)
 		(uuid "339c1cb3-13cc-4af2-b40d-8433a6750a0e")
-	)
-	(wire
-		(pts
-			(xy 100.33 180.34) (xy 101.6 180.34)
-		)
-		(stroke
-			(width 0)
-			(type solid)
-		)
-		(uuid "339c1cb3-13cc-4af2-b40d-8433a6750a0f")
 	)
 	(wire
 		(pts
@@ -4308,74 +4298,6 @@
 		)
 	)
 	(symbol
-		(lib_id "Jumper:SolderJumper_2_Open")
-		(at 96.52 180.34 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "43e66c4c-de75-44f8-8171-19825b035cbb")
-		(property "Reference" "JP1"
-			(at 96.52 183.623 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "WP write enable"
-			(at 96.52 177.546 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Footprint" "Jumper:SolderJumper-2_P1.3mm_Open_RoundedPad1.0x1.5mm"
-			(at 96.52 180.34 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 96.52 180.34 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Solder Jumper, 2-pole, open"
-			(at 96.52 180.34 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "6027cf18-3c97-476a-914a-bf03e2794017")
-		)
-		(pin "2"
-			(uuid "d8307d78-9c27-4726-8324-ecb2ccfc08bc")
-		)
-		(instances
-			(project "sa818s-hat"
-				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55"
-					(reference "JP1")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Device:R_Small")
 		(at 101.6 170.18 0)
 		(unit 1)
@@ -4674,72 +4596,6 @@
 			(project "sa818s-hat"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55"
 					(reference "#PWR0102")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:GND")
-		(at 101.6 180.34 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "d61534ae-80e4-4b99-8acb-48c690b6a4fa")
-		(property "Reference" "#PWR0103"
-			(at 97.79 180.34 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Value" "GND"
-			(at 101.6 184.15 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" ""
-			(at 101.6 180.34 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" ""
-			(at 101.6 180.34 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 101.6 180.34 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "2b1fada1-50b0-4e5a-82fb-a68db6a5e608")
-		)
-		(instances
-			(project "sa818s-hat"
-				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55"
-					(reference "#PWR0103")
 					(unit 1)
 				)
 			)
@@ -5196,7 +5052,7 @@
 		)
 		(uuid "2552347f-ce40-589f-8e06-c554e407b79f")
 	)
-	(text "Close JP1 (or ground TP1) to write the EEPROM."
+	(text "Ground TP1 to write the EEPROM."
 		(exclude_from_sim no)
 		(at 115.57 193.04 0)
 		(effects

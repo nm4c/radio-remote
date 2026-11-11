@@ -11,10 +11,10 @@ NET = os.path.join(PROJ, "build", "sa818s-hat.net")
 
 ROOT = {
     "+5V": "J1.2 J1.4",
-    "GND": "J1.6 J1.9 J1.14 J1.20 J1.25 J1.30 J1.34 J1.39 U1.1 U1.2 U1.3 U1.4 JP1.2 C1.2",
+    "GND": "J1.6 J1.9 J1.14 J1.20 J1.25 J1.30 J1.34 J1.39 U1.1 U1.2 U1.3 U1.4 C1.2",
     "ID_SD": "U1.5 R1.2 J1.27",
     "ID_SC": "U1.6 R2.2 J1.28",
-    "EE_WP": "U1.7 JP1.1 R3.2 TP1.1",
+    "EE_WP": "U1.7 R3.2 TP1.1",
     "+3V3": "U1.8 R1.1 R2.1 C1.1 R3.1 J1.1 J1.17",
 }
 POWER = {   # pihat power sheet with supply="pi": codec rails and LED only, 5 V from the Pi

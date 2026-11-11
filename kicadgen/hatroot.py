@@ -212,6 +212,23 @@ def root_eeprom(text, ru, fields, eeprom="U1", jumper="JP1", pullup="R3"):
     return text[:k] + extra + text[k:]
 
 
+def drop_wp_jumper(text, jumper="JP1", gnd="#PWR0103", pullup="R3"):
+    """Remove the EEPROM write-enable solder jumper that root_eeprom leaves on the template sheet,
+    with its ground symbol and the stub between them. WP stays pulled up by `pullup`; ground TP1
+    to write the EEPROM. Safe to run again."""
+    if f'(property "Reference" "{jumper}"' not in text:
+        return text
+    for ref in (jumper, gnd):
+        st, en = _symbol_block(text, ref)
+        text = text[:st] + text[en:]
+    m = re.search(r'\n\t\(wire\n\t\t\(pts\n\t\t\t\(xy 100\.33 180\.34\) \(xy 101\.6 180\.34\)\n.*?\n\t\)\n', text, re.S)
+    if m:
+        text = text[:m.start() + 1] + text[m.end():]
+    text = text.replace(f"Bridge {jumper} (or ground TP1) to write it.", "Ground TP1 to write it.")
+    text = text.replace(f"Close {jumper} (or ground TP1) to write the EEPROM.", "Ground TP1 to write the EEPROM.")
+    return text
+
+
 def refresh_embedded(text, lib_ids=("Device:R_Small",)):
     """Replace the template's out-of-date embedded symbols with KiCad 10's.
 

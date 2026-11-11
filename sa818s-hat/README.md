@@ -13,7 +13,7 @@ experimental use.
 | Control | PTT via MOSFET (boots in receive), high/low power via open-drain MOSFET, power-down on GPIO27, busy from the module's AudioON on GPIO23 |
 | Audio | Codec headphone out → −30 dB → MIC_IN; AF_OUT → −6 dB → codec input. Direct, no transformers (shared ground). C0G coupling capacitors and thin-film resistors |
 | Power | **From the Pi's 5 V only** (power the Pi from its USB-C socket; no input of its own). Module: TPS7A94 ultra-low-noise LDO at 4.2 V, then a ferrite + polymer-tantalum pi-filter. Codec: TPS7A2033 (3.3 V analog) and TPS7A2018 (1.8 V digital core), each from 5 V so the digital core's current pulses stay off the analog rail |
-| ID EEPROM | AT24C32D, write-protected by default (R3 pull-up), JP1 to write |
+| ID EEPROM | AT24C32D, write-protected by default (R3 pull-up); ground test point TP1 while writing it |
 
 ## GPIO use
 
