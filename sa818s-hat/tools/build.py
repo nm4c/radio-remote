@@ -23,7 +23,7 @@ sys.path.insert(0, HERE)
 import kicadlib  # noqa: E402
 import schbuild  # noqa: E402
 import sharedlib  # noqa: E402
-from hatroot import check as kicad_check, drop_wp_jumper, ensure_sheet, globalize_root, refresh_embedded, root_eeprom, root_uuid  # noqa: E402
+from hatroot import check as kicad_check, drop_wp_jumper, ensure_sheet, set_dnp, globalize_root, refresh_embedded, root_eeprom, root_uuid  # noqa: E402
 import sheet_power  # noqa: E402  (pihat)
 import sheet_codec  # noqa: E402  (pihat)
 import sheet_rfpower  # noqa: E402
@@ -91,6 +91,7 @@ def build():
     text = globalize_root(open(ROOT).read(), GLOBAL_NETS | set(RENAME), RENAME)
     text = root_eeprom(text, root_uuid(text), ROOT_FIELDS, eeprom="U1", jumper="JP1", pullup="R3")
     text = drop_wp_jumper(text)   # no solder jumper: ground TP1 to write the EEPROM
+    text = set_dnp(text, "J1")    # GPIO socket: hand-soldered, left out of JLC assembly and the BOM
     text = refresh_embedded(text)
     ru = root_uuid(text)
     for page, (name, fname, fn, at) in enumerate(SHEETS, start=2):
