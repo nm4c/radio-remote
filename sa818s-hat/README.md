@@ -54,8 +54,6 @@ The Pi 4's main UART is normally used by Bluetooth. Add `dtoverlay=disable-bt` (
   Avoid channels within a few kHz of those frequencies. If they're audible on receive, fit the shield can.
 - **L6 (not fitted):** before fitting, measure U6 pin 12 for DC with the module receiving and transmitting into a
   dummy load. Fit it only if it reads 0 V.
-- **R31 (28.0k 0.1 % thin film, sets 4.2 V):** no LCSC listing was found. Pick an equivalent at JLC or fit it by
-  hand (Yageo RT0603BRD0728KL).
 - **Check harmonics** on a spectrum analyser after the first build, before connecting an antenna.
 - **Frequency range:** this module revision is specified to 470 MHz. NiceRF's current page says 480 MHz.
 

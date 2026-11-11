@@ -3445,7 +3445,18 @@
 				)
 			)
 		)
-		(property "MPN" "Yageo RT0603BRD0728KL (thin film, 0.1%, 25 ppm/C)"
+		(property "LCSC" "C667083"
+			(at 40.64 106.68 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "FH TD03G2802BT (thin film, 0.1%, 25 ppm/C); alt. Vishay TNPW060328K0BHEA C1714791"
 			(at 40.64 106.68 0)
 			(hide yes)
 			(show_name no)

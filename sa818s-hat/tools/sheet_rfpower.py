@@ -96,8 +96,8 @@ def build(path, page):
     # ---- set-up pins, drawn below and joined by labels
     y2 = 99.06
     s.text("OUTPUT SET  Vout = 150 uA x R31 = 4.20 V", (17.78, y2 - 5.08), 1.5, bold=True)
-    s.symbol("Device:R", "R31", "28.0k 0.1%", (40.64, y2 + 7.62), footprint=R0603,
-             fields={"MPN": "Yageo RT0603BRD0728KL (thin film, 0.1%, 25 ppm/C)"},
+    s.symbol("Device:R", "R31", "28.0k 0.1%", (40.64, y2 + 7.62), footprint=R0603, lcsc="C667083",
+             fields={"MPN": "FH TD03G2802BT (thin film, 0.1%, 25 ppm/C); alt. Vishay TNPW060328K0BHEA C1714791"},
              conn={"1": ("label", "NR_SS"), "2": G})
     s.symbol("Device:C", "C34", "10uF X7R 16V", (55.88, y2 + 7.62), footprint=C0805, lcsc="C95841",
              conn={"1": ("label", "NR_SS"), "2": G})
