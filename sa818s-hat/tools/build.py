@@ -55,8 +55,10 @@ def retune(sheet, parts):
     assert not left, f"retune: not found {sorted(left)}"
     return sheet
 SHEETS = [
-    ("Power", "power.kicad_sch", lambda p, n: retune(sheet_power.build(p, n, supply="pi", codec_ldo="tps7a2033"), {
-        "C25": ("10uF X7R 16V", "Capacitor_SMD:C_0805_2012Metric", "C95841")}), (210.82, 30.48)),
+    ("Power", "power.kicad_sch", lambda p, n: retune(sheet_power.build(p, n, supply="pi", codec_ldo="tps7a2033",
+                                                                         u5_from="5v"), {
+        "C25": ("10uF X7R", "Capacitor_SMD:C_0805_2012Metric", "C95841"),
+        **{c: ("1uF X7R", "Capacitor_SMD:C_0603_1608Metric", "C29936") for c in ("C24", "C26", "C27")}}), (210.82, 30.48)),
     ("RF power", "rfpower.kicad_sch", sheet_rfpower.build, (210.82, 53.34)),
     ("Transceiver", "transceiver.kicad_sch", sheet_rf.build, (210.82, 76.2)),
     ("Codec", "codec.kicad_sch", lambda p, n: retune(sheet_codec.build(p, n, hp_n=False, lib="sa818s-hat"), {

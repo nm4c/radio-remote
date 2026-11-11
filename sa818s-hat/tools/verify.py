@@ -18,8 +18,8 @@ ROOT = {
     "+3V3": "U1.8 R1.1 R2.1 C1.1 R3.1 J1.1 J1.17",
 }
 POWER = {   # pihat power sheet with supply="pi": codec rails and LED only, 5 V from the Pi
-    "+5V": "U4.1 U4.3 C24.1 R7.1",
-    "+3.3VA": "U4.5 C25.1 C26.1 U5.1 U5.3", "+1V8": "U5.5 C27.1", "LED": "R7.2 LED1.2",
+    "+5V": "U4.1 U4.3 C24.1 R7.1 U5.1 U5.3 C26.1",   # U5 (1.8 V digital core) from 5 V, not the analog rail
+    "+3.3VA": "U4.5 C25.1", "+1V8": "U5.5 C27.1", "LED": "R7.2 LED1.2",
     "GND": "U4.2 C24.2 C25.2 C26.2 U5.2 C27.2 LED1.1",
 }
 RFPOWER = {   # TPS7A94 LDO, 5 V -> 4.2 V for the module

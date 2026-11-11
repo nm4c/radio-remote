@@ -160,7 +160,8 @@ def _tps54360_comp_feedback(s, G):
 
 
 def build(path, page, fuse=("1.5A 33V", "C18198333"), vin_global=False, buck="tps54360",
-          tvs=("SMBJ24A", "C123819"), u5_cin=True, power_in=None, supply="vin", codec_ldo="tlv76133"):
+          tvs=("SMBJ24A", "C123819"), u5_cin=True, power_in=None, supply="vin", codec_ldo="tlv76133",
+          u5_from="3v3a"):
     """fuse: (value, LCSC) for F1. The SA818S board uses 2 A for a Pi 4 plus 1 W TX.
     vin_global: make VIN a global label (the SA818S board feeds its module supply from it).
     buck: "lmr33640" or "tps54360" (see the module notes). tvs: (value, LCSC) for D3; it must
@@ -170,7 +171,9 @@ def build(path, page, fuse=("1.5A 33V", "C18198333"), vin_global=False, buck="tp
     3.5 mm screw terminal. dnp=True marks it Do Not Populate (hand-soldered).
     supply: "vin" (13.8 V input and 5 V buck, the HAT powers the Pi) or "pi" (no input or buck:
     the HAT takes 5 V from the Pi, which is powered from its own USB-C socket).
-    codec_ldo: U4 for the codec's +3.3VA, "tlv76133" or "tps7a2033" (7 uVrms, high PSRR; SA818S HAT)."""
+    codec_ldo: U4 for the codec's +3.3VA, "tlv76133" or "tps7a2033" (7 uVrms, high PSRR; SA818S HAT).
+    u5_from: U5 (+1V8, codec DVDD) input: "3v3a" (from U4's output) or "5v" (SA818S HAT: keeps the digital
+    core's clock-rate current pulses off the analog rail)."""
     s = Sheet("Power", path, page)
     G = ("pwr", "GND")
     if supply == "pi":
@@ -178,7 +181,7 @@ def build(path, page, fuse=("1.5A 33V", "C18198333"), vin_global=False, buck="tp
         s.text("This board has no power input of its own. Use the official 5.1 V 3 A Pi supply:", (17.78, 45.72))
         s.text("Pi 4 up to about 1.3 A + SA818S 0.75 A on TX + codec under 50 mA = about 2.1 A.", (17.78, 49.53))
         s.power("+5V", (35.56, 60.96)); s.wire((35.56, 60.96), (50.8, 60.96)); s.flag((50.8, 60.96))
-        _codec_rails_and_led(s, G, u5_cin, codec_ldo)
+        _codec_rails_and_led(s, G, u5_cin, codec_ldo, u5_from)
         s.text("NOTES", (17.78, 162.56), 1.5, bold=True)
         for i, t in enumerate((
                 "+5V comes from the Pi (J1 pins 2 and 4). Nothing here feeds power back into the Pi.",
@@ -240,7 +243,7 @@ def build(path, page, fuse=("1.5A 33V", "C18198333"), vin_global=False, buck="tp
     else:
         _tps54360_comp_feedback(s, G)
 
-    _codec_rails_and_led(s, G, u5_cin, codec_ldo)
+    _codec_rails_and_led(s, G, u5_cin, codec_ldo, u5_from)
 
     # ---- notes
     s.text("NOTES", (17.78, 162.56), 1.5, bold=True)
@@ -267,7 +270,7 @@ def build(path, page, fuse=("1.5A 33V", "C18198333"), vin_global=False, buck="tp
     return s
 
 
-def _codec_rails_and_led(s, G, u5_cin, codec_ldo="tlv76133"):
+def _codec_rails_and_led(s, G, u5_cin, codec_ldo="tlv76133", u5_from="3v3a"):
     # ---- codec rails
     s.text("CODEC RAILS", (17.78, 127.0), 2.0, bold=True)
     y2 = 139.7
@@ -290,13 +293,24 @@ def _codec_rails_and_led(s, G, u5_cin, codec_ldo="tlv76133"):
     s.symbol("Regulator_Linear:TPS7A20xxxDBV", "U5", "TPS7A2018PDBVR", (111.76, y2 + 2.54), lcsc="C963430",
              ref_at=(111.76, 129.54), val_at=(111.76, 132.08), conn={"2": G, "4": ("nc",)})
     s.symbol("Device:C", "C25", "10uF", (73.66, y2 + 3.81), footprint=C0805, lcsc="C15850", conn={"2": G})
-    if u5_cin:
-        s.symbol("Device:C", "C26", "1uF", (88.9, y2 + 3.81), footprint=C0603, lcsc="C15849", conn={"2": G})
     vo, u5in, u5en = s.p(vo_pin), s.p("U5.1"), s.p("U5.3")
-    chain(s, [vo, (73.66, y2), (81.28, y2), (88.9, y2), (99.06, y2), u5in])
-    for x in ((73.66, 81.28, 88.9, 99.06) if u5_cin else (73.66, 81.28, 99.06)):
-        s.junction((x, y2))
-    s.power("+3.3VA", (81.28, y2))
+    if u5_from == "5v":
+        # +3.3VA feeds only the codec's analog supplies; U5 runs from +5V with its own input cap C26
+        s.symbol("Device:C", "C26", "1uF", (96.52, y2 + 3.81), footprint=C0603, lcsc="C15849", conn={"2": G},
+                 ref_at=(99.06, y2 + 12.7), val_at=(99.06, y2 + 15.24), ref_just="left", val_just="left")
+        chain(s, [vo, (73.66, y2), (81.28, y2)])
+        s.junction((73.66, y2))
+        s.power("+3.3VA", (81.28, y2))
+        chain(s, [(91.44, y2), (96.52, y2), (99.06, y2), u5in])
+        s.power("+5V", (91.44, y2))
+        s.junction((96.52, y2)); s.junction((99.06, y2))
+    else:
+        if u5_cin:
+            s.symbol("Device:C", "C26", "1uF", (88.9, y2 + 3.81), footprint=C0603, lcsc="C15849", conn={"2": G})
+        chain(s, [vo, (73.66, y2), (81.28, y2), (88.9, y2), (99.06, y2), u5in])
+        for x in ((73.66, 81.28, 88.9, 99.06) if u5_cin else (73.66, 81.28, 99.06)):
+            s.junction((x, y2))
+        s.power("+3.3VA", (81.28, y2))
     chain(s, [u5en, (99.06, u5en[1]), (99.06, y2)])
     s.symbol("Device:C", "C27", "1uF", (129.54, y2 + 3.81), footprint=C0603, lcsc="C15849", conn={"2": G})
     chain(s, [s.p("U5.5"), (129.54, y2), (137.16, y2)])
