@@ -1848,7 +1848,7 @@
 		)
 		(uuid "5ec5899b-9362-55a1-8c46-7d04acb294a0")
 	)
-	(text "Line-level inputs need about -6 to -12 dB, mic inputs about -40 dB."
+	(text "Line-level inputs need about -6 to -12 dB,"
 		(exclude_from_sim no)
 		(at 17.78 55.88 0)
 		(effects
@@ -1857,11 +1857,22 @@
 			)
 			(justify left bottom)
 		)
-		(uuid "3c389406-6224-5438-9955-52299b677515")
+		(uuid "f98a9066-423a-577d-84f8-b5cfa93afc40")
+	)
+	(text "  mic inputs about -40 dB."
+		(exclude_from_sim no)
+		(at 17.78 59.69 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "d34e672a-7895-5fe4-bb9f-99ca0b58414e")
 	)
 	(text "HPLCOM is set to 'differential of HPLOUT', so T1 sees no DC."
 		(exclude_from_sim no)
-		(at 17.78 59.69 0)
+		(at 17.78 63.5 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -1872,7 +1883,7 @@
 	)
 	(text "C1 blocks the radio's electret bias on the MIC pin."
 		(exclude_from_sim no)
-		(at 17.78 63.5 0)
+		(at 17.78 67.31 0)
 		(effects
 			(font
 				(size 1.27 1.27)

@@ -56,7 +56,7 @@ def _lmr33640(s, y, shunt_x, caps_in, vin_global, G):
     """LMR33640ADDA: EN tied to VIN, PG unused, 1 uF on VCC, boot cap, SW straight to L1."""
     s.symbol("Regulator_Switching:LMR33640ADDA", "U3", "LMR33640ADDAR", (170.18, 55.88), lcsc="C2836966",
              footprint=sharedlib.fp("Package_SO:Texas_HSOP-8-1EP_3.9x4.9mm_P1.27mm_ThermalVias"),
-             ref_at=(170.18, 41.91), val_at=(170.18, 74.93), conn={"4": ("nc",)})
+             ref_at=(170.18, 41.91), val_at=(170.18, 77.47), conn={"4": ("nc",)})
     vin = s.p("U3.2")
     _vin_rail(s, y, shunt_x, caps_in, vin, vin_global)
     en = s.p("U3.3")

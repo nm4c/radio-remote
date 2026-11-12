@@ -16,6 +16,15 @@ It has everything on one board:
 | [`docs/BOM.md`](docs/BOM.md) | BoM notes and cost summary |
 | [`docs/jlc-bom.csv`](docs/jlc-bom.csv) | JLCPCB assembly BoM |
 | `docs/schematic/gen.py` | Regenerates the schematic page and the CSV from one parts list |
+| [`docs/schematic.svg`](docs/schematic.svg) | The KiCad schematic, all sheets on one page (made by `tools/kicad/overview.py`) |
+
+## Schematic
+
+[![RadPi Control HAT schematic, all sheets on one page](docs/schematic.svg)](docs/schematic.svg)
+
+The whole circuit on one page, straight from the KiCad schematic (click to open it full size; part
+and net names are searchable). Labels with the same name are connected. Regenerate it with
+`python3 tools/kicad/overview.py` after changing the schematic.
 
 ## Software
 

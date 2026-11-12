@@ -55,7 +55,8 @@ def build(path, page):
     s.label("R_MIC", (190.5, yt), (1, 0), glob=True)
     for i, t in enumerate((
         "No pad: set the level in software (alsamixer HP volume).",
-        "Line-level inputs need about -6 to -12 dB, mic inputs about -40 dB.",
+        "Line-level inputs need about -6 to -12 dB,",
+        "  mic inputs about -40 dB.",
         "HPLCOM is set to 'differential of HPLOUT', so T1 sees no DC.",
         "C1 blocks the radio's electret bias on the MIC pin.",
     )):
