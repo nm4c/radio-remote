@@ -92,10 +92,11 @@ def build(path, page):
         s.wire((x, uy), s.p(f"{caps[nodes.index(x)][0]}.1"))
     for x in nodes[:-1]:
         s.junction((x, uy))
-    # J3: vertical SMD SMA (Kinghelm KH-SMAK-SMT), so it can sit right at the filter output and the
-    # antenna screws on through the top of the case. Brace the barrel in the case: SMD pads carry it.
-    s.symbol("Connector:Conn_Coaxial", "J3", "SMA vertical", (nodes[-1] + 30.48, uy), lcsc="C22371060",
-             footprint=f"{sharedlib.LIB}:{sharedlib.KH_SMAK}",
+    # J3: vertical through-hole SMA, hand-soldered (DNP for JLC). Four legs carry the antenna's leverage,
+    # and it sits right at the filter output with the antenna screwed on through the top of the case.
+    s.symbol("Connector:Conn_Coaxial", "J3", "SMA vertical THT", (nodes[-1] + 30.48, uy),
+             footprint="Connector_Coaxial:SMA_Amphenol_132134-11_Vertical", dnp=True, in_bom=False,
+             fields={"MPN": "Amphenol RF 132134-11, or any vertical THT SMA jack on a 5.08 mm leg square (e.g. LCSC C496549)"},
              ref_at=(nodes[-1] + 30.48, uy - 5.08), val_at=(nodes[-1] + 30.48, uy - 7.62))
     s.wire((nodes[-1], uy), s.p("J3.1"))
     s.junction((nodes[-1], uy))

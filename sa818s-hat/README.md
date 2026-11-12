@@ -9,7 +9,7 @@ experimental use.
 |---|---|
 | Transceiver | SA818S-U, frequency, CTCSS/DCS and squelch set over UART (9600 8N1, GPIO14/15) |
 | Harmonic filter | 7th-order Chebyshev low-pass, fc 500 MHz: −0.6 to −1.1 dB from 400–480 MHz, about −50 dB at 2nd harmonic of 476 MHz, −80 dB at the 3rd (simulated with real inductor Q). Murata LQW18AN wirewound 2 % inductors, C0G capacitors at ±0.1 pF / ±1 % |
-| Antenna | Vertical SMD SMA (Kinghelm KH-SMAK-SMT, LCSC C22371060, 50 Ω DC–6 GHz) at the filter output; the antenna screws on through the top of the case. Brace the barrel in the case hole: SMD pads carry it. Footprint for a 220 nH static-bleed inductor (L6, not fitted) |
+| Antenna | Vertical through-hole SMA (Amphenol 132134-11 footprint: any vertical THT SMA jack with legs on a 5.08 mm square), hand-soldered (not fitted by JLC), right at the filter output; the antenna screws on through the top of the case. Footprint for a 220 nH static-bleed inductor (L6, not fitted) |
 | Control | PTT via MOSFET (boots in receive), high/low power via open-drain MOSFET, power-down on GPIO27, busy from the module's AudioON on GPIO23 |
 | Audio | Codec headphone out → −30 dB → MIC_IN; AF_OUT → −6 dB → codec input. Direct, no transformers (shared ground). C0G coupling capacitors and thin-film resistors |
 | Power | **From the Pi's 5 V only** (power the Pi from its USB-C socket; no input of its own). Module: TPS7A94 ultra-low-noise LDO at 4.2 V, then a ferrite + polymer-tantalum pi-filter. Codec: TPS7A2033 (3.3 V analog) and TPS7A2018 (1.8 V digital core), each from 5 V so the digital core's current pulses stay off the analog rail |

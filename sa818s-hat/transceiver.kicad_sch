@@ -3863,10 +3863,10 @@
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
-		(in_bom yes)
+		(in_bom no)
 		(on_board yes)
 		(in_pos_files yes)
-		(dnp no)
+		(dnp yes)
 		(uuid "d01f8abb-e66d-5579-b1c2-f229ca84bb55")
 		(property "Reference" "J3"
 			(at 266.7 96.52 0)
@@ -3878,7 +3878,7 @@
 				)
 			)
 		)
-		(property "Value" "SMA vertical"
+		(property "Value" "SMA vertical THT"
 			(at 266.7 93.98 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3888,7 +3888,7 @@
 				)
 			)
 		)
-		(property "Footprint" "radio-remote:Kinghelm_KH-SMAK-SMT_SMA_Vertical"
+		(property "Footprint" "Connector_Coaxial:SMA_Amphenol_132134-11_Vertical"
 			(at 266.7 101.6 0)
 			(hide yes)
 			(show_name no)
@@ -3921,7 +3921,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C22371060"
+		(property "MPN" "Amphenol RF 132134-11, or any vertical THT SMA jack on a 5.08 mm leg square (e.g. LCSC C496549)"
 			(at 266.7 101.6 0)
 			(hide yes)
 			(show_name no)
