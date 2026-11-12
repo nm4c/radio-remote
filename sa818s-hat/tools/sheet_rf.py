@@ -161,7 +161,10 @@ def build(path, page):
     # UART: Pi TX -> 1k -> module RXD
     y = 50.8
     s.text("UART 9600 8N1 (GPIO14/15)", (17.78, y - 5.08), 1.27, bold=True)
-    s.symbol("Device:R", "R48", "1k", (38.1, y), rot=90, footprint=R0603, lcsc="C21190", ref_at=(38.1, y - 3.81), val_at=(38.1, y + 3.81))
+    # R48 10k: the Pi's TX idles high, and the SA818S must not have RXD held high while it sleeps
+    # (datasheet pin table: "pull low RXD before sleep ... current leakage or poor reset"). 10k keeps
+    # that leakage under 0.3 mA during boot; the server holds TX low (break) while the module sleeps.
+    s.symbol("Device:R", "R48", "10k", (38.1, y), rot=90, footprint=R0603, lcsc="C25804", ref_at=(38.1, y - 3.81), val_at=(38.1, y + 3.81))
     a, b = sorted([s.p("R48.1"), s.p("R48.2")])
     chain(s, [(27.94, y), a]); s.label("UART_TXD", (27.94, y), (-1, 0), glob=True)
 
