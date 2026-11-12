@@ -1,4 +1,4 @@
-# Radio Remote HAT
+# RadPi Control HAT
 
 A Raspberry Pi HAT that replaces the hand-wired interface in [`../docs/HARDWARE.md`](../docs/HARDWARE.md).
 It has everything on one board:
@@ -12,7 +12,7 @@ It has everything on one board:
 | File | What it is |
 |---|---|
 | `pihat.kicad_pro` / `.kicad_sch` / `.kicad_pcb` | KiCad project |
-| [`docs/schematic/radio-remote-hat.html`](docs/schematic/radio-remote-hat.html) | Reference schematic: 7 sheets, netlist, parts, pre-layout checks. Open it in a browser. |
+| [`docs/schematic/radpi-control-hat.html`](docs/schematic/radpi-control-hat.html) | Reference schematic: 7 sheets, netlist, parts, pre-layout checks. Open it in a browser. |
 | [`docs/BOM.md`](docs/BOM.md) | BoM notes and cost summary |
 | [`docs/jlc-bom.csv`](docs/jlc-bom.csv) | JLCPCB assembly BoM |
 | `docs/schematic/gen.py` | Regenerates the schematic page and the CSV from one parts list |
@@ -42,4 +42,4 @@ Reciprocal (CERN-OHL-S-2.0)**. See [`LICENSE`](LICENSE). The generator scripts i
 CERN-OHL-S asks that products made from the design say where the source can be found. Put this on
 the board's silkscreen during layout, for example:
 
-    Radio Remote HAT  CERN-OHL-S-2.0  github.com/nm4c/radio-remote
+    RadPi Control HAT  CERN-OHL-S-2.0  github.com/nm4c/radpi

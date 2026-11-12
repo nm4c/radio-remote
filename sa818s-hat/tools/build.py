@@ -1,4 +1,4 @@
-"""Generate the SA818S HAT schematic sheets, link them from the root, and run KiCad checks.
+"""Generate the SA818 HAT schematic sheets, link them from the root, and run KiCad checks.
 
 Usage (KiCad must not have the project open):
     python3 build.py            build + check
@@ -62,7 +62,7 @@ SHEETS = [
     ("RF power", "rfpower.kicad_sch", sheet_rfpower.build, (210.82, 53.34)),
     ("Transceiver", "transceiver.kicad_sch", sheet_rf.build, (210.82, 76.2)),
     ("Codec", "codec.kicad_sch", lambda p, n: retune(sheet_codec.build(p, n, hp_n=False, lib="sa818s-hat"), {
-        "C13": ("10uF X7R 16V", "Capacitor_SMD:C_0805_2012Metric", "C95841"),
+        "C13": ("10uF", "Capacitor_SMD:C_0805_2012Metric", "C95841"),
         "R16": ("100R", "Resistor_SMD:R_0603_1608Metric", "C22775")}), (210.82, 99.06)),
     ("Audio", "audio.kicad_sch", sheet_audio.build, (210.82, 121.92)),
 ]

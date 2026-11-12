@@ -1,12 +1,12 @@
 """Sheet: Power. 13.8 V input protection, 5 V buck, TLV76133 3.3VA and TPS7A2018 1V8 rails.
 
-With supply="pi" (SA818S HAT) there is no 13.8 V input or buck: the board runs from the Pi's 5 V
+With supply="pi" (SA818 HAT) there is no 13.8 V input or buck: the board runs from the Pi's 5 V
 (header pins 2 and 4, Pi powered from its USB-C socket), and this sheet has only the codec rails and LED.
 
 Two 5 V bucks are available:
   lmr33640  TI LMR33640ADDA (Pi HAT): synchronous, internally compensated, 400 kHz. No catch
             diode, compensation network or frequency resistor; 36 V max, so a 22 V TVS.
-  tps54360  TI TPS54360 (SA818S HAT): 60 V, external catch diode and type II compensation.
+  tps54360  TI TPS54360 (SA818 HAT): 60 V, external catch diode and type II compensation.
 """
 from schbuild import Sheet
 import sharedlib
@@ -171,8 +171,8 @@ def build(path, page, fuse=("1.5A 33V", "C18198333"), vin_global=False, buck="tp
     3.5 mm screw terminal. dnp=True marks it Do Not Populate (hand-soldered).
     supply: "vin" (13.8 V input and 5 V buck, the HAT powers the Pi) or "pi" (no input or buck:
     the HAT takes 5 V from the Pi, which is powered from its own USB-C socket).
-    codec_ldo: U4 for the codec's +3.3VA, "tlv76133" or "tps7a2033" (7 uVrms, high PSRR; SA818S HAT).
-    u5_from: U5 (+1V8, codec DVDD) input: "3v3a" (from U4's output) or "5v" (SA818S HAT: keeps the digital
+    codec_ldo: U4 for the codec's +3.3VA, "tlv76133" or "tps7a2033" (7 uVrms, high PSRR; SA818 HAT).
+    u5_from: U5 (+1V8, codec DVDD) input: "3v3a" (from U4's output) or "5v" (SA818 HAT: keeps the digital
     core's clock-rate current pulses off the analog rail)."""
     s = Sheet("Power", path, page)
     G = ("pwr", "GND")

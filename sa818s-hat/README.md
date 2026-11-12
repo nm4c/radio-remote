@@ -1,8 +1,8 @@
-# Radio Remote SA818S HAT
+# RadPi SA818 HAT
 
 A Raspberry Pi 4 HAT with a **built-in 1 W UHF FM transceiver**: no external radio. A NiceRF SA818S-U
 module (400–470 MHz) is controlled by the Pi over a serial port, with audio through the same
-TLV320AIC3104 I2S codec as the [Radio Remote HAT](../pihat/). It's meant for licensed amateur or
+TLV320AIC3104 I2S codec as the [RadPi Control HAT](../pihat/). It's meant for licensed amateur or
 experimental use.
 
 | Block | What's on the board |
@@ -14,6 +14,14 @@ experimental use.
 | Audio | Codec headphone out → −30 dB → MIC_IN; AF_OUT → −6 dB → codec input. Direct, no transformers (shared ground). C0G coupling capacitors and thin-film resistors |
 | Power | **From the Pi's 5 V only** (power the Pi from its USB-C socket; no input of its own). Module: TPS7A94 ultra-low-noise LDO at 4.2 V, then a ferrite + polymer-tantalum pi-filter. Codec: TPS7A2033 (3.3 V analog) and TPS7A2018 (1.8 V digital core), each from 5 V so the digital core's current pulses stay off the analog rail |
 | ID EEPROM | AT24C32D, write-protected by default (R3 pull-up); ground test point TP1 while writing it |
+
+## Schematic
+
+[![RadPi SA818 HAT schematic, all sheets on one page](docs/schematic.svg)](docs/schematic.svg)
+
+The whole circuit on one page (click to open it full size; part and net names are searchable). Labels
+with the same name are connected. Regenerate it with `python3 tools/overview.py` after changing the
+schematic.
 
 ## GPIO use
 
@@ -35,6 +43,7 @@ The Pi 4's main UART is normally used by Bluetooth. Add `dtoverlay=disable-bt` (
 |---|---|
 | `sa818s-hat.kicad_pro` / `.kicad_sch` / `.kicad_pcb` | KiCad project (from KiCad's built-in Raspberry Pi HAT template) |
 | `sa818s-hat.kicad_sym`, `sa818s-hat.pretty/` | Project library: SA818S symbol and footprint, codec symbol |
+| `docs/schematic.svg` | The full schematic on one page (made by `tools/overview.py`) |
 | `tools/` | Generator for the sheets (`build.py`) and netlist check (`verify.py`). Uses the shared code in `../kicadgen/` and the power and codec sheets from `../pihat/tools/kicad/` |
 
 ## Before layout

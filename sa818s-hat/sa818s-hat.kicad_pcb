@@ -1606,7 +1606,7 @@
 			)
 		)
 	)
-	(footprint "radio-remote:Oscillator_SMD_Abracon_ASE-4Pin_3.2x2.5mm"
+	(footprint "radpi:Oscillator_SMD_Abracon_ASE-4Pin_3.2x2.5mm"
 		(layer "F.Cu")
 		(uuid "2cc9ac04-b44d-4835-803d-203f047cf52d")
 		(at 161.70171 54.713664 180)
@@ -3961,7 +3961,7 @@
 				)
 			)
 		)
-		(property "Value" "10uF X7R 16V"
+		(property "Value" "10uF"
 			(at 0 1.68 90)
 			(layer "F.Fab")
 			(uuid "c9b67b2e-d3a1-435d-8e67-5ee787eaf51d")
@@ -8943,7 +8943,7 @@
 			)
 		)
 	)
-	(footprint "radio-remote:Texas_DSC0010J_ThermalVias"
+	(footprint "radpi:Texas_DSC0010J_ThermalVias"
 		(layer "F.Cu")
 		(uuid "a11a395d-5aa0-4b83-a7d6-23c8788b4b2e")
 		(at 107 60.75)

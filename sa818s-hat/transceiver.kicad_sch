@@ -8,7 +8,7 @@
 		(title "Transceiver")
 		(date "2026-11-02")
 		(rev "A")
-		(company "Radio Remote HAT")
+		(company "RadPi")
 	)
 	(lib_symbols
 		(symbol "sa818s-hat:SA818S"

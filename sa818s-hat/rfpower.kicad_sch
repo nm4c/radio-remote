@@ -8,7 +8,7 @@
 		(title "RF power")
 		(date "2026-11-02")
 		(rev "A")
-		(company "Radio Remote HAT")
+		(company "RadPi")
 	)
 	(lib_symbols
 		(symbol "Device:C"
@@ -311,7 +311,7 @@
 					)
 				)
 			)
-			(property "Footprint" "radio-remote:Texas_DSC0010J_ThermalVias"
+			(property "Footprint" "radpi:Texas_DSC0010J_ThermalVias"
 				(at 0 0 0)
 				(hide yes)
 				(effects
@@ -1689,7 +1689,7 @@
 				)
 			)
 		)
-		(property "Footprint" "radio-remote:Texas_DSC0010J_ThermalVias"
+		(property "Footprint" "radpi:Texas_DSC0010J_ThermalVias"
 			(at 116.84 60.96 0)
 			(hide yes)
 			(show_name no)

@@ -1,4 +1,4 @@
-"""Radio Remote server."""
+"""RadPi server."""
 
 import os
 

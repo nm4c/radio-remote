@@ -1,4 +1,4 @@
-# Radio Remote
+# RadPi
 
 A web-based remote head for a two-way radio, running on a Raspberry Pi. You can
 receive audio, push-to-talk with your computer or phone microphone, and change channels
@@ -13,8 +13,8 @@ There are two hardware modes, set with `radio.type` in `config.yaml`:
 
 | `radio.type` | Hardware | Channels |
 |---|---|---|
-| `buttons` (default) | An external radio through the **[Radio Remote HAT](pihat/)** (or hand-wired optos, [docs/HARDWARE.md](docs/HARDWARE.md)) | The radio's own channels, stepped with UP/DOWN presses |
-| `sa818` | The **[SA818S HAT](sa818s-hat/)**: a 1 W UHF transceiver on the HAT, no external radio | A frequency/tone list in `config.yaml`, set over the module's serial port, plus direct frequency entry. Shows signal strength (RSSI) |
+| `buttons` (default) | An external radio through the **[RadPi Control HAT](pihat/)** (or hand-wired optos, [docs/HARDWARE.md](docs/HARDWARE.md)) | The radio's own channels, stepped with UP/DOWN presses |
+| `sa818` | The **[RadPi SA818 HAT](sa818s-hat/)**: a 1 W UHF transceiver on the HAT, no external radio | A frequency/tone list in `config.yaml`, set over the module's serial port, plus direct frequency entry. Shows signal strength (RSSI) |
 
 ```
  Browser (phone / PC)                     Raspberry Pi                      Radio  
@@ -44,7 +44,7 @@ There are two hardware modes, set with `radio.type` in `config.yaml`:
   clip list. See [Recording](#recording).
 - A radio-style control head: a desk head on wide screens and a portrait handheld on phones.
   See [Control head](#control-head).
-- With the SA818S HAT: frequencies, repeater offsets and CTCSS/DCS per channel, a VFO for any
+- With the RadPi SA818 HAT: frequencies, repeater offsets and CTCSS/DCS per channel, a VFO for any
   frequency in the band, and an RSSI bar on the display.
 - Several operators can listen at once. Only one can transmit, and the others see who's on air.
 - Personal accounts with **control** (everything) or **listen** (hear only) roles, an audit log of
@@ -60,7 +60,7 @@ There are two hardware modes, set with `radio.type` in `config.yaml`:
 ## Try it on your laptop (no hardware)
 
 ```bash
-cd radio-remote
+cd radpi
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp config.example.yaml config.yaml
@@ -144,7 +144,7 @@ message.
 - **Level:** every clip is played with its peak at `clips.level`, so loud and quiet recordings
   go out alike. Like voice, it then goes through `audio.tx_gain` and the sound card's mixer.
 
-The files are kept in `clips.dir` (`/opt/radio-remote/clips` on an install), as WAV files with
+The files are kept in `clips.dir` (`/opt/radpi/clips` on an install), as WAV files with
 a `clips.json` list. `update.sh` leaves them alone. **Listen** next to a clip plays it in the
 browser, where you can also save it. **Rename** gives a clip or recording a new name (up to
 40 characters) for everyone; the file on the Pi keeps its ID, so nothing else changes.
@@ -225,35 +225,41 @@ also raises the level, so recheck deviation after a big change. Selcall tones ar
 ## Install on the Pi
 
 1. Build the interface: see **[docs/HARDWARE.md](docs/HARDWARE.md)**. It has generic wiring plus IC-F621 notes.
-   Or use the **[Radio Remote HAT](pihat/)**, a Pi HAT with the interface, sound card and power supply on one board.
+   Or use the **[RadPi Control HAT](pihat/)**, a Pi HAT with the interface, sound card and power supply on one board.
 2. Copy this folder to the Pi and run:
    ```bash
    sudo ./deploy/install.sh
-   sudo nano /opt/radio-remote/config.yaml
+   sudo nano /opt/radpi/config.yaml
    ```
    Set `radio.type`, the channels (`channel.count` / `names` for an external radio,
-   `channel.list` for the SA818S HAT; the SA818S HAT also needs the UART set up, see the `sa818:` section), and the sound card
+   `channel.list` for the RadPi SA818 HAT; that board also needs the UART set up, see the `sa818:` section), and the sound card
    (`input_device` / `output_device`, for example `"USB Audio"`. List them with
-   `/opt/radio-remote/.venv/bin/python -m sounddevice`).
-3. Make your login: `sudo radio-users add <your-callsign> --role control` (see
+   `/opt/radpi/.venv/bin/python -m sounddevice`).
+3. Make your login: `sudo radpi-users add <your-callsign> --role control` (see
    [Accounts and security](#accounts-and-security)).
-4. `sudo systemctl start radio-remote` and watch the log with `journalctl -u radio-remote -f`.
+4. `sudo systemctl start radpi` and watch the log with `journalctl -u radpi -f`.
 
 ### Updating
 
-Keep a git clone on the Pi (`git clone https://github.com/nm4c/radio-remote.git`) and run, from it:
+Keep a git clone on the Pi (`git clone https://github.com/nm4c/radpi.git`) and run, from it:
 
 ```bash
-sudo ./deploy/update.sh            # git pull, copy the code to /opt/radio-remote, restart
+sudo ./deploy/update.sh            # git pull, copy the code to /opt/radpi, restart
 sudo ./deploy/update.sh --no-pull  # deploy the clone as it is, without pulling
 ```
 
-It copies only `server/`, `web/` and `requirements.txt` (and installs `radio-users`), so
+It copies only `server/`, `web/` and `requirements.txt` (and installs `radpi-users`), so
 `config.yaml`, `state.json`, the account database `radio.db`, `tls/`, the audio clips and the
 Python venv are left alone. It reinstalls Python packages only when `requirements.txt`
 changed, reloads systemd only when the service file changed, and prints the log if the service
 fails to come back up. New config options get their defaults until you add them to `config.yaml`
 (see `config.example.yaml`).
+
+The project used to be called Radio Remote. On an install from then (`/opt/radio-remote`),
+the next `update.sh` moves everything to `/opt/radpi` (config, accounts, audit log, clips and
+certificates), replaces the `radio-remote` service with `radpi` and `radio-users` with
+`radpi-users`, and rebuilds the venv. Your clone keeps pulling from the old GitHub address, which
+redirects; to tidy it up, run `git remote set-url origin https://github.com/nm4c/radpi.git`.
 
 ### Remote access over HTTPS (needed for the microphone)
 
@@ -286,18 +292,18 @@ Things to know:
 
 Each operator logs in with their own username and password. Their display name (callsign) is
 what other operators see and what the audit log records. Accounts live in `radio.db` (SQLite,
-readable only by the `radio` user), managed with `radio-users` on the Pi:
+readable only by the `radio` user), managed with `radpi-users` on the Pi:
 
 ```bash
-sudo radio-users add vk3abc --role control --name "VK3ABC"   # asks for the password
-sudo radio-users add visitor --role listen
-sudo radio-users list                    # accounts, roles, last login
-sudo radio-users passwd vk3abc           # new password; ends that user's sessions
-sudo radio-users role visitor control    # promote / demote
-sudo radio-users disable visitor         # block logins, disconnect now
-sudo radio-users sessions                # devices kept logged in
-sudo radio-users logout vk3abc           # end all of a user's sessions
-sudo radio-users log --days 1            # the audit log
+sudo radpi-users add vk3abc --role control --name "VK3ABC"   # asks for the password
+sudo radpi-users add visitor --role listen
+sudo radpi-users list                    # accounts, roles, last login
+sudo radpi-users passwd vk3abc           # new password; ends that user's sessions
+sudo radpi-users role visitor control    # promote / demote
+sudo radpi-users disable visitor         # block logins, disconnect now
+sudo radpi-users sessions                # devices kept logged in
+sudo radpi-users logout vk3abc           # end all of a user's sessions
+sudo radpi-users log --days 1            # the audit log
 ```
 
 Changes apply within about 5 seconds, also to operators who are connected: a disabled account
@@ -312,7 +318,7 @@ is disconnected, and a demoted one loses PTT straight away.
 duration, channel and kind (voice, voice effect, selcall, clip); channel changes, tune and sync;
 selcalls; clip uploads, plays, stops and deletes; recording start and stop; voice effect changes;
 refused actions from listen accounts; password and account changes. Kept for
-`server.audit_days` (365). Read it with `sudo radio-users log`.
+`server.audit_days` (365). Read it with `sudo radpi-users log`.
 
 **Passwords and sessions.**
 - Passwords are stored as scrypt hashes, never in plain text, and must be at least 8 characters.
@@ -333,7 +339,7 @@ refused actions from listen accounts; password and account changes. Kept for
 
 **Upgrading from the shared password.** If `server.password` is still set the first time the new
 version starts, it becomes a `control` account called `operator`, so everyone can still get in.
-Make personal accounts, then `sudo radio-users delete operator` and remove `password` from
+Make personal accounts, then `sudo radpi-users delete operator` and remove `password` from
 `config.yaml`.
 
 ## Channel tracking
@@ -386,7 +392,7 @@ server/   main.py (web + WebSocket + safety watchdog), radio.py (PTT, channels, 
           sa818.py (SA818S module over UART), rtc.py (WebRTC audio), audio.py (sound card, resampling),
           selcall.py (selcall tones: encoder and decoder), clips.py (stored audio clips),
           recorder.py (recording received audio into the clip list), auth.py (accounts, sessions,
-          audit log), users.py (the radio-users tool),
+          audit log), users.py (the radpi-users tool),
           eq.py (TX tone control), voicefx.py (voice effects)
 web/      index.html, app.js, worklet.js (AudioWorklet capture/playback), style.css,
           control-head/ (control head SVGs and their input handling, control_head.js)
@@ -413,7 +419,7 @@ but anything you distribute that's based on it must be shared under the same ter
 | Hardware: the KiCad projects in `pihat/` and `sa818s-hat/` (schematics, PCB, symbols, footprints), `pihat/docs/` | CERN-OHL-S v2 | [`pihat/LICENSE`](pihat/LICENSE), [`sa818s-hat/LICENSE`](sa818s-hat/LICENSE) |
 | Documentation: this README and `docs/` | CC BY-SA 4.0 | [`docs/LICENSE`](docs/LICENSE) |
 
-Copyright © 2026 nmc. Source: <https://github.com/nm4c/radio-remote>
+Copyright © 2026 nmc. Source: <https://github.com/nm4c/radpi>
 
 The HAT schematic started from KiCad's built-in Raspberry Pi HAT template, which KiCad's library
 licence lets you use in any design without passing on its terms. A future custom device-tree overlay

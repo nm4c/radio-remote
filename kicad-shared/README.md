@@ -22,7 +22,7 @@ The XY2500V STEP files are the exception to "no offset": as LCSC ships them they
 low and 7.1 mm off front-to-back, so their footprints apply (row centre, 7.1, 10.5) mm (the footprint origin is pin 1). That was measured
 against LCSC's own VRML of the same parts in edge-on renders, to about 0.05 mm.
 
-## `radio-remote.pretty/`
+## `radpi.pretty/`
 
 Copies of stock KiCad footprints whose 3D model reference is broken in KiCad 10, with the model
 fixed. Regenerated from the installed KiCad library on every build, so don't edit them by hand.

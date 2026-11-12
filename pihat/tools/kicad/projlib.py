@@ -170,7 +170,7 @@ def register(proj):
         path = os.path.join(proj, fname)
         text = open(path).read() if os.path.exists(path) else f"({root}\n\t(version 7)\n)\n"
         if '(name "pihat")' not in text:
-            entry = f'\t(lib (name "pihat")(type "{kind}")(uri "{uri}")(options "")(descr "Radio Remote HAT parts"))\n'
+            entry = f'\t(lib (name "pihat")(type "{kind}")(uri "{uri}")(options "")(descr "RadPi Control HAT parts"))\n'
             i = text.rstrip().rindex(")")
             text = text[:i] + entry + text[i:]
             open(path, "w").write(text)

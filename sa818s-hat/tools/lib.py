@@ -1,4 +1,4 @@
-"""SA818S HAT project library: symbols and footprints KiCad doesn't ship.
+"""SA818 HAT project library: symbols and footprints KiCad doesn't ship.
 
   SA818S        NiceRF SA818S-U 1 W UHF transceiver module (pin table: datasheet Rev 1.3, section 9)
   TLV320AIC3104 shared with the pihat board (same codec circuit)
@@ -140,7 +140,7 @@ def write_all(proj):
         path = os.path.join(proj, fname)
         text = open(path).read() if os.path.exists(path) else f"({root}\n\t(version 7)\n)\n"
         if f'(name "{LIB}")' not in text:
-            entry = f'\t(lib (name "{LIB}")(type "KiCad")(uri "{uri}")(options "")(descr "Radio Remote SA818S HAT parts"))\n'
+            entry = f'\t(lib (name "{LIB}")(type "KiCad")(uri "{uri}")(options "")(descr "RadPi SA818 HAT parts"))\n'
             i = text.rstrip().rindex(")")
             text = text[:i] + entry + text[i:]
             open(path, "w").write(text)

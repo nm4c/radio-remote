@@ -119,6 +119,7 @@ def build(path, page, hp_n=True, lib="pihat", i2s_series=True):
 
     # +3V3 comes from the Pi through the header
     s.power("+3V3", (220.98, 45.72))
-    s.flag((220.98, 45.72))
+    s.flag((210.82, 45.72))          # beside the rail symbol, so the two names don't overlap
+    s.wire((210.82, 45.72), (220.98, 45.72))
     s.text("+3V3 from the Pi (header pins 1, 17)", (224.79, 46.99))
     return s

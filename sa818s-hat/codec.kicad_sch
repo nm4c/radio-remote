@@ -8,7 +8,7 @@
 		(title "Codec")
 		(date "2026-11-02")
 		(rev "A")
-		(company "Radio Remote HAT")
+		(company "RadPi")
 	)
 	(lib_symbols
 		(symbol "sa818s-hat:TLV320AIC3104"
@@ -3810,7 +3810,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "radio-remote:Oscillator_SMD_Abracon_ASE-4Pin_3.2x2.5mm"
+		(property "Footprint" "radpi:Oscillator_SMD_Abracon_ASE-4Pin_3.2x2.5mm"
 			(at 40.64 137.16 0)
 			(hide yes)
 			(show_name no)
@@ -4927,7 +4927,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "10uF X7R 16V"
+		(property "Value" "10uF"
 			(at 132.08 167.64 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -6012,7 +6012,7 @@
 	)
 	(symbol
 		(lib_id "power:PWR_FLAG")
-		(at 220.98 45.72 0)
+		(at 210.82 45.72 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -6022,7 +6022,7 @@
 		(dnp no)
 		(uuid "94d7dcab-1d92-5913-9051-1ef7b7e55ce1")
 		(property "Reference" "#FLG523"
-			(at 220.98 45.72 0)
+			(at 210.82 45.72 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -6033,7 +6033,7 @@
 			)
 		)
 		(property "Value" "PWR_FLAG"
-			(at 220.98 41.91 0)
+			(at 210.82 41.91 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -6043,7 +6043,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 220.98 45.72 0)
+			(at 210.82 45.72 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -6054,7 +6054,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 220.98 45.72 0)
+			(at 210.82 45.72 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -6065,7 +6065,7 @@
 			)
 		)
 		(property "Description" "Special symbol for telling ERC where power comes from"
-			(at 220.98 45.72 0)
+			(at 210.82 45.72 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -6086,6 +6086,17 @@
 				)
 			)
 		)
+	)
+	(wire
+		(pts
+			(xy 210.82 45.72)
+			(xy 220.98 45.72)
+		)
+		(stroke
+			(width 0)
+			(type solid)
+		)
+		(uuid "5f60bb19-ba38-561d-87c0-acf75c23070a")
 	)
 	(text "+3V3 from the Pi (header pins 1, 17)"
 		(exclude_from_sim no)

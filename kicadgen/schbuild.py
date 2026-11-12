@@ -211,7 +211,7 @@ class Sheet:
         root = ["kicad_sch", ["version", 20260306], ["generator", Q("eeschema")], ["generator_version", Q("10.0")],
                 ["uuid", self.uuid], ["paper", Q("A4")],
                 ["title_block", ["title", Q(self.title)], ["date", Q("2026-11-02")], ["rev", Q("A")],
-                 ["company", Q("Radio Remote HAT")]] + ([["comment", 1, Q(title_extra)]] if title_extra else []),
+                 ["company", Q("RadPi")]] + ([["comment", 1, Q(title_extra)]] if title_extra else []),
                 ["lib_symbols"] + list(self.libs.values())]
         root += self.items
         root.append(["embedded_fonts", "no"])

@@ -1,6 +1,6 @@
 (footprint "Xinlaiya_XY2500V-F-3.5_1x02_P3.50mm_Vertical"
 	(version 20260206)
-	(generator "radio_remote_sharedlib")
+	(generator "radpi_sharedlib")
 	(layer "F.Cu")
 	(descr "Xinlaiya XY2500V-F-3.5-2P vertical pluggable header, 3.5 mm pitch, closed ends, 8 A 300 V (LCSC C880554)")
 	(tags "Xinlaiya XY2500V terminal pluggable vertical 3.5mm")

@@ -869,7 +869,7 @@
 			)
 		)
 	)
-	(footprint "radio-remote:Fuse_1812_4532Metric"
+	(footprint "radpi:Fuse_1812_4532Metric"
 		(layer "F.Cu")
 		(uuid "0a92f2b1-a896-4bd8-8d05-b536737c8503")
 		(at 104.970986 90.56902 180)
@@ -1291,7 +1291,7 @@
 			)
 		)
 	)
-	(footprint "radio-remote:Xinlaiya_XY2500V-F-3.5_1x04_P3.50mm_Vertical"
+	(footprint "radpi:Xinlaiya_XY2500V-F-3.5_1x04_P3.50mm_Vertical"
 		(layer "F.Cu")
 		(uuid "105b68b9-de35-4b9d-92e3-e27d12e1165c")
 		(at 144.305 95.5)
@@ -3588,7 +3588,7 @@
 			)
 		)
 	)
-	(footprint "radio-remote:Oscillator_SMD_Abracon_ASE-4Pin_3.2x2.5mm"
+	(footprint "radpi:Oscillator_SMD_Abracon_ASE-4Pin_3.2x2.5mm"
 		(layer "F.Cu")
 		(uuid "2fc13e31-c14b-48fa-b9f9-2e8550fc6c61")
 		(at 158.55 52.825 180)
@@ -7445,7 +7445,7 @@
 			)
 		)
 	)
-	(footprint "radio-remote:Xinlaiya_XY2500V-F-3.5_1x06_P3.50mm_Vertical"
+	(footprint "radpi:Xinlaiya_XY2500V-F-3.5_1x06_P3.50mm_Vertical"
 		(layer "F.Cu")
 		(uuid "6a13f62f-c740-43b6-abc2-65ad8c106397")
 		(at 120.306645 95.5)
@@ -9191,7 +9191,7 @@
 			)
 		)
 	)
-	(footprint "radio-remote:Texas_HSOP-8-1EP_3.9x4.9mm_P1.27mm_ThermalVias"
+	(footprint "radpi:Texas_HSOP-8-1EP_3.9x4.9mm_P1.27mm_ThermalVias"
 		(layer "F.Cu")
 		(uuid "7bdba44f-99f3-4990-b1a9-30cceffdfe38")
 		(at 107.35 69.135)
@@ -11181,7 +11181,7 @@
 			)
 		)
 	)
-	(footprint "radio-remote:Xinlaiya_XY2500V-F-3.5_1x02_P3.50mm_Vertical"
+	(footprint "radpi:Xinlaiya_XY2500V-F-3.5_1x02_P3.50mm_Vertical"
 		(layer "F.Cu")
 		(uuid "af74962e-2e45-4c48-a207-e7ed09b74a9f")
 		(at 110.305 95.5)

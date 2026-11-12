@@ -140,16 +140,16 @@ class RemoteHead:
         pw = str(self.cfg["server"].get("password") or "")
         if self.db.count() or not pw or pw == "change-me":
             if not self.db.count():
-                log.warning("no operator accounts yet: create one with  sudo radio-users add <name>")
+                log.warning("no operator accounts yet: create one with  sudo radpi-users add <name>")
             return
         try:
             self.db.add("operator", check_password(pw), "control", "Operator")
         except AuthError as e:
-            log.warning("couldn't turn server.password into an account (%s): create one with radio-users", e)
+            log.warning("couldn't turn server.password into an account (%s): create one with radpi-users", e)
             return
         self.db.log("user_added", "migration", None, username="operator", role="control")
         log.warning("created account 'operator' (control) from server.password. Make personal accounts "
-                    "with radio-users, then remove server.password from the config.")
+                    "with radpi-users, then remove server.password from the config.")
 
     def audit(self, c, event, **detail):
         """Write to the audit log as operator c (or the system, when c is None)."""
@@ -850,7 +850,7 @@ class RemoteHead:
                         "kind": kind, "what": what, "t0": time.monotonic(), "channel": self.radio.channel}
 
     def _recheck_accounts(self):
-        """Apply radio-users changes to connected operators: disabled or deleted accounts and
+        """Apply radpi-users changes to connected operators: disabled or deleted accounts and
         ended sessions are disconnected; role changes take effect at once."""
         for c in list(self._authed()):
             try:
@@ -1007,7 +1007,7 @@ def build_app(cfg):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Radio remote head server")
+    ap = argparse.ArgumentParser(description="RadPi: radio remote head server")
     ap.add_argument("-c", "--config", default="config.yaml")
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args()

@@ -8,7 +8,7 @@
 		(title "Radio connectors")
 		(date "2026-11-02")
 		(rev "A")
-		(company "Radio Remote HAT")
+		(company "RadPi")
 	)
 	(lib_symbols
 		(symbol "Connector_Generic:Conn_01x04"
@@ -858,7 +858,7 @@
 				)
 			)
 		)
-		(property "Footprint" "radio-remote:Xinlaiya_XY2500V-F-3.5_1x04_P3.50mm_Vertical"
+		(property "Footprint" "radpi:Xinlaiya_XY2500V-F-3.5_1x04_P3.50mm_Vertical"
 			(at 50.8 58.42 0)
 			(hide yes)
 			(show_name no)
@@ -1190,7 +1190,7 @@
 				)
 			)
 		)
-		(property "Footprint" "radio-remote:Xinlaiya_XY2500V-F-3.5_1x06_P3.50mm_Vertical"
+		(property "Footprint" "radpi:Xinlaiya_XY2500V-F-3.5_1x06_P3.50mm_Vertical"
 			(at 50.8 106.68 0)
 			(hide yes)
 			(show_name no)

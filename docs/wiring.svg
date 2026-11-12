@@ -10,7 +10,7 @@
     .dotr { fill: #c2410c; }
   </style>
   <rect width="1190" height="830" fill="#ffffff"/>
-  <text x="30" y="28" font-size="18" font-weight="bold" fill="#111">Radio Remote: wiring</text>
+  <text x="30" y="28" font-size="18" font-weight="bold" fill="#111">RadPi: wiring</text>
   <text x="300" y="28" class="sm">Blue = Pi / sound-card side.  Orange = radio side.  The two sides only meet through optocouplers and transformers.  Dot = joined, plain crossing = not joined.</text>
 
   <!-- ===== Raspberry Pi ===== -->

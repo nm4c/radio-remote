@@ -8,7 +8,7 @@
 		(title "Power")
 		(date "2026-11-02")
 		(rev "A")
-		(company "Radio Remote HAT")
+		(company "RadPi")
 	)
 	(lib_symbols
 		(symbol "Connector:Screw_Terminal_01x02"
@@ -2930,7 +2930,7 @@
 				)
 			)
 		)
-		(property "Footprint" "radio-remote:Xinlaiya_XY2500V-F-3.5_1x02_P3.50mm_Vertical"
+		(property "Footprint" "radpi:Xinlaiya_XY2500V-F-3.5_1x02_P3.50mm_Vertical"
 			(at 25.4 50.8 0)
 			(hide yes)
 			(show_name no)
@@ -3020,7 +3020,7 @@
 				)
 			)
 		)
-		(property "Footprint" "radio-remote:Fuse_1812_4532Metric"
+		(property "Footprint" "radpi:Fuse_1812_4532Metric"
 			(at 49.53 50.8 0)
 			(hide yes)
 			(show_name no)
@@ -4206,7 +4206,7 @@
 				)
 			)
 		)
-		(property "Footprint" "radio-remote:Texas_HSOP-8-1EP_3.9x4.9mm_P1.27mm_ThermalVias"
+		(property "Footprint" "radpi:Texas_HSOP-8-1EP_3.9x4.9mm_P1.27mm_ThermalVias"
 			(at 170.18 55.88 0)
 			(hide yes)
 			(show_name no)

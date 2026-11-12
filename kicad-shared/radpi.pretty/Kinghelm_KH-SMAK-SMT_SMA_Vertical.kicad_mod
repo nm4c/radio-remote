@@ -1,6 +1,6 @@
 (footprint "Kinghelm_KH-SMAK-SMT_SMA_Vertical"
 	(version 20260206)
-	(generator "radio_remote_sharedlib")
+	(generator "radpi_sharedlib")
 	(layer "F.Cu")
 	(descr "Kinghelm KH-SMAK-SMT SMA jack, vertical, SMD, 50 ohm DC-6 GHz (LCSC C22371060)")
 	(tags "SMA vertical SMD Kinghelm")

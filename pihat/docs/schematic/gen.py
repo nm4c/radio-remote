@@ -1,12 +1,12 @@
-"""Generates the Radio Remote HAT schematic page (HTML + inline SVG) and the JLC BoM CSV.
+"""Generates the RadPi Control HAT schematic page (HTML + inline SVG) and the JLC BoM CSV.
 
-Usage:  python3 gen.py            (writes radio-remote-hat.html here and ../jlc-bom.csv)
+Usage:  python3 gen.py            (writes radpi-control-hat.html here and ../jlc-bom.csv)
 The parts list below (PARTS) is the single source for both outputs.
 """
 import csv, html, os, re, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "radio-remote-hat.html")
+OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "radpi-control-hat.html")
 CSV_OUT = os.path.join(HERE, "..", "jlc-bom.csv")
 CW = 6.3  # approx mono char width at 10.5px
 
@@ -175,7 +175,7 @@ class Sheet:
 
 # ================================================================= SHEET 1: overview
 def sheet_overview():
-    s = Sheet(1120, 470, "RADIO REMOTE HAT · REV A · SHEET 1/7")
+    s = Sheet(1120, 470, "RADPI CONTROL HAT · REV A · SHEET 1/7")
     def block(x, y, w, h, title, sub, side):
         s.add(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="3" class="blk blk-{side}"/>')
         s.text(x + 12, y + 22, title, "t-blk")
@@ -220,7 +220,7 @@ def sheet_overview():
 
 # ================================================================= SHEET 2: power
 def sheet_power():
-    s = Sheet(1120, 580, "RADIO REMOTE HAT · REV A · SHEET 3/7 · POWER")
+    s = Sheet(1120, 580, "RADPI CONTROL HAT · REV A · SHEET 3/7 · POWER")
     s.text(40, 52, "13.8 V INPUT PROTECTION + 5 V BUCK", "t-sec")
     e = s.ic(60, 120, 70, "J2", "XY2500V-F 2 way", [], [(1, "+13.8V"), (2, "GND")], top=30)
     s.poly([(160, 170), (180, 170), (180, 190)]); s.gnd(180, 190)
@@ -298,7 +298,7 @@ def sheet_power():
 
 # ================================================================= SHEET 3: control
 def sheet_control():
-    s = Sheet(1120, 560, "RADIO REMOTE HAT · REV A · SHEET 4/7 · CONTROL")
+    s = Sheet(1120, 560, "RADPI CONTROL HAT · REV A · SHEET 4/7 · CONTROL")
     s.text(40, 52, "OPTO-ISOLATED PTT · UP · DOWN · BUSY", "t-sec")
     P = 40
     rows = [120 + P * i for i in range(8)]
@@ -371,7 +371,7 @@ def sheet_control():
 
 # ================================================================= SHEET 4: radio connectors
 def sheet_connectors():
-    s = Sheet(1120, 640, "RADIO REMOTE HAT · REV A · SHEET 5/7 · RADIO CONNECTORS")
+    s = Sheet(1120, 640, "RADPI CONTROL HAT · REV A · SHEET 5/7 · RADIO CONNECTORS")
     s.text(40, 52, "PLUGGABLE TERMINAL HEADERS · XY2500V-F · 3.5 mm · vertical, closed ends", "t-sec")
     s.ic(140, 100, 90, "J3", "Audio · 4 way", [],
          [(1, "TX", "R_MIC", "rd"), (2, "TX ret", "RGND", "rd"), (3, "RX+", "R_SPP", "rd"), (4, "RX−", "R_SPN", "rd")],
@@ -405,7 +405,7 @@ def sheet_connectors():
 
 # ================================================================= SHEET 5: codec
 def sheet_codec():
-    s = Sheet(1120, 760, "RADIO REMOTE HAT · REV A · SHEET 6/7 · CODEC")
+    s = Sheet(1120, 760, "RADPI CONTROL HAT · REV A · SHEET 6/7 · CODEC")
     s.text(40, 52, "I2S CODEC · TLV320AIC3104 (RHB, QFN-32)", "t-sec")
     left = [(1, "MCLK"), (2, "BCLK"), (3, "WCLK"), (4, "DIN"), (5, "DOUT"),
             (8, "SCL", "I2C_SCL"), (9, "SDA", "I2C_SDA"), (7, "IOVDD", "3V3_PI"), (32, "DVDD", "1V8"),
@@ -488,7 +488,7 @@ def xfmr(s, x, y, ref, val):
 
 
 def sheet_audio():
-    s = Sheet(1120, 720, "RADIO REMOTE HAT · REV A · SHEET 7/7 · AUDIO ISOLATION + ID EEPROM")
+    s = Sheet(1120, 720, "RADPI CONTROL HAT · REV A · SHEET 7/7 · AUDIO ISOLATION + ID EEPROM")
     s.text(40, 52, "TX: CODEC → RADIO MIC", "t-sec")
     s.add('<line x1="440" y1="104" x2="440" y2="196" class="barrier"/>')
     s.add('<line x1="860" y1="314" x2="860" y2="406" class="barrier"/>')

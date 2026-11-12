@@ -1,20 +1,20 @@
-# Radio Remote – configuration
+# RadPi – configuration
 # Copy to config.yaml and edit.
 
 radio:
   # Shown in the web UI header and browser tab.
   name: "IC-F621"
   # Which hardware this Pi drives:
-  #   buttons  an external radio through the Radio Remote HAT (pihat/) or loose optocouplers:
+  #   buttons  an external radio through the RadPi Control HAT (pihat/) or loose optocouplers:
   #            PTT + channel UP/DOWN pressed on the mic lines. Uses gpio: and channel.count/names.
-  #   sa818    the SA818S HAT (sa818s-hat/): built-in UHF transceiver, frequencies set over the UART.
-  #            Uses the sa818: section and channel.list. See "SA818S HAT" at the end of this file.
+  #   sa818    the RadPi SA818 HAT (sa818s-hat/): built-in UHF transceiver, frequencies set over the UART.
+  #            Uses the sa818: section and channel.list. See "RadPi SA818 HAT" at the end of this file.
   type: buttons
 
 server:
   host: 0.0.0.0
   port: 8080
-  # Operators log in with their own accounts, made with `sudo radio-users add <name>` (see README,
+  # Operators log in with their own accounts, made with `sudo radpi-users add <name>` (see README,
   # "Accounts and security"). Roles: control (everything) or listen (hear only).
   # Upgrading from a version with one shared password? If server.password is still set when the
   # account database is empty, it becomes a control account called "operator". Make personal
@@ -155,7 +155,7 @@ webrtc:
   tx_prebuffer_ms: 40    # radio-side buffer while a WebRTC operator transmits (audio.tx_prebuffer_ms is the fallback's)
   tx_max_ms: 200         # if more than this piles up, the oldest audio is dropped to catch up
 
-# ---- SA818S HAT (radio.type: sa818) ---------------------------------------------------------
+# ---- RadPi SA818 HAT (radio.type: sa818) ---------------------------------------------------
 # On the HAT: PTT = GPIO17 (gpio.ptt_pin, active_high true), busy = the module's AudioON on GPIO23,
 # so set gpio.busy_pin: 23 and busy_pull_up: true. gpio.up_pin/down_pin aren't used.
 # The Pi 4's main UART is used by Bluetooth: add  dtoverlay=disable-bt  to /boot/firmware/config.txt,

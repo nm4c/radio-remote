@@ -1119,7 +1119,7 @@
 				)
 			)
 		)
-		(property "Footprint" "radio-remote:Texas_DSC0010J_ThermalVias"
+		(property "Footprint" "radpi:Texas_DSC0010J_ThermalVias"
 			(at 0 0 0)
 			(hide yes)
 			(effects

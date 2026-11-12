@@ -1,17 +1,17 @@
-"""radio-users: manage operator accounts and read the audit log.
+"""radpi-users: manage operator accounts and read the audit log.
 
-On the Pi (installed as /usr/local/bin/radio-users by install.sh / update.sh):
-    sudo radio-users add vk3abc --role control --name "VK3ABC Nick"
-    sudo radio-users add listener1 --role listen
-    sudo radio-users list
-    sudo radio-users passwd vk3abc
-    sudo radio-users role vk3abc listen
-    sudo radio-users disable vk3abc        (also ends its sessions)
-    sudo radio-users enable vk3abc
-    sudo radio-users delete vk3abc
-    sudo radio-users sessions              (who is kept logged in where)
-    sudo radio-users logout vk3abc         (end all of a user's sessions)
-    sudo radio-users log [--user vk3abc] [--days 7] [--limit 200]
+On the Pi (installed as /usr/local/bin/radpi-users by install.sh / update.sh):
+    sudo radpi-users add vk3abc --role control --name "VK3ABC Nick"
+    sudo radpi-users add listener1 --role listen
+    sudo radpi-users list
+    sudo radpi-users passwd vk3abc
+    sudo radpi-users role vk3abc listen
+    sudo radpi-users disable vk3abc        (also ends its sessions)
+    sudo radpi-users enable vk3abc
+    sudo radpi-users delete vk3abc
+    sudo radpi-users sessions              (who is kept logged in where)
+    sudo radpi-users logout vk3abc         (end all of a user's sessions)
+    sudo radpi-users log [--user vk3abc] [--days 7] [--limit 200]
 
 Changes take effect within a few seconds, even for operators who are connected now.
 Passwords are asked for without echo; --password-stdin reads one from standard input instead.
@@ -43,8 +43,8 @@ def _when(t):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(prog="radio-users", description="Manage Radio Remote operator accounts.")
-    ap.add_argument("-c", "--config", default="/opt/radio-remote/config.yaml")
+    ap = argparse.ArgumentParser(prog="radpi-users", description="Manage RadPi operator accounts.")
+    ap.add_argument("-c", "--config", default="/opt/radpi/config.yaml")
     sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("add", help="create an account")
     p.add_argument("username")
@@ -117,7 +117,7 @@ def main(argv=None):
                 extra = " ".join(f"{k}={v}" for k, v in detail.items())
                 print(f"{_when(e['t'])}  {e['user'] or '-':14s} {e['ip'] or '':16s} {e['event']:16s} {extra}")
     except AuthError as e:
-        sys.exit(f"radio-users: {e}")
+        sys.exit(f"radpi-users: {e}")
 
 
 if __name__ == "__main__":

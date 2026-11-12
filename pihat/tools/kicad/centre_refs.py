@@ -7,7 +7,7 @@ set to match). Footprints without a fab reference keep theirs; T1/T2 are centred
 
 Run after Update PCB from Schematic adds parts, with KiCad closed (it edits the board file):
     /Applications/KiCad/KiCad.app/Contents/Frameworks/Python.framework/Versions/3.9/bin/python3 centre_refs.py
-    ... centre_refs.py ../../../sa818s-hat/sa818s-hat.kicad_pcb      (the SA818S HAT)
+    ... centre_refs.py ../../../sa818s-hat/sa818s-hat.kicad_pcb      (the SA818 HAT)
 """
 import os
 import sys

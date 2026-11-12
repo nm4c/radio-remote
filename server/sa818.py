@@ -1,4 +1,4 @@
-"""SA818S built-in transceiver (the SA818S HAT).
+"""SA818S built-in transceiver (the RadPi SA818 HAT).
 
 The module is set over its serial port (9600 8N1, NiceRF SA818 programming manual):
   AT+DMOCONNECT                       handshake           -> +DMOCONNECT:0

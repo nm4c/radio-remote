@@ -1,4 +1,4 @@
 (sym_lib_table
 	(version 7)
-	(lib (name "pihat")(type "KiCad")(uri "${KIPRJMOD}/pihat.kicad_sym")(options "")(descr "Radio Remote HAT parts"))
+	(lib (name "pihat")(type "KiCad")(uri "${KIPRJMOD}/pihat.kicad_sym")(options "")(descr "RadPi Control HAT parts"))
 )

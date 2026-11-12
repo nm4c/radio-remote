@@ -11,7 +11,7 @@ Roles:
   control  everything.
 
 The server reads the database on every login and re-checks connected operators every few
-seconds, so `radio-users` (server/users.py) changes take effect while the server runs.
+seconds, so `radpi-users` (server/users.py) changes take effect while the server runs.
 """
 
 import base64

@@ -1,4 +1,4 @@
 (sym_lib_table
 	(version 7)
-	(lib (name "sa818s-hat")(type "KiCad")(uri "${KIPRJMOD}/sa818s-hat.kicad_sym")(options "")(descr "Radio Remote SA818S HAT parts"))
+	(lib (name "sa818s-hat")(type "KiCad")(uri "${KIPRJMOD}/sa818s-hat.kicad_sym")(options "")(descr "RadPi SA818 HAT parts"))
 )

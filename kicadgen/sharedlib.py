@@ -1,10 +1,10 @@
-"""Footprints and 3D models shared by the Radio Remote boards (pihat, sa818s-hat).
+"""Footprints and 3D models shared by the RadPi boards (pihat, sa818s-hat).
 
 Everything lives in kicad-shared/ at the repo root, next to both projects:
   kicad-shared/3dmodels/          STEP models KiCad's own library doesn't have. Downloaded from
                                   LCSC/EasyEDA for the exact parts (easyeda2kicad), each one
                                   checked to sit centred on its footprint's origin, at z = 0.
-  kicad-shared/radio-remote.pretty  Copies of stock KiCad footprints whose 3D model reference
+  kicad-shared/radpi.pretty  Copies of stock KiCad footprints whose 3D model reference
                                   is broken in KiCad 10 (renamed file, or no model at all),
                                   with the model path fixed. Regenerated from the installed
                                   KiCad library on every build.
@@ -17,7 +17,7 @@ import re
 KICAD = "/Applications/KiCad/KiCad.app/Contents/SharedSupport"
 REPO = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 SHARED = os.path.join(REPO, "kicad-shared")
-LIB = "radio-remote"
+LIB = "radpi"
 MODELS = "${KIPRJMOD}/../kicad-shared/3dmodels"
 STOCK3D = "${KICAD10_3DMODEL_DIR}"
 
@@ -43,7 +43,7 @@ FIXED = {
     "Package_SO:Texas_HSOP-8-1EP_3.9x4.9mm_P1.27mm_ThermalVias":
         f"{STOCK3D}/Package_SO.3dshapes/Texas_HTSOP-8-1EP_3.9x4.9mm_P1.27mm_EP2.95x4.9mm_Mask2.4x3.1mm_ThermalVias.step",
     "Package_SO:TI_SO-PowerPAD-8_ThermalVias": f"{STOCK3D}/Package_SO.3dshapes/TI_SO-PowerPAD-8.step",
-    # TI DSC (WSON-10 3 x 3 mm, TPS7A9401DSCR on the SA818S HAT): the footprint names a model KiCad
+    # TI DSC (WSON-10 3 x 3 mm, TPS7A9401DSCR on the SA818 HAT): the footprint names a model KiCad
     # doesn't ship. LCSC C5220127's model sits on KiCad's pads as drawn (checked in top and edge-on renders).
     "Package_SON:Texas_DSC0010J_ThermalVias": f"{MODELS}/TI_WSON-10_DSC.step",
 }
@@ -78,7 +78,7 @@ def xy2500v(n):
     cx = pitch * (n - 1) / 2       # middle of the row: the body and model are centred here
     half = (pitch * n + 1) / 2
     top, bot = -4.0, 3.0
-    out = [f'(footprint "{xy2500v_name(n)}"\n\t(version 20260206)\n\t(generator "radio_remote_sharedlib")\n'
+    out = [f'(footprint "{xy2500v_name(n)}"\n\t(version 20260206)\n\t(generator "radpi_sharedlib")\n'
            f'\t(layer "F.Cu")\n\t(descr "Xinlaiya XY2500V-F-3.5-{n}P vertical pluggable header, 3.5 mm pitch, '
            f'closed ends, 8 A 300 V (LCSC {dict(zip(XY2500V_PINS, ("C880554", "C880556", "C880558")))[n]})")\n'
            f'\t(tags "Xinlaiya XY2500V terminal pluggable vertical 3.5mm")\n',
@@ -110,7 +110,7 @@ def kh_smak_smt():
     """Kinghelm KH-SMAK-SMT (LCSC C22371060): SMA jack, vertical, surface mount. 50 ohm, DC-6 GHz,
     PTFE. Pads as LCSC's footprint: 1.6 mm round centre pad, four 1.4 mm square ground pads on a
     5.08 mm square; body 6.5 x 6.5 mm, 10 mm tall."""
-    out = [f'(footprint "{KH_SMAK}"\n\t(version 20260206)\n\t(generator "radio_remote_sharedlib")\n'
+    out = [f'(footprint "{KH_SMAK}"\n\t(version 20260206)\n\t(generator "radpi_sharedlib")\n'
            '\t(layer "F.Cu")\n\t(descr "Kinghelm KH-SMAK-SMT SMA jack, vertical, SMD, 50 ohm DC-6 GHz (LCSC C22371060)")\n'
            '\t(tags "SMA vertical SMD Kinghelm")\n',
            _text("Reference", "REF**", 0, -4.6, "F.SilkS", 1),
@@ -153,7 +153,7 @@ def _model_of(entry):
 
 
 def write_footprints():
-    """Copy each stock footprint in FIXED into radio-remote.pretty with its model replaced."""
+    """Copy each stock footprint in FIXED into radpi.pretty with its model replaced."""
     out = os.path.join(SHARED, f"{LIB}.pretty")
     os.makedirs(out, exist_ok=True)
     for stock, entry in FIXED.items():
@@ -178,7 +178,7 @@ def register(proj):
     text = open(path).read() if os.path.exists(path) else "(fp_lib_table\n\t(version 7)\n)\n"
     if f'(name "{LIB}")' not in text:
         entry = (f'\t(lib (name "{LIB}")(type "KiCad")(uri "${{KIPRJMOD}}/../kicad-shared/{LIB}.pretty")'
-                 f'(options "")(descr "Footprints shared by the Radio Remote boards, with 3D models"))\n')
+                 f'(options "")(descr "Footprints shared by the RadPi boards, with 3D models"))\n')
         i = text.rstrip().rindex(")")
         text = text[:i] + entry + text[i:]
         open(path, "w").write(text)

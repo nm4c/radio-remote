@@ -10,7 +10,7 @@ from . import selcall
 DEFAULTS = {
     "radio": {
         "name": "Radio",
-        "type": "buttons",   # buttons = external radio via the Radio Remote HAT, sa818 = SA818S HAT
+        "type": "buttons",   # buttons = external radio via the RadPi Control HAT, sa818 = RadPi SA818 HAT
     },
     "server": {
         "host": "0.0.0.0",

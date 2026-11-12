@@ -2,11 +2,11 @@
 
 Two kinds of radio, chosen with `radio.type` in config.yaml:
 
-  buttons  An external radio (IC-F621 etc.) through the Radio Remote HAT or loose optocouplers:
+  buttons  An external radio (IC-F621 etc.) through the RadPi Control HAT or loose optocouplers:
            PTT and channel UP/DOWN are "pressed" on the mic lines. There's no way to read the
            channel back, so it's tracked here in software; if it drifts (someone pressed a button
            on the radio), "sync" tells the server the true channel.
-  sa818    The SA818S HAT: a built-in transceiver set over its serial port (see sa818.py).
+  sa818    The RadPi SA818 HAT: a built-in transceiver set over its serial port (see sa818.py).
 
 Both share PTT handling, the busy input, the channel list and remembering the last channel.
 """
@@ -213,7 +213,7 @@ class Radio:
 
 
 class ButtonRadio(Radio):
-    """External radio: channel UP/DOWN button presses on the mic lines (Radio Remote HAT)."""
+    """External radio: channel UP/DOWN button presses on the mic lines (RadPi Control HAT)."""
 
     kind = "buttons"
     can_sync = True

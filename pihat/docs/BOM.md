@@ -1,7 +1,7 @@
-# Radio Remote HAT: BoM notes (Rev A)
+# RadPi Control HAT: BoM notes (Rev A)
 
 The full parts list, with designators, is in the schematic page
-([`schematic/radio-remote-hat.html`](schematic/radio-remote-hat.html), "Parts" section) and in
+([`schematic/radpi-control-hat.html`](schematic/radpi-control-hat.html), "Parts" section) and in
 [`jlc-bom.csv`](jlc-bom.csv), ready to upload to JLCPCB. Both come from the same list in
 `schematic/gen.py`. Change the list there, then run `python3 gen.py` to update both.
 

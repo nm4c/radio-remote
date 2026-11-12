@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# radpi-users: manage RadPi operator accounts and read the audit log.
+# Installed to /usr/local/bin by install.sh / update.sh. Run with sudo, e.g.:
+#   sudo radpi-users add vk3abc --role control      sudo radpi-users list
+#   sudo radpi-users add guest --role listen         sudo radpi-users log --days 1
+# It runs as the 'radio' user so the database keeps its owner, and records who ran it.
+set -euo pipefail
+if [[ $EUID -ne 0 ]]; then echo "run with sudo: sudo radpi-users $*"; exit 1; fi
+cd /opt/radpi
+exec sudo -u radio env RADIO_USERS_BY="${SUDO_USER:-root}" \
+  /opt/radpi/.venv/bin/python -m server.users -c /opt/radpi/config.yaml "$@"

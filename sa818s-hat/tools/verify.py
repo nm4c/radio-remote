@@ -1,4 +1,4 @@
-"""Check the SA818S HAT's exported netlist against the intended connections."""
+"""Check the SA818 HAT's exported netlist against the intended connections."""
 import os
 import sys
 

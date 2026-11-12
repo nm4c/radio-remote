@@ -1048,7 +1048,7 @@ function handle(m) {
       $("#tuneForm").hidden = !S.radio.canTune;
       $("#tuneHint").textContent = S.radio.band ? `${S.radio.band[0]}–${S.radio.band[1]} MHz` : "";
       $("#radioName").textContent = m.radio_name;
-      document.title = `${m.radio_name} · Radio Remote`;
+      document.title = `${m.radio_name} · RadPi`;
       S.holdIntervalMs = m.hold_interval_ms;
       S.rtcAvailable = !!m.webrtc && "RTCPeerConnection" in window;
       S.wireRate = m.wire_rate;

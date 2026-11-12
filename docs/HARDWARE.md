@@ -308,7 +308,7 @@ dropouts, the Pi rebooting on transmit, or buzz on TX.
 1. Find the sound card:
    ```bash
    aplay -l; arecord -l                       # note the card number, e.g. "card 1"
-   /opt/radio-remote/.venv/bin/python -m sounddevice
+   /opt/radpi/.venv/bin/python -m sounddevice
    ```
    Put part of its name in `config.yaml`, for example `input_device: "USB"` and
    `output_device: "USB"`.
