@@ -7,9 +7,10 @@ Interface choices (SA818S datasheet Rev 1.3, pin table):
   AudioON goes low while received audio is present -> busy; divided to 3.3 V for GPIO23.
   Module TXD may swing to VBAT (4.2 V) -> divided to 3.3 V for the Pi's RXD.
 
-Low-pass: Chebyshev 0.1 dB, 7th order, fc 500 MHz, built from stock values
-(6.8 pF / 22 nH / 12 pF / 24 nH). Simulated with Q=40 inductors: -0.6..-1.1 dB 400-480 MHz,
-about -50 dB at 952 MHz (2nd harmonic of 476) and -80 dB at the 3rd.
+Low-pass: 7th-order, symmetric, tuned for a flat match up to 480 MHz (-3 dB at about 550 MHz):
+5.6 pF / 18 nH / 13 pF / 18 nH / 13 pF / 18 nH / 5.6 pF. Simulated with the parts' Q, ESR and
+self-resonance, pads and tolerances: 0.45-0.65 dB loss 400-480 MHz (0.62 dB at 477), return loss
+better than 22 dB, about -57 dB at 954 MHz (2nd harmonic of 477) and -39 dB at 800 MHz.
 """
 from schbuild import Sheet
 import sharedlib
@@ -66,15 +67,17 @@ def build(path, page):
     s.text("under the module, stitching vias.", (ux - 12.7, yg + 13.97))
 
     # ---------------- harmonic filter -> SMA
-    s.text("LOW-PASS  7th-order Chebyshev, fc 500 MHz", (184.15, 78.74), 1.5, bold=True)
-    s.text("2nd harmonic -50 dB, 3rd -80 dB (simulated)", (184.15, 82.55))
+    s.text("LOW-PASS  7th order, -3 dB at 550 MHz", (184.15, 78.74), 1.5, bold=True)
+    s.text("0.6 dB loss at 477 MHz, 2nd harmonic -57 dB (simulated)", (184.15, 82.55))
     ant = s.p("U6.12")
     nodes = [ant[0] + 7.62, ant[0] + 22.86, ant[0] + 38.1, ant[0] + 53.34]
-    # Filter caps chosen for accuracy (RF review, Nov 2026): 6.8 pF +/-0.1 pF Murata GCM1555C1H6R8BA16D
-    # (0402: the only +/-0.1 pF part at LCSC, and lower parasitics), 12 pF +/-1% Yageo CC0603FRNPO9BN120.
-    caps = [("C41", "6.8pF", "C354360", C0402), ("C42", "12pF", "C519482", C0603),
-            ("C43", "12pF", "C519482", C0603), ("C44", "6.8pF", "C354360", C0402)]
-    inds = [("L3", "22nH 2%", "C162643"), ("L4", "24nH 2%", "C162644"), ("L5", "22nH 2%", "C162643")]
+    # Filter parts (re-tuned for 477 MHz, Nov 2026). Caps: Murata GJM high-Q RF series (lowest ESR at
+    # UHF; the shunt caps' ESR costs as much loss as the inductors' Q), all 0402 for low ESL:
+    # GJM1555C1H5R6BB01D 5.6 pF +/-0.1 pF, GJM1555C1H130GB01D 13 pF +/-2%.
+    # Inductors: Murata LQW18AN18NG80D, 18 nH 2% wirewound, lowest DCR in 0603 at LCSC (75 mOhm, 1.4 A).
+    caps = [("C41", "5.6pF", "C161329", C0402), ("C42", "13pF", "C2167421", C0402),
+            ("C43", "13pF", "C2167421", C0402), ("C44", "5.6pF", "C161329", C0402)]
+    inds = [("L3", "18nH 2%", "C1330613"), ("L4", "18nH 2%", "C1330613"), ("L5", "18nH 2%", "C1330613")]
     for x, (ref, val, lcsc, cfp) in zip(nodes, caps):
         s.symbol("Device:C", ref, val, (x, uy + 3.81), footprint=cfp, lcsc=lcsc, conn={"2": G},
                  ref_at=(x + 2.54, uy + 5.08), val_at=(x + 2.54, uy + 7.62), ref_just="left", val_just="left")
@@ -114,7 +117,7 @@ def build(path, page):
         "Filter in a straight line, ground vias at each cap.",
         "Shield can over U6 + filter if the Pi desenses RX.",
         "L6 (DNP): fit only if U6 pin 12 shows 0 V DC (RX and TX).",
-        "C41/C44 6.8 pF +/-0.1 pF C0G 0402; C42/C43 12 pF +/-1% C0G 0603.",
+        "C41/C44 5.6 pF +/-0.1 pF, C42/C43 13 pF 2%: Murata GJM high-Q 0402.",
     )):
         s.text(t, (184.15, 119.38 + i * 3.81))
 

@@ -1,14 +1,14 @@
 # RadPi SA818 HAT
 
 A Raspberry Pi 4 HAT with a **built-in 1 W UHF FM transceiver**: no external radio. A NiceRF SA818S-U
-module (400–470 MHz) is controlled by the Pi over a serial port, with audio through the same
+module (400–480 MHz) is controlled by the Pi over a serial port, with audio through the same
 TLV320AIC3104 I2S codec as the [RadPi Control HAT](../pihat/). It's meant for licensed amateur or
 experimental use.
 
 | Block | What's on the board |
 |---|---|
 | Transceiver | SA818S-U, frequency, CTCSS/DCS and squelch set over UART (9600 8N1, GPIO14/15) |
-| Harmonic filter | 7th-order Chebyshev low-pass, fc 500 MHz: −0.6 to −1.1 dB from 400–480 MHz, about −50 dB at 2nd harmonic of 476 MHz, −80 dB at the 3rd (simulated with real inductor Q). Murata LQW18AN wirewound 2 % inductors, C0G capacitors at ±0.1 pF / ±1 % |
+| Harmonic filter | 7th-order low-pass tuned for 400–480 MHz (−3 dB at about 550 MHz): 0.45–0.65 dB loss across the band, 0.62 dB at 477 MHz, return loss better than 22 dB, about −57 dB at the 2nd harmonic of 477 MHz (simulated with the parts' Q, ESR, self-resonance and tolerances). Murata LQW18AN 18 nH 2 % wirewound inductors (lowest-resistance 0603 version), Murata GJM high-Q C0G capacitors (5.6 pF ±0.1 pF, 13 pF ±2 %), all 0402 |
 | Antenna | Vertical through-hole SMA (Amphenol 132134-11 footprint: any vertical THT SMA jack with legs on a 5.08 mm square), hand-soldered (not fitted by JLC), right at the filter output; the antenna screws on through the top of the case. Footprint for a 220 nH static-bleed inductor (L6, not fitted) |
 | Control | PTT via MOSFET (boots in receive), high/low power via open-drain MOSFET, power-down on GPIO27, busy from the module's AudioON on GPIO23 |
 | Audio | Codec headphone out → −30 dB → MIC_IN; AF_OUT → −6 dB → codec input. Direct, no transformers (shared ground). C0G coupling capacitors and thin-film resistors |
@@ -64,7 +64,7 @@ The Pi 4's main UART is normally used by Bluetooth. Add `dtoverlay=disable-bt` (
 - **L6 (not fitted):** before fitting, measure U6 pin 12 for DC with the module receiving and transmitting into a
   dummy load. Fit it only if it reads 0 V.
 - **Check harmonics** on a spectrum analyser after the first build, before connecting an antenna.
-- **Frequency range:** this module revision is specified to 470 MHz. NiceRF's current page says 480 MHz.
+- **Frequency range:** the module covers 400–480 MHz (the SA818S-CE is the same module with CE-RED certification). NiceRF only promises power flat within 1 dB up to 470 MHz, so measure the output at your frequency.
 
 ## Software
 
