@@ -2,6 +2,7 @@
 config.yaml
 state.json
 clips/
+/bot/            # the AI agent's data: voiceprints, notes, logs, recordings
 *.tmp
 
 .venv/
