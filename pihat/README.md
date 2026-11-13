@@ -9,6 +9,10 @@ It has everything on one board:
 - **Power:** a 13.8 V input with protection, and a 5 V buck that also powers the Pi.
 - **HAT ID EEPROM:** tells the Pi which sound-card overlay to load at boot.
 
+<p align="center">
+  <img src="pihat.png" alt="3D render of the RadPi Control HAT v1.0: purple board with the Pi header along the top, the 13.8 V input, buck converter and bulk capacitor on the left, the codec and crystal on the right, two audio isolation transformers, and green screw terminals along the bottom edge for power, RGND, PTT, UP, DN, BS+ and BS-, MIC, RGND, S+ and S-" width="80%">
+</p>
+
 | File | What it is |
 |---|---|
 | `pihat.kicad_pro` / `.kicad_sch` / `.kicad_pcb` | KiCad project |

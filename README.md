@@ -1,13 +1,36 @@
 # RadPi
 
-A web-based remote head for a two-way radio, running on a Raspberry Pi. You can
-receive audio, push-to-talk with your computer or phone microphone, and change channels
-from a browser.
+RadPi puts a two-way radio on the web. A Raspberry Pi sits next to a radio, or carries its own
+transceiver on a HAT, and anyone with a browser can listen, talk and run the radio from
+anywhere, on a phone or a PC.
 
-It works with any radio whose PTT and channel UP/DOWN can be operated by grounding a
-line, which covers most land-mobile and UHF CB radios through the mic connector. It was
-built for an Icom Radio. Set the model name shown in the UI with `radio.name` in
-`config.yaml`.
+- **Remote operation:** receive audio and push-to-talk with low-latency WebRTC audio. Change
+  channels or tune frequencies on a radio-style control head (a desk head on wide screens, a
+  handheld on phones).
+- **Two hardware options:**
+  - The **RadPi Control HAT** drives an existing radio through its mic connector. It works with
+    most land-mobile and UHF CB radios.
+  - The **RadPi SA818 HAT** has a built-in 1 W UHF transceiver, with frequencies, CTCSS/DCS,
+    a VFO and signal strength.
+- **On-air tools:** selcall (send and decode), audio clips played to air, recording of the
+  channel, voice effects, and TX tone control.
+- **AI agent (optional):**
+  - It transcribes the channel and recognises who's talking.
+  - It learns new voices and names, and keeps notes on people.
+  - It can banter on air in a persona and voice you choose, including an Australian one you
+    train yourself.
+  - The models can run on the Pi, on an AI HAT+ 2, or in the cloud.
+- **Several operators, safely:** personal accounts with control or listen-only roles, an audit
+  log, and one transmitter at a time. Transmit time-outs drop PTT if a browser goes quiet.
+- **Open source:**
+  - Software: GPL-3.0.
+  - Hardware: CERN-OHL-S. Both HATs are KiCad projects with JLC-ready parts.
+  - Mock radio and audio backends let you try it all on a laptop.
+
+<p align="center">
+  <img src="docs/images/radpi-desk.png" alt="RadPi in a desktop browser: a desk-radio control head showing channel 1, Simplex, BUSY and a received selcall, with the PTT button and channel buttons below" width="72%">
+  <img src="docs/images/radpi-phone.png" alt="RadPi on a phone: a handheld-radio control head showing channel 1, Simplex, 477.1250 MHz, with the PTT button below" width="24%">
+</p>
 
 There are two hardware modes, set with `radio.type` in `config.yaml`:
 
@@ -243,6 +266,10 @@ For each over it:
    and pick up their name.
 4. Speaks: Piper offline (your own Australian voice: [docs/voice/README.md](docs/voice/README.md)),
    or Azure, Google or ElevenLabs Australian voices over the internet.
+
+<p align="center">
+  <img src="docs/images/radpi-ai.png" alt="The AI agent panel in Approve mode: a reply waiting for Send or Discard, the live transcript with known and anonymous speakers, and the list of people it knows" width="70%">
+</p>
 
 The panel shows the live transcript with who said what and how sure it is. Control operators can:
 
@@ -493,7 +520,7 @@ web/      index.html, app.js, worklet.js (AudioWorklet capture/playback), style.
           control-head/ (control head SVGs and their input handling, control_head.js)
 assets/control-head/  generators for the control head artwork, plus PNGs and layout JSON
 deploy/   install.sh, systemd unit
-docs/     HARDWARE.md (hand-wired interface), voice/ (training an Australian Piper voice)
+docs/     HARDWARE.md (hand-wired interface), voice/ (training an Australian Piper voice), images/ (screenshots)
 pihat/       Pi HAT for an external radio: KiCad project, schematic reference, JLC BoM
 sa818s-hat/  Pi HAT with a built-in SA818S 1 W UHF transceiver (no external radio)
 kicadgen/    shared KiCad schematic generator used by both HATs
