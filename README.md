@@ -42,6 +42,8 @@ There are two hardware modes, set with `radio.type` in `config.yaml`:
   and off with the radio's P key. See [Voice effects](#voice-effects).
 - Recording: the orange button records what the radio hears into 15-minute parts, which join the
   clip list. See [Recording](#recording).
+- AI agent (off until you switch it on): transcribes the channel, recognises voices, learns new
+  people, and can banter on air in a persona and voice of your choosing. See [AI agent](#ai-agent).
 - A radio-style control head: a desk head on wide screens and a portrait handheld on phones.
   See [Control head](#control-head).
 - With the RadPi SA818 HAT: frequencies, repeater offsets and CTCSS/DCS per channel, a VFO for any
@@ -213,6 +215,95 @@ understand on a weak signal. Each preset is a few lines in `server/voicefx.py` (
 size, f0 = pitch, keep = how much intonation survives) if you want to tune them.
 Turn the feature off with `voice_fx: enabled: false`.
 
+## AI agent
+
+An optional agent that listens to the channel and can talk back. Turn it on with
+`bot: enabled: true` in `config.yaml` (see the `bot:` section of `config.example.yaml`). An
+**AI agent** panel then appears in the page. With `enabled: false` (the default) none of it loads
+and the panel stays hidden.
+
+Its Python packages (Whisper, the speaker model, Piper and PyTorch) come to well over a gigabyte,
+so they're only installed if you ask:
+
+- **New install:** `sudo ./deploy/install.sh --with-ai`.
+- **Existing install:** `sudo ./deploy/update.sh --with-ai`. After that, plain `update.sh` keeps
+  them up to date. Without the flag they're never downloaded.
+- **Removing them:** `sudo ./deploy/update.sh --without-ai` rebuilds the venv without them.
+
+For each over it:
+
+1. Transcribes it: Whisper on the Pi's CPU (`faster_whisper`), or any OpenAI-compatible
+   transcription server.
+2. Works out who it was: a voiceprint (SpeechBrain ECAPA) compared with the people it knows.
+   People you name are **known**. An unfamiliar voice is kept as **Caller N** and recognised next
+   time, and becomes **acquainted** once it hears their name.
+3. Decides whether to say something: an LLM gets the persona, what it knows about the speaker
+   (their notes), the last few overs and the new one. It runs on Ollama, on hailo-ollama on the
+   AI HAT+ 2 (Pi 5), or on any OpenAI-compatible server. It can also add to the speaker's notes
+   and pick up their name.
+4. Speaks: Piper offline (your own Australian voice: [docs/voice/README.md](docs/voice/README.md)),
+   or Azure, Google or ElevenLabs Australian voices over the internet.
+
+The panel shows the live transcript with who said what and how sure it is. Control operators can:
+
+- Switch its mode:
+  - **Listen**: transcribe and identify only.
+  - **Approve**: each reply waits for **Send** or **Discard**.
+  - **Auto**: replies go on air by themselves.
+- Stop it mid-sentence.
+- Name a voice from any over (**Name…**).
+- Rename, merge or forget people.
+
+Behaviour comes from the config and the persona prompt, not the code:
+
+- The persona: `bot.persona`, default `server/bot/prompts/banter.md`.
+- When it speaks: `reply_policy` is `llm`, `always` or `addressed`.
+- Rate limits: `max_replies_per_hour`, `min_reply_gap_s`. They're off by default.
+- What it learns: `learn_anonymous`, `learn_notes`.
+
+The code fixes only the radio mechanics:
+
+- It waits for the channel to be quiet (`reply_gap_ms`) and never keys over anyone.
+- Replies are capped at `max_reply_s`, and the server's transmit time-out still applies.
+- Any operator can stop it.
+
+Its transmissions go in the audit log as `kind: bot`.
+
+Everything it learns is plain files in `bot.dir`. These can be read, edited and deleted directly:
+
+- `people/people.json`: who it knows.
+- `people/<id>.md`: notes on each person.
+- `people/<id>.npy`: voiceprints.
+
+The research log is `bot.dir/log/<date>.jsonl`. It records every over: transcript, speaker match
+and score, and timings. It records every LLM decision, including the raw answer and silences, and
+what happened to each reply (sent, dropped and why, discarded, stopped). With `keep_audio` it also
+keeps each over's audio. `retention_days` prunes old logs and audio.
+
+Try it without a radio, on recordings:
+
+```bash
+python -m server.bot -c config.yaml enrol --name Dave dave-1.wav dave-2.wav   # seed a known voice
+python -m server.bot -c config.yaml replay overs/*.wav          # each file is one over
+python -m server.bot -c config.yaml replay --split evening.wav  # cut a long recording into overs
+python -m server.bot -c config.yaml people                      # who it knows
+```
+
+`replay` runs the full pipeline and writes the replies it would have sent as WAVs (`--out`). Use
+`--dir` to keep test runs out of the live agent's memory.
+
+Rough timings on a Pi 5:
+
+| Step | Time |
+|---|---|
+| Whisper `base.en` | a few seconds per over |
+| Speaker match | well under a second |
+| A 1.5B model on the AI HAT+ 2 | a few seconds |
+| Piper | faster than real time |
+
+So expect roughly 4–10 s from un-key to reply. Mock backends (`backend: mock` for each) let you
+try the panel on a laptop.
+
 ## TX tone control
 
 Transmitted voice and clips pass through a bass and treble shelf on the Pi, because phone and
@@ -228,7 +319,7 @@ also raises the level, so recheck deviation after a big change. Selcall tones ar
    Or use the **[RadPi Control HAT](pihat/)**, a Pi HAT with the interface, sound card and power supply on one board.
 2. Copy this folder to the Pi and run:
    ```bash
-   sudo ./deploy/install.sh
+   sudo ./deploy/install.sh            # or --with-ai to include the optional AI agent
    sudo nano /opt/radpi/config.yaml
    ```
    Set `radio.type`, the channels (`channel.count` / `names` for an external radio,
@@ -246,6 +337,7 @@ Keep a git clone on the Pi (`git clone https://github.com/nm4c/radpi.git`) and r
 ```bash
 sudo ./deploy/update.sh            # git pull, copy the code to /opt/radpi, restart
 sudo ./deploy/update.sh --no-pull  # deploy the clone as it is, without pulling
+sudo ./deploy/update.sh --with-ai  # also install the optional AI agent's packages (large download)
 ```
 
 It copies only `server/`, `web/` and `requirements.txt` (and installs `radpi-users`), so
@@ -379,6 +471,8 @@ Messages marked * need the `control` role; from a `listen` account they're refus
 | → | `{"type":"rtc_offer","sdp":"…"}` complete SDP (non-trickle): one sendrecv Opus audio track, your mic out, radio in |
 | ← | `{"type":"rtc_answer","sdp":"…"}` or `{"type":"rtc_failed","text":"…"}` |
 | → | `{"type":"rtc_close"}` give up on WebRTC and go back to WebSocket audio |
+| → | \* AI agent: `{"type":"bot_mode","mode":"listen"\|"approve"\|"auto"}`, `{"type":"bot_approve"\|"bot_reject","id":"<reply id>"}`, `{"type":"bot_stop"}`, `{"type":"bot_enrol","over":"<over id>","name":"Dave"}`, `{"type":"bot_rename","person":"<id>","name":"…"}` (an existing name merges them), `{"type":"bot_forget","person":"<id>"}` |
+| ← | `hello.bot` is the agent's state (null if off): `name`, `mode`, `policy`, `status` (per backend: `ready`, `loading` or an error), `stage`, `people`, `items`, `backends`. `state.bot_tx` is the text it is saying on air, or null. `{"type":"bot", …}` updates any of `items` (overs `{"id","kind":"over","t","secs","text","person","who","who_kind","score"}` and replies `{"id","kind":"reply","t","text","over","secs","status","reason"}`, merged by id), `people`, `mode`, `stage`, `status` |
 
 Clips are uploaded over HTTP (control accounts): `POST /clips?name=Net%20opening` with header
 `X-Radio-Token: <auth.token>` and a mono 16-bit WAV body at `wire_rate`. The reply is the new
@@ -393,12 +487,13 @@ server/   main.py (web + WebSocket + safety watchdog), radio.py (PTT, channels, 
           selcall.py (selcall tones: encoder and decoder), clips.py (stored audio clips),
           recorder.py (recording received audio into the clip list), auth.py (accounts, sessions,
           audit log), users.py (the radpi-users tool),
-          eq.py (TX tone control), voicefx.py (voice effects)
+          eq.py (TX tone control), voicefx.py (voice effects),
+          bot/ (the AI agent: capture, stt, speakers, brain, tts, agent; python -m server.bot)
 web/      index.html, app.js, worklet.js (AudioWorklet capture/playback), style.css,
           control-head/ (control head SVGs and their input handling, control_head.js)
 assets/control-head/  generators for the control head artwork, plus PNGs and layout JSON
 deploy/   install.sh, systemd unit
-docs/     HARDWARE.md (hand-wired interface)
+docs/     HARDWARE.md (hand-wired interface), voice/ (training an Australian Piper voice)
 pihat/       Pi HAT for an external radio: KiCad project, schematic reference, JLC BoM
 sa818s-hat/  Pi HAT with a built-in SA818S 1 W UHF transceiver (no external radio)
 kicadgen/    shared KiCad schematic generator used by both HATs

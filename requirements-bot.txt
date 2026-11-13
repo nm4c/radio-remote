@@ -1,0 +1,9 @@
+# Extra packages for the AI agent (bot: in config.yaml). Not installed by default. Add them with
+#   sudo ./deploy/install.sh --with-ai      (new install)
+#   sudo ./deploy/update.sh --with-ai       (existing install; later updates then keep them current)
+# This pulls in PyTorch (CPU) for the speaker model: well over a gigabyte, several minutes on a Pi.
+faster-whisper>=1.0        # bot.stt.backend: faster_whisper
+speechbrain>=1.0           # bot.speaker.backend: ecapa
+torch>=2.1
+torchaudio>=2.1
+piper-tts>=1.2             # bot.tts.backend: piper

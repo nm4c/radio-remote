@@ -129,6 +129,37 @@
       <p class="selcall-hint">Changes your voice while you transmit. Clips and selcalls go out unchanged.</p>
     </section>
 
+    <!-- AI agent (bot: in config.yaml; hidden unless the server has it switched on). It transcribes
+         the channel, recognises voices and, in Approve or Auto, answers on air. -->
+    <section class="bot" id="botPanel" hidden aria-labelledby="botTitle">
+      <div class="selcall-top">
+        <h2 id="botTitle">AI agent</h2>
+        <span class="selcall-std" id="botInfo"></span>
+      </div>
+      <div class="bot-modes" id="botModes" role="group" aria-label="AI agent mode">
+        <button type="button" data-mode="listen">Listen</button>
+        <button type="button" data-mode="approve">Approve</button>
+        <button type="button" data-mode="auto">Auto</button>
+      </div>
+      <p class="selcall-hint" id="botModeHint"></p>
+      <div class="bot-pending" id="botPending" hidden>
+        <p class="bot-pending-text" id="botPendingText"></p>
+        <div class="row">
+          <button type="button" class="primary" id="botSend">Send</button>
+          <button type="button" id="botDiscard">Discard</button>
+        </div>
+      </div>
+      <button type="button" class="danger" id="botStop" hidden>Stop it talking</button>
+      <p class="bot-stage" id="botStage" aria-live="polite"></p>
+      <ol class="bot-feed" id="botFeed" aria-label="Transcript"></ol>
+      <p class="clip-empty" id="botEmpty">Nothing heard yet.</p>
+      <details class="bot-people">
+        <summary>People it knows <span id="botPeopleCount"></span></summary>
+        <ul id="botPeople"></ul>
+      </details>
+      <p class="selcall-hint" id="botStatus"></p>
+    </section>
+
     <div class="sliders">
       <label>Speaker volume <input id="vol" type="range" min="0" max="2" step="0.05" value="1"></label>
       <label>Mic gain <input id="micGain" type="range" min="0" max="3" step="0.05" value="1"></label>

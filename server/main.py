@@ -32,7 +32,8 @@ AUTH_RECHECK_S = 5      # how often connected operators are re-checked against t
 
 # Messages only 'control' accounts may send. Everything else a 'listen' account sends is ignored.
 CONTROL_MESSAGES = {"ptt", "ptt_hold", "channel", "selcall", "voice_fx", "record",
-                    "clip_play", "clip_stop", "clip_delete", "clip_rename"}
+                    "clip_play", "clip_stop", "clip_delete", "clip_rename",
+                    "bot_mode", "bot_approve", "bot_reject", "bot_stop", "bot_enrol", "bot_rename", "bot_forget"}
 
 
 class Client:
@@ -133,6 +134,13 @@ class RemoteHead:
         self.recorder = None
         if self.clips and cfg["record"]["enabled"]:
             self.recorder = Recorder(self.clips, int(cfg["audio"]["wire_rate"]), cfg["record"], self._record_changed)
+        # The AI agent (bot.enabled): only imported when it's switched on. bot_tx is its reply on
+        # air now ({"text"}), which, like a clip, stops PTT presses meanwhile.
+        self.bot = None
+        self.bot_tx = None
+        if cfg["bot"]["enabled"]:
+            from .bot import Agent
+            self.bot = Agent(cfg, self)
 
     def _migrate_password(self):
         """First start with the user database: the old shared server.password becomes a
@@ -164,6 +172,8 @@ class RemoteHead:
         return [c for c in self.clients if c.authed]
 
     def _client(self, cid):
+        if self.bot and cid == self.bot.operator.id:
+            return self.bot.operator
         return next((c for c in self.clients if c.id == cid), None)
 
     def _spawn(self, coro):
@@ -201,6 +211,7 @@ class RemoteHead:
             "operators": sorted(x.name for x in self._authed()),
             "selcall_tx": self.selcall_tx,
             "clip_tx": {"id": self.clip_tx["id"], "name": self.clip_tx["name"]} if self.clip_tx else None,
+            "bot_tx": self.bot_tx["text"] if self.bot_tx else None,
             "recording": self.recorder.status() if self.recorder else None,
             "fx": c.fx,
         }
@@ -223,6 +234,8 @@ class RemoteHead:
             # While we transmit the receiver is muted: record our side instead (record.include_tx).
             self.recorder.feed(sent if keyed and self.recorder.include_tx else pcm,
                                active=keyed or self._busy())
+        if self.bot:
+            self.bot.feed(pcm, self._busy(), owner is not None)
         if self.selcall_rx:
             if owner is None:
                 for digits in self.selcall_rx.feed(pcm):
@@ -344,6 +357,7 @@ class RemoteHead:
                     "record_minutes": float(self.cfg["record"]["max_minutes"]),
                     "list": self.clips.list(),
                 } if self.clips else None,
+                "bot": self.bot.hello() if self.bot else None,
             })
             self.broadcast_state()
 
@@ -484,6 +498,12 @@ class RemoteHead:
             if self.clips:
                 self._clip_message(c, kind, m.get("id"), m.get("name"))
             return
+        if isinstance(kind, str) and kind.startswith("bot_"):
+            if self.bot and kind in CONTROL_MESSAGES:
+                text = self.bot.handle(c, kind, m)
+                if text:
+                    c.send_json({"type": "notice", "level": "warn", "text": text})
+            return
         if kind == "ptt_hold":
             c.last_hold = time.monotonic()
         elif kind == "ptt":
@@ -539,7 +559,7 @@ class RemoteHead:
         if preset is not None and preset not in voicefx.PRESETS:
             return
         c.fx = preset
-        if self.radio.ptt_owner == c.id and not (self.selcall_tx or self.clip_tx):
+        if self.radio.ptt_owner == c.id and not (self.selcall_tx or self.clip_tx or self.bot_tx):
             # Switched while talking: takes effect straight away.
             self.tx_fx = voicefx.VoiceFx(preset, int(self.cfg["audio"]["wire_rate"])) if preset else None
         log.info("%s voice effect: %s", c.name, preset or "off")
@@ -547,8 +567,9 @@ class RemoteHead:
         c.send_json(self.state_for(c))
 
     def _ptt_on(self, c):
-        if self.selcall_tx or self.clip_tx:
-            text = "Sending a selcall" if self.selcall_tx else "A clip is playing on air"
+        if self.selcall_tx or self.clip_tx or self.bot_tx:
+            text = ("Sending a selcall" if self.selcall_tx else "A clip is playing on air" if self.clip_tx
+                    else "The AI agent is talking (Stop in its panel cuts it off)")
             c.send_json({"type": "notice", "level": "warn", "code": "ptt_denied", "text": text})
             return
         try:
@@ -571,7 +592,7 @@ class RemoteHead:
         c.last_hold = time.monotonic()
 
     async def _ptt_off(self, c):
-        if self.radio.ptt_owner != c.id or self.selcall_tx or self.clip_tx:
+        if self.radio.ptt_owner != c.id or self.selcall_tx or self.clip_tx or self.bot_tx:
             return
         gen = self._ptt_gen
         if c.rtc and c.rtc.ready:
@@ -636,6 +657,8 @@ class RemoteHead:
             return "A selcall is being sent"
         if self.clip_tx:
             return "A clip is playing on air"
+        if self.bot_tx:
+            return "The AI agent is talking"
         if self.radio.ptt_owner is not None:
             return "The radio is transmitting"
         return None
@@ -737,6 +760,49 @@ class RemoteHead:
     def _max_play_seconds(self):
         """Longest clip that can go on air: it, its lead-in and a margin must fit in the TX limit."""
         return float(self.cfg["ptt"]["max_tx_seconds"]) - int(self.cl["tx_delay_ms"]) / 1000 - 2
+
+    # ---- AI agent (server/bot/) -------------------------------------------
+
+    def bot_channel_state(self):
+        """(busy, on_air): whether the channel is in use, and why the radio can't key now, if not."""
+        r = self.radio
+        why = self._on_air() or ("Channel change in progress" if r.stepping else None) or r.error
+        return self._busy(), why
+
+    async def bot_transmit(self, samples, text, lead_ms):
+        """Put one of the agent's replies on air, like a clip. Returns True if it all went out."""
+        why = self.bot_channel_state()[1]
+        if why:
+            raise RadioError(why)
+        op = self.bot.operator
+        self.bot_tx = {"text": text}  # claim the radio before any await
+        log.info("AI agent on air: %r", text)
+        # The tone control, then back to the agent's own peak level (bot.level).
+        x = self.tx_eq.whole(samples)
+        peak, want = float(np.max(np.abs(x))) if len(x) else 0.0, float(np.max(np.abs(samples))) if len(samples) else 0.0
+        if peak:
+            x = x * (want / peak)
+        try:
+            return await self._transmit(op, x, lead_ms)
+        finally:
+            self.bot_tx = None
+            self.broadcast_state()
+
+    def bot_stop(self, c):
+        """Any control operator can cut the agent off mid-sentence."""
+        if self.bot_tx and self.radio.ptt_owner == self.bot.operator.id:
+            log.info("%s stopped the AI agent", c.name)
+            self.audit(c, "bot_stop", text=self.bot_tx["text"][:200])
+            self._ptt_gen += 1  # ends _transmit's wait; it then leaves the unkeying to us
+            self.radio.unkey("stopped by an operator")
+            self.audio.clear_tx()
+
+    def bot_broadcast(self, obj):
+        for c in self._authed():
+            c.send_json(obj)
+
+    def bot_audit(self, c, event, **detail):
+        self.audit(c, event, **detail)
 
     # ---- recording ------------------------------------------------------
 
@@ -844,6 +910,8 @@ class RemoteHead:
                 kind, what = "selcall", self.selcall_tx
             elif self.clip_tx:
                 kind, what = "clip", self.clip_tx["name"]
+            elif self.bot_tx:
+                kind, what = "bot", self.bot_tx["text"][:200]
             elif c and c.fx:
                 what = f"voice effect {c.fx}"
             self._tx = {"owner": owner, "user": c.username if c else None, "ip": c.remote if c else None,
@@ -935,6 +1003,7 @@ class RemoteHead:
                 log.error("can't resume recording: %s", e)
         app["watchdog"] = asyncio.create_task(self.watchdog())
         app["radio"] = asyncio.create_task(self.radio.run())
+        app["bot"] = asyncio.create_task(self.bot.run()) if self.bot else None
 
     async def on_shutdown(self, app):
         self.radio.unkey("shutdown")
@@ -945,7 +1014,9 @@ class RemoteHead:
             await c.ws.close(code=1001, message=b"server shutdown")
 
     async def on_cleanup(self, app):
-        for key in ("watchdog", "radio"):
+        for key in ("watchdog", "radio", "bot"):
+            if app[key] is None:
+                continue
             app[key].cancel()
             try:
                 await app[key]

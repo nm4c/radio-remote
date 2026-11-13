@@ -120,6 +120,72 @@ DEFAULTS = {
         "tx_prebuffer_ms": 40,
         "tx_max_ms": 200,
     },
+    # The AI agent (server/bot/). Off by default: with enabled false nothing of it is loaded and
+    # the web page shows no AI panel. See the bot: section of config.example.yaml.
+    "bot": {
+        "enabled": False,
+        "name": "RadPi",            # what it calls itself on air; also always a wake word
+        "dir": "bot",               # people, notes, logs and over audio (relative to this file)
+        "mode": "listen",           # at start-up: listen (never transmits), approve, or auto
+        "persona": None,            # persona prompt file; null = server/bot/prompts/banter.md
+        "reply_policy": "llm",      # llm (it decides), always, or addressed (only when named)
+        "wake_words": [],           # more names that count as addressing it
+        "learn_anonymous": True,    # give unknown voices a pseudonym and remember them
+        "learn_notes": True,        # let the LLM keep notes on people and pick up their names
+        "opt_out_phrases": [],      # e.g. ["forget me"]: deletes the speaker's profile. Empty = off
+        "context_overs": 12,        # recent overs shown to the LLM
+        "min_over_s": 0.8,          # shorter overs (kerchunks) are ignored
+        "max_over_s": 60,           # longer ones are cut into parts
+        "preroll_ms": 300,          # audio kept from before the channel went busy
+        "hang_ms": 700,             # an over ends after the channel is quiet this long
+        "reply_gap_ms": 1500,       # the channel must be quiet this long before it keys up
+        "reply_wait_s": 20,         # give up on a reply if the channel doesn't go quiet
+        "drop_stale": True,         # drop a reply if someone else has spoken since
+        "max_reply_s": 30,          # longest reply on air (also capped by ptt.max_tx_seconds)
+        "max_replies_per_hour": None,  # null = no limit
+        "min_reply_gap_s": 0,       # seconds between its transmissions
+        "approve_timeout_s": 60,    # approve mode: a reply nobody approves is dropped after this
+        "tx_delay_ms": 300,         # keyed silence before speaking, while the transmitter comes up
+        "level": 0.5,               # peak level of its voice (audio.tx_gain applies on top)
+        "keep_audio": True,         # save each over's audio with the log
+        "retention_days": None,     # delete logs and audio older than this; null = keep
+        "pronounce": {"RadPi": "Rad Pie"},  # text replacements before speaking
+        "stt": {
+            "backend": "faster_whisper",  # faster_whisper, openai (any compatible server), or mock
+            "model": "base.en",
+            "language": "en",
+            "compute_type": "int8",
+            "beam_size": 1,
+            "url": None,                  # openai: e.g. http://127.0.0.1:8000/v1
+            "api_key": None,
+            "prompt": None,               # vocabulary hint (names, callsigns, local places)
+        },
+        "speaker": {
+            "backend": "ecapa",           # ecapa (SpeechBrain), or basic (numpy, rough; for testing)
+            "match": None,                # similarity to count as the same person; null = backend default
+            "update": None,               # above this, the over also refines their voiceprint
+            "min_enrol_s": 2.5,           # shortest over that can start a new voiceprint
+            "max_samples": 20,            # voiceprint samples kept per person
+            "model_dir": None,            # where the ecapa model is cached; null = <dir>/models
+        },
+        "llm": {
+            "backend": "ollama",          # ollama (also hailo-ollama), openai (llama.cpp, cloud...), mock
+            "url": "http://127.0.0.1:11434",
+            "model": "qwen2.5:1.5b",
+            "api_key": None,
+            "temperature": 0.9,
+            "max_tokens": 160,
+            "timeout_s": 60,
+        },
+        "tts": {
+            "backend": "piper",           # piper, azure, google, elevenlabs, or mock
+            "voice": None,                # piper: .onnx path; azure/google: voice name; elevenlabs: voice id
+            "model": None,                # elevenlabs: model id (null = eleven_flash_v2_5)
+            "api_key": None,
+            "region": None,               # azure: e.g. australiaeast
+            "speed": 1.0,
+        },
+    },
 }
 
 
@@ -165,13 +231,20 @@ def load(path):
     _check_selcall(cfg["selcall"])
     _check_clips(cfg["clips"], cfg["ptt"])
     _check_record(cfg["record"])
+    _check_bot(cfg["bot"], cfg["ptt"])
 
     # Resolve the state file and clip folder relative to the config file.
-    for section, key in (("server", "state_file"), ("server", "db_file"), ("clips", "dir")):
+    for section, key in (("server", "state_file"), ("server", "db_file"), ("clips", "dir"), ("bot", "dir")):
         p = Path(cfg[section][key])
         if not p.is_absolute():
             p = path.resolve().parent / p
         cfg[section][key] = str(p)
+    bot = cfg["bot"]
+    for sub, key in (("tts", "voice"), (None, "persona")):
+        holder = bot[sub] if sub else bot
+        v = holder.get(key)
+        if v and (sub is None or bot["tts"]["backend"] == "piper") and not Path(v).is_absolute():
+            holder[key] = str(path.resolve().parent / v)
     return cfg
 
 
@@ -226,6 +299,49 @@ def _check_clips(cl, ptt):
         raise SystemExit("config: clips.tx_delay_ms must be 0-3000")
     if not 0 < float(cl["level"]) <= 1:
         raise SystemExit("config: clips.level must be between 0 and 1")
+
+
+def _check_bot(b, ptt):
+    """Validate the bot section in place. Only checked when it's switched on."""
+    if not b["enabled"]:
+        return
+    choices = {
+        "mode": ("listen", "approve", "auto"),
+        "reply_policy": ("llm", "always", "addressed"),
+    }
+    for key, allowed in choices.items():
+        if b[key] not in allowed:
+            raise SystemExit(f"config: bot.{key} must be one of {', '.join(allowed)}")
+    backends = {
+        "stt": ("faster_whisper", "openai", "mock"),
+        "speaker": ("ecapa", "basic"),
+        "llm": ("ollama", "openai", "mock"),
+        "tts": ("piper", "azure", "google", "elevenlabs", "mock"),
+    }
+    for sub, allowed in backends.items():
+        if b[sub]["backend"] not in allowed:
+            raise SystemExit(f"config: bot.{sub}.backend must be one of {', '.join(allowed)}")
+    t = b["tts"]
+    if t["backend"] == "piper" and not t["voice"]:
+        raise SystemExit("config: bot.tts.voice must be the path of a Piper .onnx voice")
+    if t["backend"] in ("azure", "google", "elevenlabs") and not t["api_key"]:
+        raise SystemExit(f"config: bot.tts.api_key is needed for {t['backend']}")
+    if t["backend"] == "azure" and not t["region"]:
+        raise SystemExit("config: bot.tts.region is needed for azure (e.g. australiaeast)")
+    if b["stt"]["backend"] == "openai" and not b["stt"]["url"]:
+        raise SystemExit("config: bot.stt.url is needed for the openai backend")
+    room = float(ptt["max_tx_seconds"]) - int(b["tx_delay_ms"]) / 1000 - 2
+    b["max_reply_s"] = min(float(b["max_reply_s"]), room)
+    if b["max_reply_s"] < 2:
+        raise SystemExit("config: bot.max_reply_s is too short (or ptt.max_tx_seconds is)")
+    if not 0 < float(b["level"]) <= 1:
+        raise SystemExit("config: bot.level must be between 0 and 1")
+    if b["max_replies_per_hour"] is not None and int(b["max_replies_per_hour"]) < 1:
+        raise SystemExit("config: bot.max_replies_per_hour must be 1 or more, or null for no limit")
+    if b["retention_days"] is not None and float(b["retention_days"]) <= 0:
+        raise SystemExit("config: bot.retention_days must be more than 0, or null to keep everything")
+    if not 0.2 <= float(b["min_over_s"]) < float(b["max_over_s"]) <= 300:
+        raise SystemExit("config: bot.min_over_s and max_over_s must be 0.2-300 s, min below max")
 
 
 def _check_record(rec):

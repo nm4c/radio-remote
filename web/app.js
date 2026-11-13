@@ -51,6 +51,8 @@ const S = {
   fxList: null,        // voice effect presets from the server (null = effects off)
   fxSel: null,         // preset this operator picked for the P / P1 key
   fxShown: null,       // "Voice: Vader" on the head's bottom line for a moment: {text, until}
+  bot: null,           // the AI agent's state from the server (null = agent off)
+  botItems: new Map(), // id -> over or reply shown in the agent's transcript
 };
 
 // ---------- storage (best effort) ----------
@@ -531,6 +533,7 @@ function updateHead() {
   if (st.error) detail = st.error;
   else if (st.selcall_tx) detail = `Sending selcall ${st.selcall_tx}`;
   else if (st.clip_tx) detail = `Playing ${st.clip_tx.name}`;
+  else if (st.bot_tx) detail = `AI: ${st.bot_tx}`;
   else if (p.active && !p.mine) detail = `TX by ${p.by}`;
   else if (st.stepping) detail = "Changing channel…";
   else if (call) detail = call;
@@ -950,6 +953,138 @@ async function uploadClips(files) {
   }
 }
 
+// ---------- AI agent ----------
+// The server's agent (server/bot/) transcribes every over, matches the voice to the people it
+// knows, and in Approve or Auto mode answers on air. This panel shows the live transcript, lets
+// control operators switch modes, approve or discard replies, stop it mid-sentence, and name
+// voices (Name… on an over teaches it who that was). Everything else lives in config.yaml.
+
+const BOT_MODE_HINT = {
+  listen: "Transcribing and recognising voices only. It never transmits.",
+  approve: "Each reply waits here: Send puts it on air, Discard drops it.",
+  auto: "Replies go on air by themselves once the channel is quiet.",
+};
+const BOT_STAGE = { transcribing: "Transcribing…", identifying: "Recognising the voice…",
+  thinking: "Thinking…", speaking: "Making its reply…" };
+const BOT_ITEMS_MAX = 200;
+const BOT_SHOWN = 80;
+
+function setupBot(b) {
+  S.bot = b || null;
+  $("#botPanel").hidden = !b;
+  if (!b) return;
+  S.botItems = new Map(b.items.map((it) => [it.id, it]));
+  renderBot();
+}
+
+function onBot(m) {
+  if (!S.bot) return;
+  for (const it of m.items || []) S.botItems.set(it.id, { ...(S.botItems.get(it.id) || {}), ...it });
+  while (S.botItems.size > BOT_ITEMS_MAX) S.botItems.delete(S.botItems.keys().next().value);
+  for (const k of ["people", "mode", "status"]) if (m[k] !== undefined) S.bot[k] = m[k];
+  if ("stage" in m) S.bot.stage = m.stage;
+  renderBot();
+}
+
+function botDecide(send_) {
+  const r = botPendingReply();
+  if (r) send({ type: send_ ? "bot_approve" : "bot_reject", id: r.id });
+}
+
+function botPendingReply() {
+  let last = null;
+  for (const it of S.botItems.values()) if (it.kind === "reply" && it.status === "pending") last = it;
+  return last;
+}
+
+function hhmm(t) {
+  const d = new Date(t * 1000);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+
+function renderBot() {
+  const b = S.bot;
+  if (!b) return;
+  for (const btn of $("#botModes").children) {
+    btn.classList.toggle("on", btn.dataset.mode === b.mode);
+    btn.setAttribute("aria-pressed", btn.dataset.mode === b.mode ? "true" : "false");
+  }
+  $("#botModeHint").textContent = BOT_MODE_HINT[b.mode] || "";
+  const known = b.people.filter((p) => p.kind !== "anonymous").length;
+  $("#botInfo").textContent = `${b.name} · ${known} known · ${b.people.length - known} new`;
+  $("#botStage").textContent = BOT_STAGE[b.stage] || "";
+  const errs = Object.entries(b.status || {}).filter(([, v]) => v !== "ready");
+  $("#botStatus").textContent = errs.length
+    ? errs.map(([k, v]) => `${k}: ${v}`).join(" · ")
+    : `${b.backends.stt} · ${b.backends.speaker} · ${b.backends.llm} · ${b.backends.tts} · replies: ${b.policy}`;
+
+  const pend = botPendingReply();
+  $("#botPending").hidden = !pend;
+  if (pend) $("#botPendingText").textContent = `“${pend.text}”`;
+
+  // Transcript, newest first.
+  const items = [...S.botItems.values()].sort((a, c) => c.t - a.t).slice(0, BOT_SHOWN);
+  $("#botEmpty").hidden = items.length > 0;
+  $("#botFeed").replaceChildren(...items.map((it) => {
+    const li = el("li", it.kind);
+    li.append(el("span", "when", hhmm(it.t)));
+    const body = el("span", "said");
+    if (it.kind === "reply") {
+      body.append(el("span", "who", b.name));
+      body.append(document.createTextNode(it.text));
+      const why = it.reason ? ` (${it.reason})` : "";
+      body.append(el("span", "meta", `${it.status}${why}`));
+      li.classList.toggle("gone", ["dropped", "discarded", "stopped"].includes(it.status));
+      li.append(body, el("span"));
+    } else {
+      const who = el("span", `who ${it.who ? it.who_kind : "none"}`, it.who || "?");
+      if (it.score != null) who.title = `voice match ${Math.round(it.score * 100)}%`;
+      body.append(who);
+      body.append(document.createTextNode(it.text == null ? "…" : it.text || "(no words)"));
+      body.append(el("span", "meta", `${it.secs} s`));
+      li.append(body);
+      const name = el("button", null, "Name…");
+      name.type = "button";
+      name.title = "Tell it who this was, so it learns the voice";
+      name.addEventListener("click", () => {
+        const n = prompt("Whose voice is this?", it.who_kind === "anonymous" ? "" : it.who || "");
+        if (n && n.trim()) send({ type: "bot_enrol", over: it.id, name: n.trim() });
+      });
+      li.append(it.secs >= 1 ? name : el("span"));
+    }
+    return li;
+  }));
+
+  // People.
+  const people = [...b.people].sort((a, c) => (c.last_seen || 0) - (a.last_seen || 0));
+  $("#botPeopleCount").textContent = `(${people.length})`;
+  $("#botPeople").replaceChildren(...people.map((p) => {
+    const li = el("li");
+    const name = el("span", null, p.name);
+    name.append(el("span", "kind", `  ${p.kind} · ${p.overs || 0} over${p.overs === 1 ? "" : "s"} · last ${p.last_seen ? hhmm(p.last_seen) : "–"}`));
+    const ren = el("button", null, "Rename");
+    ren.type = "button";
+    ren.addEventListener("click", () => {
+      const n = prompt(`New name for ${p.name} (an existing name merges the two):`, p.kind === "anonymous" ? "" : p.name);
+      if (n && n.trim() && n.trim() !== p.name) send({ type: "bot_rename", person: p.id, name: n.trim() });
+    });
+    const del = el("button", "danger", "Forget");
+    del.type = "button";
+    del.addEventListener("click", () => {
+      if (confirm(`Forget ${p.name}? Their voiceprint and notes are deleted.`)) send({ type: "bot_forget", person: p.id });
+    });
+    li.append(name, ren, del);
+    return li;
+  }));
+}
+
 // ---------- WebSocket ----------
 function send(obj) {
   if (S.ws && S.ws.readyState === WebSocket.OPEN) S.ws.send(JSON.stringify(obj));
@@ -1055,6 +1190,7 @@ function handle(m) {
       setupSelcall(m.selcall);
       setupClips(m.clips);
       setupFx(m.voice_fx);
+      setupBot(m.bot);
       buildChannels();
       rtcStart();
       break;
@@ -1076,6 +1212,9 @@ function handle(m) {
       break;
     case "clips":
       setClipList(m.list);
+      break;
+    case "bot":
+      onBot(m);
       break;
     case "rtc_answer":
       if (S.pc) S.pc.setRemoteDescription({ type: "answer", sdp: m.sdp }).catch((e) => rtcFallback(e.message));
@@ -1212,6 +1351,7 @@ function render() {
   updateHead(); // channel, frequency, TX/CHG/BUSY, errors and signal go on the head's screen
   renderClips(); // marks the clip on air, and stops it being deleted meanwhile
   renderFx();
+  if (S.bot) $("#botStop").hidden = !st.bot_tx;
 
   const btn = $("#ptt");
   btn.classList.toggle("live", p.mine);
@@ -1291,6 +1431,10 @@ function init() {
   });
 
   $("#clipUpload").addEventListener("click", () => $("#clipFile").click());
+  for (const b of $("#botModes").children) b.addEventListener("click", () => send({ type: "bot_mode", mode: b.dataset.mode }));
+  $("#botSend").addEventListener("click", () => botDecide(true));
+  $("#botDiscard").addEventListener("click", () => botDecide(false));
+  $("#botStop").addEventListener("click", () => send({ type: "bot_stop" }));
   $("#recordBtn").addEventListener("click", toggleRecord);
   $("#fxToggle").addEventListener("click", toggleFx);
   $("#recordVox").addEventListener("change", (e) => store.set("recordVox", e.target.checked ? "1" : "0"));

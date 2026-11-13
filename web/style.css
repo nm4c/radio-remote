@@ -189,6 +189,40 @@ button.danger { color: var(--tx); }
 .fx-presets button.sel { border-color: var(--lcd-fg); color: var(--lcd-fg); }
 .fx-presets button.on { background: var(--lcd-fg); border-color: var(--lcd-fg); color: #1a1a1a; font-weight: 700; }
 .fx-toggle.on { background: var(--lcd-fg); border-color: var(--lcd-fg); color: #1a1a1a; font-weight: 700; }
+/* AI agent */
+.bot { display: grid; gap: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.bot h2 { margin: 0; font-size: 15px; }
+.bot-modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.bot-modes button { padding: 8px 6px; font-size: 14px; }
+.bot-modes button.on { background: var(--lcd-fg); border-color: var(--lcd-fg); color: #1a1a1a; font-weight: 700; }
+.bot-pending { display: grid; gap: 8px; border: 1px solid var(--lcd-fg); border-radius: 10px; padding: 10px; }
+.bot-pending-text { margin: 0; }
+.bot-pending .row { display: flex; gap: 8px; }
+.bot-stage { margin: 0; color: var(--muted); font-size: 12px; }
+.bot-stage:empty { display: none; }
+.bot-feed { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; max-height: 22em; overflow-y: auto; }
+.bot-feed:empty { display: none; }
+.bot-feed li { display: grid; grid-template-columns: 3.4em 1fr auto; gap: 8px; align-items: baseline;
+  padding: 5px 6px; border-radius: 6px; font-size: 14px; }
+.bot-feed li:hover { background: var(--panel-2); }
+.bot-feed .when { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.bot-feed .who { font-weight: 600; margin-right: 6px; }
+.bot-feed .who.anonymous { color: var(--muted); font-style: italic; }
+.bot-feed .who.none { color: var(--muted); font-weight: 400; }
+.bot-feed .meta { color: var(--muted); font-size: 11px; margin-left: 6px; font-variant-numeric: tabular-nums; }
+.bot-feed .said { overflow-wrap: anywhere; }
+.bot-feed li.reply { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.bot-feed li.reply .who { color: var(--accent); }
+.bot-feed li.reply.gone .said { color: var(--muted); text-decoration: line-through; }
+.bot-feed button { padding: 2px 8px; font-size: 12px; color: var(--muted); }
+.bot-people summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+.bot-people ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 2px; }
+.bot-people li { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; padding: 4px 6px;
+  border-radius: 6px; font-size: 14px; }
+.bot-people li:hover { background: var(--panel-2); }
+.bot-people .kind { color: var(--muted); font-size: 12px; }
+.bot-people button { padding: 2px 8px; font-size: 12px; color: var(--muted); }
+.bot-people button.danger { color: var(--tx); }
 .sync { display: grid; gap: 10px; }
 .settings { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
 .settings summary { cursor: pointer; color: var(--muted); }
@@ -226,5 +260,6 @@ button.linkish { background: none; border: none; color: var(--accent); padding: 
 .listen-only #selcallPanel label, .listen-only #selcallHint, .listen-only #selcallPresets,
 .listen-only .clip-actions, .listen-only #recordBtn, .listen-only #recordModeRow, .listen-only #clipList input,
 .listen-only #clipList button, .listen-only #clipsHint, .listen-only .sliders label:nth-child(2),
-.listen-only .micmeter { display: none !important; }
+.listen-only .micmeter, .listen-only #botModes, .listen-only #botPending .row, .listen-only #botStop,
+.listen-only .bot-feed button, .listen-only #botPeople button { display: none !important; }
 .record-mode { font-size: 13px; color: var(--muted); }

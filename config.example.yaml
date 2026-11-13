@@ -177,3 +177,61 @@ sa818:
     lowpass: true
   rssi_ms: 500          # how often to read signal strength while receiving
   rssi_offset_db: null  # set to show dBm: dBm = RSSI + offset (calibrate against a known signal)
+
+# ---- AI agent ------------------------------------------------------------------------------
+# Listens to the channel, transcribes every over, learns voices (people you name, and new voices
+# under a pseudonym until it learns their name), keeps notes on people, and can answer on air in
+# a voice and persona you choose. Off by default: with enabled false nothing of it loads and the
+# web page shows no AI panel. Turn it on here, restart, then pick a mode in the AI agent panel:
+#   Listen   transcribe and identify only (never transmits)
+#   Approve  every reply waits in the panel for an operator to Send or Discard it
+#   Auto     replies go on air by themselves when the channel is quiet
+# Its packages (over a gigabyte) aren't installed by default: add them with  sudo ./deploy/update.sh --with-ai
+# Try it offline first on recordings:  python -m server.bot replay -c config.yaml some-overs/*.wav
+# Everything it learns and logs is in bot.dir (see server/bot/agent.py for the log format).
+bot:
+  enabled: false
+  name: "RadPi"            # what it calls itself; saying it on air counts as talking to it
+  dir: bot                 # people, notes, logs and over audio
+  mode: listen             # at start-up: listen, approve or auto
+  persona: null            # your own persona prompt file; null = server/bot/prompts/banter.md
+  reply_policy: llm        # llm: it decides when to speak; always; addressed: only when named
+  wake_words: []           # more names that count as talking to it
+  learn_anonymous: true    # remember unfamiliar voices as "Caller N"
+  learn_notes: true        # let it note things about people and pick up their names
+  opt_out_phrases: []      # e.g. ["forget me"]: deletes that speaker's profile. Empty = off
+  context_overs: 12        # recent overs it sees each time
+  reply_gap_ms: 1500       # the channel must be quiet this long before it keys up
+  reply_wait_s: 20         # gives up on a reply if the channel doesn't go quiet
+  drop_stale: true         # drops a reply if someone else spoke in the meantime
+  max_reply_s: 30          # longest reply (also capped by ptt.max_tx_seconds)
+  max_replies_per_hour: null   # null = no limit
+  min_reply_gap_s: 0
+  approve_timeout_s: 60
+  level: 0.5               # its voice's peak level (audio.tx_gain applies on top)
+  keep_audio: true         # keep each over's audio with the log (about 1.9 MB a minute of talk)
+  retention_days: null     # delete logs and audio older than this; null = keep everything
+  pronounce: {"RadPi": "Rad Pie"}   # words the voice gets wrong -> how to spell them for it
+  stt:                     # speech to text
+    backend: faster_whisper   # on the Pi's CPU; or openai (any compatible server: url, api_key), or mock
+    model: base.en            # tiny.en is faster, small.en more accurate
+    prompt: null              # vocabulary hint: local names, places, callsigns
+  speaker:                 # voice recognition
+    backend: ecapa            # SpeechBrain ECAPA (good); basic = numpy only, rough, for testing
+    match: null               # how similar counts as the same person; null = the backend's default
+  llm:
+    backend: ollama           # ollama or hailo-ollama (AI HAT+ 2); openai = any compatible server; mock
+    url: http://127.0.0.1:11434
+    model: qwen2.5:1.5b
+    api_key: null
+    temperature: 0.9
+  tts:                     # its voice
+    backend: piper            # offline; or azure, google, elevenlabs (need the internet), or mock
+    voice: null               # piper: path to the .onnx (docs/voice/README.md makes an Aussie one)
+    # Cloud voices with an Australian accent, until your own Piper voice is trained:
+    #   azure:      voice: en-AU-WilliamNeural (or en-AU-NatashaNeural), region: australiaeast, api_key: ...
+    #   google:     voice: en-AU-Neural2-B (male) or en-AU-Neural2-C (female), api_key: ...
+    #   elevenlabs: voice: <voice id of an Australian voice from the voice library>, api_key: ...
+    api_key: null
+    region: null
+    speed: 1.0
