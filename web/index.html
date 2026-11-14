@@ -117,6 +117,28 @@
       </div>
     </section>
 
+    <!-- Say: type something, pick a voice, and the Pi speaks it on air (tts: in config.yaml;
+         hidden unless the server has it switched on). -->
+    <section class="say" id="sayPanel" hidden aria-labelledby="sayTitle">
+      <div class="selcall-top">
+        <h2 id="sayTitle">Say</h2>
+        <span class="selcall-std" id="sayInfo"></span>
+      </div>
+      <label>Voice
+        <select id="sayVoice"></select>
+      </label>
+      <label>Text
+        <textarea id="sayText" rows="3" placeholder="Type what to say on air"></textarea>
+      </label>
+      <div class="say-actions">
+        <button type="button" class="primary" id="saySend">Say on air</button>
+        <button type="button" id="sayPreview">Listen first</button>
+        <button type="button" class="danger" id="sayStop" hidden>Stop</button>
+        <span class="clip-progress" id="sayStatus" aria-live="polite"></span>
+      </div>
+      <p class="selcall-hint" id="sayHint">Listen first plays it here only. Ctrl+Enter says it on air.</p>
+    </section>
+
     <!-- Voice effects: pick one here; P on the desk head (P1 on the handheld) or the button
          switches it on and off. The Pi applies it to your live voice only. -->
     <section class="fx" id="fxPanel" hidden aria-labelledby="fxTitle">

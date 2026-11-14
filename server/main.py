@@ -4,12 +4,14 @@ import argparse
 import asyncio
 import collections
 import hmac
+import io
 import itertools
 import json
 import logging
 import secrets
 import ssl
 import time
+import wave
 from pathlib import Path
 
 import numpy as np
@@ -17,7 +19,7 @@ from aiohttp import WSMsgType, web
 
 from .audio import create_audio
 from .config import load
-from . import clips, rtc, selcall, voicefx
+from . import clips, rtc, selcall, tts, voicefx
 from .auth import LoginLimiter, UserDB, AuthError, check_password, hash_password, verify_password
 from .eq import TxEq
 from .recorder import Recorder
@@ -32,9 +34,20 @@ AUTH_RECHECK_S = 5      # how often connected operators are re-checked against t
 
 # Messages only 'control' accounts may send. Everything else a 'listen' account sends is ignored.
 CONTROL_MESSAGES = {"ptt", "ptt_hold", "channel", "selcall", "voice_fx", "record",
-                    "clip_play", "clip_stop", "clip_delete", "clip_rename",
+                    "clip_play", "clip_stop", "clip_delete", "clip_rename", "say", "say_stop",
                     "bot_mode", "bot_approve", "bot_reject", "bot_stop", "bot_enrol", "bot_rename", "bot_forget"}
 
+
+
+def _wav(pcm, rate):
+    """16-bit mono PCM as a WAV file."""
+    out = io.BytesIO()
+    with wave.open(out, "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(rate)
+        w.writeframes(pcm)
+    return out.getvalue()
 
 class Client:
     _ids = itertools.count(1)
@@ -134,6 +147,13 @@ class RemoteHead:
         self.recorder = None
         if self.clips and cfg["record"]["enabled"]:
             self.recorder = Recorder(self.clips, int(cfg["audio"]["wire_rate"]), cfg["record"], self._record_changed)
+        # Say (tts.enabled): typed text spoken on air in a chosen voice. say_tx is the text on air
+        # now ({"text", "voice", "by"}), which like a clip stops PTT presses meanwhile; say_making
+        # is set while some operator's text is being turned into speech (one at a time).
+        self.ts = cfg["tts"]
+        self.speech = tts.Speech(self.ts, int(cfg["audio"]["wire_rate"])) if self.ts["enabled"] else None
+        self.say_tx = None
+        self.say_making = None
         # The AI agent (bot.enabled): only imported when it's switched on. bot_tx is its reply on
         # air now ({"text"}), which, like a clip, stops PTT presses meanwhile.
         self.bot = None
@@ -212,6 +232,7 @@ class RemoteHead:
             "selcall_tx": self.selcall_tx,
             "clip_tx": {"id": self.clip_tx["id"], "name": self.clip_tx["name"]} if self.clip_tx else None,
             "bot_tx": self.bot_tx["text"] if self.bot_tx else None,
+            "say_tx": {k: self.say_tx[k] for k in ("text", "voice", "by")} if self.say_tx else None,
             "recording": self.recorder.status() if self.recorder else None,
             "fx": c.fx,
         }
@@ -358,6 +379,7 @@ class RemoteHead:
                     "list": self.clips.list(),
                 } if self.clips else None,
                 "bot": self.bot.hello() if self.bot else None,
+                "say": {**self.speech.hello(), "max_seconds": self._max_say_seconds()} if self.speech else None,
             })
             self.broadcast_state()
 
@@ -498,6 +520,13 @@ class RemoteHead:
             if self.clips:
                 self._clip_message(c, kind, m.get("id"), m.get("name"))
             return
+        if kind in ("say", "say_stop"):
+            if self.speech:
+                if kind == "say":
+                    self._say_request(c, m.get("text"), m.get("voice"))
+                else:
+                    self._say_stop(c)
+            return
         if isinstance(kind, str) and kind.startswith("bot_"):
             if self.bot and kind in CONTROL_MESSAGES:
                 text = self.bot.handle(c, kind, m)
@@ -559,7 +588,7 @@ class RemoteHead:
         if preset is not None and preset not in voicefx.PRESETS:
             return
         c.fx = preset
-        if self.radio.ptt_owner == c.id and not (self.selcall_tx or self.clip_tx or self.bot_tx):
+        if self.radio.ptt_owner == c.id and not (self.selcall_tx or self.clip_tx or self.bot_tx or self.say_tx):
             # Switched while talking: takes effect straight away.
             self.tx_fx = voicefx.VoiceFx(preset, int(self.cfg["audio"]["wire_rate"])) if preset else None
         log.info("%s voice effect: %s", c.name, preset or "off")
@@ -567,8 +596,9 @@ class RemoteHead:
         c.send_json(self.state_for(c))
 
     def _ptt_on(self, c):
-        if self.selcall_tx or self.clip_tx or self.bot_tx:
+        if self.selcall_tx or self.clip_tx or self.bot_tx or self.say_tx:
             text = ("Sending a selcall" if self.selcall_tx else "A clip is playing on air" if self.clip_tx
+                    else f"{self.say_tx['by']}'s text is being spoken (Stop in the Say panel)" if self.say_tx
                     else "The AI agent is talking (Stop in its panel cuts it off)")
             c.send_json({"type": "notice", "level": "warn", "code": "ptt_denied", "text": text})
             return
@@ -592,7 +622,7 @@ class RemoteHead:
         c.last_hold = time.monotonic()
 
     async def _ptt_off(self, c):
-        if self.radio.ptt_owner != c.id or self.selcall_tx or self.clip_tx or self.bot_tx:
+        if self.radio.ptt_owner != c.id or self.selcall_tx or self.clip_tx or self.bot_tx or self.say_tx:
             return
         gen = self._ptt_gen
         if c.rtc and c.rtc.ready:
@@ -659,6 +689,8 @@ class RemoteHead:
             return "A clip is playing on air"
         if self.bot_tx:
             return "The AI agent is talking"
+        if self.say_tx:
+            return "Text is being spoken on air"
         if self.radio.ptt_owner is not None:
             return "The radio is transmitting"
         return None
@@ -804,6 +836,115 @@ class RemoteHead:
     def bot_audit(self, c, event, **detail):
         self.audit(c, event, **detail)
 
+    # ---- Say: text to speech on air (server/tts.py) -------------------------
+
+    def _max_say_seconds(self):
+        return float(self.cfg["ptt"]["max_tx_seconds"]) - int(self.ts["tx_delay_ms"]) / 1000 - 2
+
+    def _say_request(self, c, text, voice):
+        def refuse(t):
+            c.send_json({"type": "say", "status": "failed", "text": t})
+
+        if not isinstance(text, str) or not text.strip():
+            return refuse("Type something to say first")
+        if len(text) > int(self.ts["max_chars"]):
+            return refuse(f"That's too long: {len(text)} characters (the limit is {self.ts['max_chars']})")
+        if not isinstance(voice, str) or voice not in self.speech.voices:
+            return refuse("Pick a voice (that one isn't in config.yaml any more)")
+        if self.say_making:
+            return refuse(f"Still making {self.say_making}'s speech: try again in a moment")
+        busy = self._on_air()
+        if busy:
+            return refuse(f"Can't say it now: {busy[0].lower()}{busy[1:]}")
+        self.say_making = c.name  # claimed before any await
+        self._spawn(self._say(c, text.strip(), voice))
+
+    async def _say(self, c, text, voice):
+        c.send_json({"type": "say", "status": "making"})
+        try:
+            try:
+                samples = await self.speech.say(voice, text)
+            except ValueError as e:
+                return c.send_json({"type": "say", "status": "failed", "text": str(e)})
+            except Exception as e:  # a cloud service or Piper failing: tell the operator why
+                log.warning("say: %s voice failed: %s", voice, e)
+                return c.send_json({"type": "say", "status": "failed", "text": f"The {voice} voice failed: {e}"})
+        finally:
+            self.say_making = None
+        rate = int(self.cfg["audio"]["wire_rate"])
+        seconds = len(samples) / rate
+        if seconds > self._max_say_seconds():
+            return c.send_json({"type": "say", "status": "failed", "text":
+                                f"That takes {seconds:.0f} s to say: the limit is {self._max_say_seconds():g} s "
+                                "(ptt.max_tx_seconds). Split it up."})
+        # Typing and synthesis took a moment: someone may have started transmitting meanwhile.
+        busy = self._on_air() or (None if c in self.clients and c.control else "You're no longer allowed to transmit")
+        if busy:
+            return c.send_json({"type": "say", "status": "failed", "text": f"Not sent: {busy[0].lower()}{busy[1:]}"})
+        # The tone control, then back to the level the voice was made at (tts.level).
+        x = self.tx_eq.whole(samples)
+        peak = float(np.max(np.abs(x))) if len(x) else 0.0
+        if peak:
+            x = x * (float(np.max(np.abs(samples))) / peak)
+        self.say_tx = {"text": text, "voice": voice, "by": c.name}
+        log.info("%s says (%s, %.1f s): %r", c.name, voice, seconds, text)
+        self.audit(c, "say", voice=voice, text=text[:200], seconds=round(seconds, 1))
+        completed = None
+        try:
+            completed = await self._transmit(c, x, int(self.ts["tx_delay_ms"]))
+        except RadioError as e:
+            c.send_json({"type": "say", "status": "failed", "text": str(e)})
+        finally:
+            job, self.say_tx = self.say_tx, None
+            self.broadcast_state()
+        if completed:
+            c.send_json({"type": "say", "status": "done"})
+        elif completed is False:
+            who = job.get("stopped_by")
+            text = f"Stopped by {who}" if who else "Interrupted"
+            for o in self._authed():
+                if who or o is c:
+                    o.send_json({"type": "say", "status": "stopped", "text": text, "mine": o is c})
+
+    def _say_stop(self, c):
+        """Any control operator can cut it off, like a clip."""
+        if self.say_tx and self.radio.ptt_owner is not None:
+            log.info("%s stopped %s's text on air", c.name, self.say_tx["by"])
+            self.audit(c, "say_stop", text=self.say_tx["text"][:200])
+            self.say_tx["stopped_by"] = c.name
+            self._ptt_gen += 1  # ends _transmit's wait; it then leaves the unkeying to us
+            self.radio.unkey()
+            self.audio.clear_tx()
+
+    async def say_preview(self, request):
+        """POST /say/preview  {"voice", "text"}: the speech as a WAV, to hear before sending it.
+        Control operators only (cloud voices are paid by the character). X-Radio-Token header."""
+        token = request.headers.get("X-Radio-Token", "")
+        c = next((x for x in self._authed() if hmac.compare_digest(x.token, token)), None)
+        if c is None:
+            return web.json_response({"error": "Not logged in (reload the page)"}, status=403)
+        if not c.control:
+            self.audit(c, "denied", action="say_preview")
+            return web.json_response({"error": "Listen-only account"}, status=403)
+        if not self.speech:
+            return web.json_response({"error": "Say is turned off on this radio"}, status=404)
+        try:
+            m = await request.json()
+            text, voice = m.get("text"), m.get("voice")
+            if not isinstance(text, str) or not isinstance(voice, str):
+                raise ValueError("Type something to say first")
+            if len(text) > int(self.ts["max_chars"]):
+                raise ValueError(f"That's too long (the limit is {self.ts['max_chars']} characters)")
+            samples = await self.speech.say(voice, text)
+        except ValueError as e:
+            return web.json_response({"error": str(e)}, status=400)
+        except Exception as e:
+            log.warning("say preview: %s voice failed: %s", voice, e)
+            return web.json_response({"error": f"The {voice} voice failed: {e}"}, status=502)
+        pcm = (np.clip(samples, -1, 1) * 32767).astype("<i2").tobytes()
+        return web.Response(body=_wav(pcm, int(self.cfg["audio"]["wire_rate"])), content_type="audio/wav",
+                            headers={"Cache-Control": "no-store"})
+
     # ---- recording ------------------------------------------------------
 
     def _record(self, c, on, mode=None):
@@ -912,6 +1053,8 @@ class RemoteHead:
                 kind, what = "clip", self.clip_tx["name"]
             elif self.bot_tx:
                 kind, what = "bot", self.bot_tx["text"][:200]
+            elif self.say_tx:
+                kind, what = "say", f"{self.say_tx['voice']}: {self.say_tx['text'][:200]}"
             elif c and c.fx:
                 what = f"voice effect {c.fx}"
             self._tx = {"owner": owner, "user": c.username if c else None, "ip": c.remote if c else None,
@@ -1069,6 +1212,7 @@ def build_app(cfg):
     app.router.add_get("/", _index)
     app.router.add_get("/ws", head.ws_handler)
     app.router.add_post("/clips", head.clip_upload)
+    app.router.add_post("/say/preview", head.say_preview)
     app.router.add_get(r"/clips/{id:[0-9a-f]{12}}.wav", head.clip_file)
     app.router.add_static("/static", WEB_DIR)
     app.on_startup.append(head.on_startup)

@@ -6,10 +6,12 @@ The sound card runs at `device_rate` (48 kHz) and we resample by an integer
 factor with a windowed-sinc FIR filter.
 """
 
+import io
 import logging
 import math
 import threading
 import time
+import wave
 
 import numpy as np
 
@@ -23,6 +25,38 @@ def _lowpass(cutoff, numtaps=95):
     n = np.arange(numtaps) - (numtaps - 1) / 2
     h = np.sinc(2 * cutoff * n) * np.hamming(numtaps)
     return (h / h.sum()).astype(np.float32)
+
+
+def resample(x, src, dst):
+    """Resample float32 mono audio. Good enough for speech: a windowed-sinc low-pass below the
+    lower Nyquist frequency, then linear interpolation onto the new sample times."""
+    if src == dst or len(x) == 0:
+        return x.astype(np.float32)
+    if dst < src:
+        taps = _lowpass(0.45 * dst / src, 127)
+        x = np.convolve(x, taps, mode="same")
+    n = int(round(len(x) * dst / src))
+    t = np.arange(n) * (src / dst)
+    return np.interp(t, np.arange(len(x)), x).astype(np.float32)
+
+
+def read_wav(path_or_bytes, rate):
+    """Any PCM WAV (mono or stereo, 8/16/32-bit) as float32 mono at `rate`."""
+    src = io.BytesIO(path_or_bytes) if isinstance(path_or_bytes, (bytes, bytearray)) else str(path_or_bytes)
+    with wave.open(src) as w:
+        ch, width, fr = w.getnchannels(), w.getsampwidth(), w.getframerate()
+        raw = w.readframes(w.getnframes())
+    if width == 2:
+        x = np.frombuffer(raw, "<i2").astype(np.float32) / 32768
+    elif width == 4:
+        x = np.frombuffer(raw, "<i4").astype(np.float32) / 2147483648
+    elif width == 1:
+        x = (np.frombuffer(raw, np.uint8).astype(np.float32) - 128) / 128
+    else:
+        raise ValueError(f"unsupported WAV sample width {width}")
+    if ch > 1:
+        x = x.reshape(-1, ch).mean(axis=1)
+    return resample(x, fr, rate)
 
 
 class _FIR:

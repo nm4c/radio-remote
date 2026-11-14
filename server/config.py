@@ -120,6 +120,20 @@ DEFAULTS = {
         "tx_prebuffer_ms": 40,
         "tx_max_ms": 200,
     },
+    # Say: type text in the web page, pick a voice, and it's spoken on air (server/tts.py). Off
+    # by default; the page shows the panel only when it's on. See the tts: section of
+    # config.example.yaml for Australian voices.
+    "tts": {
+        "enabled": False,
+        "voices": [],               # [{name, backend, voice, speed}]; the first is the default
+        "max_chars": 600,           # longest text accepted (also capped by ptt.max_tx_seconds)
+        "level": 0.5,               # peak level (audio.tx_gain applies on top)
+        "tx_delay_ms": 300,         # keyed silence before speaking, while the transmitter comes up
+        "pronounce": {"RadPi": "Rad Pie"},  # text replacements before speaking
+        "azure": {"api_key": None, "region": None},        # region e.g. australiaeast
+        "google": {"api_key": None},
+        "elevenlabs": {"api_key": None, "model": None},    # model null = eleven_flash_v2_5
+    },
     # The AI agent (server/bot/). Off by default: with enabled false nothing of it is loaded and
     # the web page shows no AI panel. See the bot: section of config.example.yaml.
     "bot": {
@@ -231,6 +245,13 @@ def load(path):
     _check_selcall(cfg["selcall"])
     _check_clips(cfg["clips"], cfg["ptt"])
     _check_record(cfg["record"])
+    _check_tts(cfg["tts"], cfg["ptt"])
+    # The agent's voice can use the Say panel's cloud keys instead of repeating them.
+    bt = cfg["bot"]["tts"]
+    keys = cfg["tts"].get(bt["backend"]) if bt["backend"] in ("azure", "google", "elevenlabs") else None
+    if keys:
+        bt["api_key"] = bt["api_key"] or keys.get("api_key")
+        bt["region"] = bt["region"] or keys.get("region")
     _check_bot(cfg["bot"], cfg["ptt"])
 
     # Resolve the state file and clip folder relative to the config file.
@@ -245,6 +266,9 @@ def load(path):
         v = holder.get(key)
         if v and (sub is None or bot["tts"]["backend"] == "piper") and not Path(v).is_absolute():
             holder[key] = str(path.resolve().parent / v)
+    for v in cfg["tts"]["voices"] if cfg["tts"]["enabled"] else ():
+        if v["backend"] == "piper" and not Path(v["voice"]).is_absolute():
+            v["voice"] = str(path.resolve().parent / v["voice"])
     return cfg
 
 
@@ -301,6 +325,47 @@ def _check_clips(cl, ptt):
         raise SystemExit("config: clips.level must be between 0 and 1")
 
 
+TTS_BACKENDS = ("piper", "azure", "google", "elevenlabs", "mock")
+
+
+def _check_tts(t, ptt):
+    """Validate the tts (Say panel) section in place. Only checked when it's switched on."""
+    if not t["enabled"]:
+        return
+    voices = t["voices"]
+    if not isinstance(voices, list) or not voices:
+        raise SystemExit("config: tts.voices needs at least one voice (see config.example.yaml)")
+    names = set()
+    for i, v in enumerate(voices):
+        if not isinstance(v, dict) or not str(v.get("name") or "").strip():
+            raise SystemExit(f"config: tts.voices[{i}] needs a name")
+        v["name"] = str(v["name"]).strip()[:40]
+        if v["name"] in names:
+            raise SystemExit(f"config: tts.voices: {v['name']!r} is listed twice")
+        names.add(v["name"])
+        b = v.get("backend")
+        if b not in TTS_BACKENDS:
+            raise SystemExit(f"config: tts voice {v['name']!r}: backend must be one of {', '.join(TTS_BACKENDS)}")
+        if b != "mock" and not v.get("voice"):
+            raise SystemExit(f"config: tts voice {v['name']!r} needs voice: "
+                             + ("the path of a Piper .onnx voice" if b == "piper" else "the backend's voice name or id"))
+        if not 0.5 <= float(v.get("speed") or 1.0) <= 2:
+            raise SystemExit(f"config: tts voice {v['name']!r}: speed must be 0.5-2")
+        keys = t.get(b) or {}
+        if b in ("azure", "google", "elevenlabs") and not keys.get("api_key"):
+            raise SystemExit(f"config: tts.{b}.api_key is needed for the voice {v['name']!r}")
+        if b == "azure" and not keys.get("region"):
+            raise SystemExit("config: tts.azure.region is needed (e.g. australiaeast)")
+    if not 20 <= int(t["max_chars"]) <= 5000:
+        raise SystemExit("config: tts.max_chars must be 20-5000")
+    if not 0 < float(t["level"]) <= 1:
+        raise SystemExit("config: tts.level must be between 0 and 1")
+    if not 0 <= int(t["tx_delay_ms"]) <= 3000:
+        raise SystemExit("config: tts.tx_delay_ms must be 0-3000")
+    if float(ptt["max_tx_seconds"]) - int(t["tx_delay_ms"]) / 1000 - 2 < 2:
+        raise SystemExit("config: ptt.max_tx_seconds is too short for tts")
+
+
 def _check_bot(b, ptt):
     """Validate the bot section in place. Only checked when it's switched on."""
     if not b["enabled"]:
@@ -316,7 +381,7 @@ def _check_bot(b, ptt):
         "stt": ("faster_whisper", "openai", "mock"),
         "speaker": ("ecapa", "basic"),
         "llm": ("ollama", "openai", "mock"),
-        "tts": ("piper", "azure", "google", "elevenlabs", "mock"),
+        "tts": TTS_BACKENDS,
     }
     for sub, allowed in backends.items():
         if b[sub]["backend"] not in allowed:

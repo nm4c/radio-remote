@@ -13,7 +13,7 @@ import wave
 
 import numpy as np
 
-from ..audio import _lowpass
+from ..audio import read_wav, resample  # noqa: F401  (used from here by the agent)
 
 
 class OverCapture:
@@ -80,19 +80,6 @@ def to_pcm(x):
     return (np.clip(x, -1, 1) * 32767).astype("<i2").tobytes()
 
 
-def resample(x, src, dst):
-    """Resample float32 mono audio. Good enough for speech: a windowed-sinc low-pass below the
-    lower Nyquist frequency, then linear interpolation onto the new sample times."""
-    if src == dst or len(x) == 0:
-        return x.astype(np.float32)
-    if dst < src:
-        taps = _lowpass(0.45 * dst / src, 127)
-        x = np.convolve(x, taps, mode="same")
-    n = int(round(len(x) * dst / src))
-    t = np.arange(n) * (src / dst)
-    return np.interp(t, np.arange(len(x)), x).astype(np.float32)
-
-
 def wav_bytes(pcm, rate):
     out = io.BytesIO()
     with wave.open(out, "wb") as w:
@@ -101,22 +88,3 @@ def wav_bytes(pcm, rate):
         w.setframerate(rate)
         w.writeframes(pcm)
     return out.getvalue()
-
-
-def read_wav(path_or_bytes, rate):
-    """Any PCM WAV (mono or stereo, 8/16/32-bit) as float32 mono at `rate`."""
-    src = io.BytesIO(path_or_bytes) if isinstance(path_or_bytes, (bytes, bytearray)) else str(path_or_bytes)
-    with wave.open(src) as w:
-        ch, width, fr = w.getnchannels(), w.getsampwidth(), w.getframerate()
-        raw = w.readframes(w.getnframes())
-    if width == 2:
-        x = np.frombuffer(raw, "<i2").astype(np.float32) / 32768
-    elif width == 4:
-        x = np.frombuffer(raw, "<i4").astype(np.float32) / 2147483648
-    elif width == 1:
-        x = (np.frombuffer(raw, np.uint8).astype(np.float32) - 128) / 128
-    else:
-        raise ValueError(f"unsupported WAV sample width {width}")
-    if ch > 1:
-        x = x.reshape(-1, ch).mean(axis=1)
-    return resample(x, fr, rate)

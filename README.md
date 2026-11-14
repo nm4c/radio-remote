@@ -12,8 +12,9 @@ anywhere, on a phone or a PC.
     most land-mobile and UHF CB radios.
   - The **RadPi SA818 HAT** has a built-in 1 W UHF transceiver, with frequencies, CTCSS/DCS,
     a VFO and signal strength.
-- **On-air tools:** selcall (send and decode), audio clips played to air, recording of the
-  channel, voice effects, and TX tone control.
+- **On-air tools:** selcall (send and decode), audio clips played to air, text to speech in a
+  choice of voices (Australian male and female included), recording of the channel, voice
+  effects, and TX tone control.
 - **AI agent (optional):**
   - It transcribes the channel and recognises who's talking.
   - It learns new voices and names, and keeps notes on people.
@@ -61,6 +62,8 @@ There are two hardware modes, set with `radio.type` in `config.yaml`:
   the channel. See [Selcall](#selcall).
 - Audio clips: upload MP3s (or any audio the browser can play), pick one, and transmit it with
   the radio's Play key. See [Audio clips](#audio-clips).
+- Say (off until you switch it on): type something, pick a voice, and the Pi speaks it on air.
+  See [Say (text to speech)](#say-text-to-speech).
 - Voice effects: Vader, Dalek, Demon, Robot, Giant, Female, Chipmunk and Ghost, switched on
   and off with the radio's P key. See [Voice effects](#voice-effects).
 - Recording: the orange button records what the radio hears into 15-minute parts, which join the
@@ -205,6 +208,35 @@ volume knob also stops it, and that press does nothing else.
   stops, with a notice, if the disk gets down to `record.min_free_mb`.
 - A recording can be played on air like any clip if it fits inside `ptt.max_tx_seconds`.
   Longer ones can't be picked, but you can still listen to and save them.
+
+## Say (text to speech)
+
+Type something in the **Say** panel, pick a voice and press **Say on air** (or Ctrl+Enter). The
+Pi turns it into speech, keys the radio, waits `tts.tx_delay_ms` and speaks it, like a clip.
+**Listen first** plays it in your own browser only, so you can check a voice or a tricky word
+before it goes out. Off by default: set `tts.enabled: true` and list the voices in
+`config.yaml` (see the `tts:` section of `config.example.yaml`).
+
+- **Voices:** each one in `tts.voices` has a name for the list, a backend and that backend's
+  voice. Mix them freely; the first is the default, and each browser remembers its last pick.
+
+  | Backend | Australian voices | Notes |
+  |---|---|---|
+  | `azure` (Azure AI Speech) | `en-AU-NatashaNeural` (female), `en-AU-WilliamNeural` (male), and more | Natural sounding. Free tier. Needs `tts.azure.api_key` and `region` (e.g. `australiaeast`) |
+  | `google` (Cloud Text-to-Speech) | `en-AU-Neural2-A`/`C` (female), `en-AU-Neural2-B`/`D` (male) | Needs `tts.google.api_key` |
+  | `elevenlabs` | any Australian voice from its voice library | The most lifelike; small free tier. Needs `tts.elevenlabs.api_key` |
+  | `piper` (offline, on the Pi) | none ready-made: [train your own](docs/voice/README.md) | British and American voices work out of the box. `sudo /opt/radpi/.venv/bin/pip install piper-tts`, then download a voice's `.onnx` and `.onnx.json` |
+
+  The cloud voices need the internet and take about a second; Piper works with no connection.
+- **Stopping:** while it speaks, any control operator can press **Stop**. PTT, clips and
+  selcalls are locked out meanwhile, and Say can't start while anyone transmits. Text that takes
+  longer than `ptt.max_tx_seconds` to say is refused, so split long messages up.
+- **Level and words:** speech goes out with its peak at `tts.level`, through the TX tone
+  control and `audio.tx_gain`. Add words it says wrong to `tts.pronounce`, spelled the way
+  they should sound (`{"Wagga": "Wogga"}`).
+- **Records:** each one is in the audit log (who, which voice, the text) and on the head's
+  bottom line while it's on air. Listen-only accounts don't see the panel.
+- **Keys:** the AI agent's voice (`bot.tts`) uses the same cloud keys if it doesn't have its own.
 
 ## Voice effects
 
@@ -488,6 +520,7 @@ Messages marked * need the `control` role; from a `listen` account they're refus
 | → | \* `{"type":"voice_fx","preset":"vader"\|null}` switch this operator's voice effect on (a preset id from `hello.voice_fx`) or off; `state.fx` is the one on |
 | → | \* `{"type":"record","on":true\|false,"mode":"continuous"\|"vox"}` start or stop recording (`mode` optional: `record.mode`) |
 | → | \* `{"type":"clip_play","id":"3f9c1a2b7d4e"}` key the radio and play a stored clip; `{"type":"clip_stop"}` stop the one on air (any operator); `{"type":"clip_delete","id":"…"}`; `{"type":"clip_rename","id":"…","name":"…"}` (uploads and recordings, up to 40 characters) |
+| → | \* `{"type":"say","text":"…","voice":"<name from hello.say.voices>"}` speak text on air; `{"type":"say_stop"}` stop it (any operator). Replies `{"type":"say","status":"making"\|"done"\|"failed"\|"stopped","text":"…"}` to the sender (`stopped` goes to everyone when another operator stopped it). `hello.say` is `{"voices":[{"name","backend"}],"max_chars","max_seconds"}` (null if off); `state.say_tx` is `{"text","voice","by"}` while on air, or null |
 | → | \* binary: TX audio, int16 LE mono 16 kHz, 20 ms frames. Ignored unless you hold PTT. |
 | → | `{"type":"logout"}` end this session; `{"type":"change_password","old":"…","new":"…"}` (reply `{"type":"password","ok":…}`) |
 | ← | `{"type":"account","role":"…","display":"…"}` an administrator changed this account while connected |
@@ -504,7 +537,9 @@ Messages marked * need the `control` role; from a `listen` account they're refus
 Clips are uploaded over HTTP (control accounts): `POST /clips?name=Net%20opening` with header
 `X-Radio-Token: <auth.token>` and a mono 16-bit WAV body at `wire_rate`. The reply is the new
 clip's entry, or `{"error":"…"}`. `GET /clips/<id>.wav?token=<auth.token>` returns a clip's audio
-(any account). The token lasts as long as that WebSocket connection.
+(any account). The token lasts as long as that WebSocket connection. `POST /say/preview` with the
+same header and a JSON body `{"text","voice"}` returns the speech as a WAV without transmitting
+(control accounts).
 
 ## Layout
 
@@ -514,8 +549,9 @@ server/   main.py (web + WebSocket + safety watchdog), radio.py (PTT, channels, 
           selcall.py (selcall tones: encoder and decoder), clips.py (stored audio clips),
           recorder.py (recording received audio into the clip list), auth.py (accounts, sessions,
           audit log), users.py (the radpi-users tool),
-          eq.py (TX tone control), voicefx.py (voice effects),
-          bot/ (the AI agent: capture, stt, speakers, brain, tts, agent; python -m server.bot)
+          eq.py (TX tone control), voicefx.py (voice effects), tts.py (text to speech: Say and
+          the AI agent's voice), bot/ (the AI agent: capture, stt, speakers, brain, agent;
+          python -m server.bot)
 web/      index.html, app.js, worklet.js (AudioWorklet capture/playback), style.css,
           control-head/ (control head SVGs and their input handling, control_head.js)
 assets/control-head/  generators for the control head artwork, plus PNGs and layout JSON

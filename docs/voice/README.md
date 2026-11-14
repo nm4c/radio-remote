@@ -4,7 +4,7 @@ Piper's ready-made English voices are American or British. This page makes your 
 someone Australian reading prompts, fine-tune an existing Piper voice on the recordings, and
 put the result on the Pi. The voice runs offline, faster than real time on a Pi 5.
 
-Until it's ready, use a cloud voice with an Australian accent (`bot.tts` in `config.yaml`:
+Until it's ready, use a cloud voice with an Australian accent (`bot.tts` or `tts.voices` in `config.yaml`:
 Azure `en-AU-WilliamNeural` or `en-AU-NatashaNeural`, Google `en-AU-Neural2-B`, or an
 ElevenLabs voice).
 
@@ -91,13 +91,17 @@ cp ~/aussie-cache/config.json en_AU-aussie-medium.onnx.json
 
 ## 3. Use it
 
-Copy both files to the Pi, for example into `/opt/radpi/voices/`, then in `config.yaml`:
+Copy both files to the Pi, for example into `/opt/radpi/voices/`, then in `config.yaml` for the
+AI agent's voice, the Say panel, or both:
 
 ```yaml
 bot:
   tts:
     backend: piper
     voice: voices/en_AU-aussie-medium.onnx   # relative to config.yaml
+tts:
+  voices:
+    - {name: "Aussie (offline)", backend: piper, voice: voices/en_AU-aussie-medium.onnx}
 ```
 
 Restart (`sudo systemctl restart radpi`) and try it offline first:
@@ -106,7 +110,7 @@ Restart (`sudo systemctl restart radpi`) and try it offline first:
 cd /opt/radpi && sudo -u radio .venv/bin/python -m server.bot -c config.yaml replay some-over.wav
 ```
 
-If it mispronounces a word, add it to `bot.pronounce` spelled the way it should sound:
+If it mispronounces a word, add it to `bot.pronounce` (and `tts.pronounce`) spelled the way it should sound:
 `{"Wagga": "Wogga", "RadPi": "Rad Pie"}`.
 
 Over a 12.5 kHz FM channel the audio is band-limited (about 300–3000 Hz), which hides most

@@ -1,18 +1,18 @@
-"""Text to speech: the agent's voice.
+"""Text to speech, for the Say panel (tts: in config.yaml) and the AI agent's voice (bot.tts).
 
-Backends (bot.tts.backend), all returning float32 audio at the wire rate (16 kHz):
+Backends, all returning float32 audio at the wire rate (16 kHz):
   piper       offline, on the Pi (pip install piper-tts). voice: path of a .onnx voice; its
-              .onnx.json must sit beside it. Your own Australian voice goes here once trained
-              (docs/voice/README.md). Faster than real time on a Pi 5.
-  azure       Azure AI Speech. voice e.g. en-AU-NatashaNeural or en-AU-WilliamNeural;
-              region e.g. australiaeast; api_key is the resource key.
+              .onnx.json must sit beside it. Piper's own voices are American or British; an
+              Australian one has to be trained (docs/voice/README.md). Faster than real time on a Pi 5.
+  azure       Azure AI Speech. voice e.g. en-AU-NatashaNeural (female) or en-AU-WilliamNeural
+              (male); region e.g. australiaeast; api_key is the resource key.
   google      Google Cloud Text-to-Speech. voice e.g. en-AU-Neural2-B (male) or en-AU-Neural2-C
               (female); api_key is an API key allowed to use the service.
   elevenlabs  ElevenLabs. voice: a voice id from your voice library (pick an Australian one);
               model defaults to eleven_flash_v2_5, the low-latency one.
   mock        a short warble per word, for testing without a voice.
 
-The cloud ones need the internet (the USB modem) and add about 0.5-1.5 s per reply.
+The cloud ones need the internet (the USB modem) and take about 0.5-1.5 s per sentence.
 """
 
 import asyncio
@@ -24,14 +24,16 @@ from html import escape
 import aiohttp
 import numpy as np
 
-from .capture import read_wav, resample
+from .audio import read_wav, resample
 
-log = logging.getLogger("bot.tts")
+log = logging.getLogger("tts")
 
 
-def clean(text, pronounce):
-    """Plain speakable text: no emoji, markdown or stage directions; pronunciation fixes applied."""
-    text = re.sub(r"\*[^*]{0,40}\*|\([^)]{0,40}\)|\[[^\]]{0,40}\]", " ", text)   # *grins*, (laughs), [static]
+def clean(text, pronounce, stage_directions=True):
+    """Plain speakable text: no emoji or markdown, pronunciation fixes applied, and (for the
+    LLM's replies) no stage directions."""
+    if stage_directions:
+        text = re.sub(r"\*[^*]{0,40}\*|\([^)]{0,40}\)|\[[^\]]{0,40}\]", " ", text)   # *grins*, (laughs), [static]
     text = re.sub(r"[^\w\s.,!?;:'\"&%$/-]", " ", text)
     for word, say in (pronounce or {}).items():
         text = re.sub(rf"\b{re.escape(word)}\b", say, text, flags=re.I)
@@ -113,7 +115,7 @@ class ElevenLabs:
         self.cfg = cfg
         self.rate = rate
         if not cfg["voice"]:
-            raise SystemExit("config: bot.tts.voice must be an ElevenLabs voice id")
+            raise SystemExit("config: an ElevenLabs voice needs voice: <voice id>")
 
     async def speak(self, text):
         url = f"https://api.elevenlabs.io/v1/text-to-speech/{self.cfg['voice']}?output_format=pcm_16000"
@@ -154,3 +156,52 @@ async def speak(engine, text):
     if engine.is_async:
         return await engine.speak(text)
     return await asyncio.to_thread(engine.speak, text)
+
+
+# ---- the Say panel ------------------------------------------------------------
+
+class Speech:
+    """Operators type something, pick a voice, and it's spoken on air (tts: in config.yaml).
+
+    Each voice in tts.voices names a backend and that backend's voice; the cloud keys are shared
+    per backend (tts.azure, tts.google, tts.elevenlabs). A voice's engine is made the first time
+    it's used and kept, so a Piper voice is only loaded into memory once it's picked.
+    """
+
+    def __init__(self, cfg, rate):
+        self.cfg = cfg
+        self.rate = rate
+        self.voices = {v["name"]: v for v in cfg["voices"]}
+        self.engines = {}
+        self.lock = asyncio.Lock()  # one at a time: Piper keeps a CPU core busy while it works
+
+    def hello(self):
+        return {"voices": [{"name": v["name"], "backend": v["backend"]} for v in self.cfg["voices"]],
+                "max_chars": int(self.cfg["max_chars"])}
+
+    def _engine_cfg(self, v):
+        keys = self.cfg.get(v["backend"]) or {}
+        return {"backend": v["backend"], "voice": v.get("voice"), "speed": float(v.get("speed") or 1.0),
+                "model": v.get("model") or keys.get("model"), "api_key": keys.get("api_key"),
+                "region": keys.get("region")}
+
+    async def say(self, voice, text):
+        """float32 audio of `text` in `voice`, peak at tts.level. ValueError for bad requests,
+        anything else for a backend that failed."""
+        v = self.voices.get(voice)
+        if v is None:
+            raise ValueError("That voice isn't in config.yaml any more (reload the page)")
+        text = clean(str(text)[:int(self.cfg["max_chars"])], self.cfg["pronounce"], stage_directions=False)
+        if not text:
+            raise ValueError("Nothing to say")
+        async with self.lock:
+            engine = self.engines.get(voice)
+            if engine is None:
+                engine = await asyncio.to_thread(create, self._engine_cfg(v), self.rate)
+                self.engines[voice] = engine
+            x = await speak(engine, text)
+        x = np.asarray(x, np.float32)
+        peak = float(np.max(np.abs(x))) if len(x) else 0.0
+        if not peak:
+            raise RuntimeError("the voice came back silent")
+        return x * (float(self.cfg["level"]) / peak)

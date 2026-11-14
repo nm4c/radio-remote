@@ -534,6 +534,7 @@ function updateHead() {
   else if (st.selcall_tx) detail = `Sending selcall ${st.selcall_tx}`;
   else if (st.clip_tx) detail = `Playing ${st.clip_tx.name}`;
   else if (st.bot_tx) detail = `AI: ${st.bot_tx}`;
+  else if (st.say_tx) detail = `${st.say_tx.voice}: ${st.say_tx.text}`;
   else if (p.active && !p.mine) detail = `TX by ${p.by}`;
   else if (st.stepping) detail = "Changing channel…";
   else if (call) detail = call;
@@ -953,6 +954,118 @@ async function uploadClips(files) {
   }
 }
 
+// ---------- Say ----------
+// Text to speech on air (tts: in config.yaml). The server turns the text into speech in the
+// chosen voice and transmits it like a clip; Listen first fetches the same audio to play here only.
+
+function setupSay(cfg) {
+  S.say = cfg || null;
+  S.sayMaking = false;
+  $("#sayPanel").hidden = !cfg;
+  if (!cfg) return;
+  const sel = $("#sayVoice");
+  sel.replaceChildren(...cfg.voices.map((v) => {
+    const o = document.createElement("option");
+    o.value = v.name;
+    o.textContent = v.name;
+    return o;
+  }));
+  const saved = store.get("sayVoice");
+  if (saved && cfg.voices.some((v) => v.name === saved)) sel.value = saved;
+  $("#sayText").maxLength = cfg.max_chars;
+  $("#sayInfo").textContent = `up to ${Math.round(cfg.max_seconds)} s`;
+  $("#sayStatus").textContent = "";
+  renderSay();
+}
+
+function renderSay() {
+  if (!S.say) return;
+  const st = S.server;
+  const onAir = !!(st && st.say_tx);
+  const busy = !st || st.ptt.active || st.stepping;
+  const len = $("#sayText").value.length;
+  if (onAir && S.sayMaking) { S.sayMaking = false; S.sayNote = false; } // made it: now it's on air
+  $("#sayStop").hidden = !onAir;
+  $("#saySend").disabled = S.sayMaking || busy || !$("#sayText").value.trim();
+  $("#sayPreview").disabled = S.sayPreviewing || !$("#sayText").value.trim();
+  if (onAir) $("#sayStatus").textContent = `On air: ${st.say_tx.by}`;
+  else if (!S.sayMaking && !S.sayPreviewing && !S.sayNote) {
+    $("#sayStatus").textContent = len > S.say.max_chars * 0.8 ? `${len} / ${S.say.max_chars}` : "";
+  }
+}
+
+function sayNow() {
+  if (!S.say || S.sayMaking) return;
+  if (S.role !== "control") { listenOnlyToast(); return; }
+  const text = $("#sayText").value.trim();
+  if (!text) return;
+  const st = S.server;
+  if (st && st.ptt.active) { toast("Radio is transmitting"); return; }
+  send({ type: "say", text, voice: $("#sayVoice").value });
+  S.sayMaking = true;
+  sayNote("Making the speech…");
+}
+
+function sayNote(text, ms = 0) {
+  S.sayNote = !!text;
+  $("#sayStatus").textContent = text || "";
+  clearTimeout(S.sayNoteTimer);
+  if (ms) S.sayNoteTimer = setTimeout(() => { S.sayNote = false; renderSay(); }, ms);
+  renderSay();
+}
+
+function onSay(m) {
+  if (!S.say) return;
+  if (m.status === "making") {
+    S.sayMaking = true;
+    sayNote("Making the speech…");
+  } else if (m.status === "done") {
+    S.sayMaking = false;
+    sayNote("Sent", 3000);
+  } else if (m.status === "failed") {
+    S.sayMaking = false;
+    sayNote("");
+    toast(m.text);
+  } else if (m.status === "stopped") {
+    S.sayMaking = false;
+    if (m.mine) sayNote("", 0);
+    toast(m.text);
+  }
+  // The text stays in the box after sending, so it can be said again or changed.
+}
+
+async function sayPreview() {
+  if (!S.say || S.sayPreviewing) return;
+  const text = $("#sayText").value.trim();
+  if (!text) return;
+  S.sayPreviewing = true;
+  sayNote("Making the speech…");
+  try {
+    const r = await fetch("/say/preview", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Radio-Token": S.token || "" },
+      body: JSON.stringify({ text, voice: $("#sayVoice").value }),
+    });
+    if (!r.ok) {
+      let err = `HTTP ${r.status}`;
+      try { err = (await r.json()).error || err; } catch (_) { /* not JSON */ }
+      throw new Error(err);
+    }
+    const url = URL.createObjectURL(await r.blob());
+    if (S.sayAudio) S.sayAudio.pause();
+    S.sayAudio = new Audio(url);
+    S.sayAudio.addEventListener("ended", () => URL.revokeObjectURL(url));
+    await S.sayAudio.play();
+    sayNote("Playing here (not on air)", 2500);
+  } catch (e) {
+    sayNote("");
+    toast(`Listen first: ${e.message}`);
+  } finally {
+    S.sayPreviewing = false;
+    renderSay();
+  }
+}
+
 // ---------- AI agent ----------
 // The server's agent (server/bot/) transcribes every over, matches the voice to the people it
 // knows, and in Approve or Auto mode answers on air. This panel shows the live transcript, lets
@@ -1191,6 +1304,7 @@ function handle(m) {
       setupClips(m.clips);
       setupFx(m.voice_fx);
       setupBot(m.bot);
+      setupSay(m.say);
       buildChannels();
       rtcStart();
       break;
@@ -1215,6 +1329,9 @@ function handle(m) {
       break;
     case "bot":
       onBot(m);
+      break;
+    case "say":
+      onSay(m);
       break;
     case "rtc_answer":
       if (S.pc) S.pc.setRemoteDescription({ type: "answer", sdp: m.sdp }).catch((e) => rtcFallback(e.message));
@@ -1352,12 +1469,13 @@ function render() {
   renderClips(); // marks the clip on air, and stops it being deleted meanwhile
   renderFx();
   if (S.bot) $("#botStop").hidden = !st.bot_tx;
+  if (S.say) renderSay();
 
   const btn = $("#ptt");
   btn.classList.toggle("live", p.mine);
   btn.classList.toggle("pending", S.pttWanted && !p.mine);
   btn.classList.toggle("locked", otherTx || !S.micOk);
-  $("#pttLabel").textContent = p.mine ? (st.selcall_tx ? "SELCALL" : st.clip_tx ? "CLIP" : "ON AIR")
+  $("#pttLabel").textContent = p.mine ? (st.selcall_tx ? "SELCALL" : st.clip_tx ? "CLIP" : st.say_tx ? "SAY" : "ON AIR")
     : otherTx ? "IN USE" : "PTT";
 
   $("#tuneForm").querySelector("button").disabled = busyRadio;
@@ -1435,6 +1553,14 @@ function init() {
   $("#botSend").addEventListener("click", () => botDecide(true));
   $("#botDiscard").addEventListener("click", () => botDecide(false));
   $("#botStop").addEventListener("click", () => send({ type: "bot_stop" }));
+  $("#saySend").addEventListener("click", sayNow);
+  $("#sayPreview").addEventListener("click", sayPreview);
+  $("#sayStop").addEventListener("click", () => send({ type: "say_stop" }));
+  $("#sayVoice").addEventListener("change", (e) => store.set("sayVoice", e.target.value));
+  $("#sayText").addEventListener("input", renderSay);
+  $("#sayText").addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); sayNow(); }
+  });
   $("#recordBtn").addEventListener("click", toggleRecord);
   $("#fxToggle").addEventListener("click", toggleFx);
   $("#recordVox").addEventListener("change", (e) => store.set("recordVox", e.target.checked ? "1" : "0"));

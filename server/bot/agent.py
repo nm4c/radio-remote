@@ -34,7 +34,8 @@ from pathlib import Path
 
 import numpy as np
 
-from . import brain, stt, tts
+from .. import tts
+from . import brain, stt
 from .capture import OverCapture, to_float, wav_bytes
 from .speakers import People, create_embedder
 

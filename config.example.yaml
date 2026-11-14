@@ -130,6 +130,33 @@ voice_fx:
   # switches it on and off.
   enabled: true
 
+tts:
+  # Say: type something in the Say panel, pick a voice, and the Pi speaks it on air (Stop cuts it
+  # off). Listen first plays it in your own browser only. Off by default.
+  enabled: false
+  voices:              # shown in this order; the first is the default. Add speed: 0.5-2 to any voice.
+    # Azure AI Speech: natural Australian voices, with a free tier. Needs azure: below.
+    - {name: "Natasha (AU female)", backend: azure, voice: en-AU-NatashaNeural}
+    - {name: "William (AU male)", backend: azure, voice: en-AU-WilliamNeural}
+    # Google Cloud Text-to-Speech. Needs google: below.
+    # - {name: "Google AU female", backend: google, voice: en-AU-Neural2-C}
+    # - {name: "Google AU male", backend: google, voice: en-AU-Neural2-B}
+    # ElevenLabs: any voice from its library (it has Australian ones). Needs elevenlabs: below.
+    # - {name: "Bazza", backend: elevenlabs, voice: <voice id>}
+    # Offline, on the Pi, with Piper (sudo /opt/radpi/.venv/bin/pip install piper-tts, then download
+    # a voice's .onnx and .onnx.json from huggingface.co/rhasspy/piper-voices). Its ready-made voices
+    # are British or American; your own Australian one can be trained (docs/voice/README.md).
+    # - {name: "Alba (UK female, offline)", backend: piper, voice: voices/en_GB-alba-medium.onnx}
+    # - {name: "Alan (UK male, offline)", backend: piper, voice: voices/en_GB-alan-medium.onnx}
+  max_chars: 600       # longest text; what's said must also fit in ptt.max_tx_seconds
+  level: 0.5           # peak level on air (audio.tx_gain applies on top)
+  tx_delay_ms: 300     # keyed silence before speaking, while the transmitter comes up
+  pronounce: {RadPi: "Rad Pie"}   # words it says wrong, spelled the way they should sound
+  azure: {api_key: null, region: australiaeast}   # the Speech resource's key and region
+  google: {api_key: null}
+  elevenlabs: {api_key: null, model: null}
+  # The AI agent's voice (bot.tts) uses these keys too if it doesn't have its own.
+
 record:
   # The orange button on the radio records received audio into the clip list (see README, Recording).
   enabled: true        # needs clips.enabled
