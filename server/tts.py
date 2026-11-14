@@ -123,7 +123,8 @@ class Google:
         speed, pitch, gain = TONE_SHAPE[tone][:3]
         audio = {"audioEncoding": "LINEAR16", "sampleRateHertz": 16000,
                  "speakingRate": float(self.cfg["speed"]) * speed}
-        if tone != "normal":
+        if tone != "normal" and "Chirp" not in self.voice:
+            # Chirp (HD) voices take no pitch or gain: they get the speed, and the shaping after.
             audio.update(pitch=pitch, volumeGainDb=gain)
         body = {"input": {"text": text},
                 "voice": {"languageCode": "-".join(self.voice.split("-")[:2]), "name": self.voice},
