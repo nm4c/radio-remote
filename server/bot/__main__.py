@@ -113,7 +113,7 @@ async def enrol(cfg, args):
         agent.people.add_note(person["id"], args.note)
 
 
-def people(cfg):
+def people(cfg, args):
     from .speakers import People
     b = cfg["bot"]
     ppl = People(Path(b["dir"]) / "people", b["speaker"], b["speaker"]["backend"])
@@ -122,6 +122,10 @@ def people(cfg):
         s = ppl.samples.get(p["id"])
         print(f"{p['name']:<20} {p['kind']:<11} {p.get('overs', 0):>5} overs  {0 if s is None else len(s):>2} samples"
               f"  last {seen}  ({p['id']})")
+    if args.similar:
+        print(f"\nMost alike pairs (match {ppl.match:.2f}, merge {ppl.merge:.2f}, new {ppl.new:.2f}):")
+        for score, a, c in ppl.similar()[:args.similar]:
+            print(f"  {score:.3f}  {a['name']} ({a['kind']})  ~  {c['name']} ({c['kind']})")
 
 
 def main():
@@ -142,7 +146,9 @@ def main():
     e.add_argument("--note", help="something to put in their notes")
     e.add_argument("--out", default="bot-replies", help=argparse.SUPPRESS)
     e.add_argument("files", nargs="+")
-    sub.add_parser("people", help="list the people it knows")
+    pp = sub.add_parser("people", help="list the people it knows")
+    pp.add_argument("--similar", type=int, nargs="?", const=20, default=0, metavar="N",
+                    help="also show the N most alike pairs of voiceprints (default 20), for tuning speaker.merge")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)-7s %(name)s: %(message)s")
 
@@ -156,7 +162,7 @@ def main():
     elif args.cmd == "enrol":
         asyncio.run(enrol(cfg, args))
     else:
-        people(cfg)
+        people(cfg, args)
 
 
 if __name__ == "__main__":

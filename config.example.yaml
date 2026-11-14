@@ -221,11 +221,12 @@ bot:
   name: "RadPi"            # what it calls itself; saying it on air counts as talking to it
   dir: bot                 # people, notes, logs and over audio
   mode: listen             # at start-up: listen, approve or auto
-  persona: null            # your own persona prompt file; null = server/bot/prompts/banter.md
+  persona: null            # built-in: banter (friendly, the default) or cb (foul-mouthed); or your own .md file
   reply_policy: llm        # llm: it decides when to speak; always; addressed: only when named
   wake_words: []           # more names that count as talking to it
   learn_anonymous: true    # remember unfamiliar voices as "Caller N"
   learn_notes: true        # let it note things about people and pick up their names
+  tones: true              # it can raise its voice or shout back (faster, higher, mic overdriven)
   opt_out_phrases: []      # e.g. ["forget me"]: deletes that speaker's profile. Empty = off
   context_overs: 12        # recent overs it sees each time
   reply_gap_ms: 1500       # the channel must be quiet this long before it keys up
@@ -246,6 +247,9 @@ bot:
   speaker:                 # voice recognition
     backend: ecapa            # SpeechBrain ECAPA (good); basic = numpy only, rough, for testing
     match: null               # how similar counts as the same person; null = the backend's default
+    new: null                 # below this, a new caller; between new and match it says "not sure"
+    merge: null               # anonymous callers whose voices are this alike are merged
+                              # See  python -m server.bot people --similar  to tune these.
   llm:
     backend: ollama           # ollama or hailo-ollama (AI HAT+ 2); openai = any compatible server; mock
     url: http://127.0.0.1:11434

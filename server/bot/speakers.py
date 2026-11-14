@@ -1,9 +1,20 @@
 """Who is talking: voiceprints, and the people the agent knows.
 
 Each over is turned into an embedding (a vector that describes the voice, not the words) and
-compared with every person's voiceprint, the average of their recent embeddings. The best
-match above `speaker.match` is that person; above `speaker.update` the over is also added to
-their voiceprint, so it follows their voice over different radios and conditions.
+compared with every person's voiceprint: the overs of theirs it has kept, one embedding each. A
+person's score is the average of their few closest overs, not of all of them, so someone heard on
+two different radios still matches whichever one they're on now. Over a radio channel the rig
+colours the sound about as much as the voice does, which is why this matters.
+
+  score >= speaker.match         that person; >= speaker.update also adds the over to their voiceprint
+  score <  speaker.new           nobody it knows: a new anonymous caller (if the over is long enough)
+  in between                     not sure: left unidentified rather than guessed or split off
+
+Anonymous callers whose voiceprints turn out to be close (>= speaker.merge) are merged, so one
+person split into "Caller 3" and "Caller 7" comes back together as it hears more of them. Named
+people (known, acquainted) are never merged automatically. When the voiceprint is full
+(speaker.max_samples), the most redundant over is dropped rather than the oldest, so the different
+radios someone uses stay represented.
 
 People come in three kinds:
   known       enrolled by an operator (named in the web page or with  python -m server.bot enrol)
@@ -33,7 +44,10 @@ import numpy as np
 
 log = logging.getLogger("bot.speakers")
 
-DEFAULT_THRESHOLDS = {"ecapa": (0.60, 0.72), "basic": (0.96, 0.98)}  # (match, update)
+# (match, update, new, merge) per backend. ECAPA's are for narrowband FM radio audio, which scores
+# lower for the same voice than the clean recordings the model was trained on.
+DEFAULT_THRESHOLDS = {"ecapa": (0.50, 0.62, 0.38, 0.55), "basic": (0.96, 0.98, 0.93, 0.97)}
+TOP_K = 3  # a person's score: the mean of this many of their closest kept overs
 NOTES_MAX = 4000  # characters of notes kept per person (older lines are trimmed off the top)
 
 
@@ -103,6 +117,18 @@ def _unit(v):
     return v / n if n else v
 
 
+def _score(samples, e):
+    """How well unit embedding e matches a person: the mean of their TOP_K closest samples."""
+    sims = samples @ e
+    k = min(TOP_K, len(sims))
+    return float(np.mean(np.partition(sims, -k)[-k:]))
+
+
+def _pair_score(a, b):
+    """How alike two voiceprints are: each sample's score against the other, averaged both ways."""
+    return (np.mean([_score(b, x) for x in a]) + np.mean([_score(a, x) for x in b])) / 2
+
+
 # ---- people -----------------------------------------------------------------------
 
 class People:
@@ -112,9 +138,10 @@ class People:
         self.dir = Path(directory)
         self.dir.mkdir(parents=True, exist_ok=True)
         self.index = self.dir / "people.json"
-        dm, du = DEFAULT_THRESHOLDS[backend]
-        self.match = float(cfg["match"]) if cfg["match"] is not None else dm
-        self.update = float(cfg["update"]) if cfg["update"] is not None else du
+        defaults = dict(zip(("match", "update", "new", "merge"), DEFAULT_THRESHOLDS[backend]))
+        for key, default in defaults.items():
+            setattr(self, key, float(cfg[key]) if cfg.get(key) is not None else default)
+        self.new = min(self.new, self.match)
         self.max_samples = int(cfg["max_samples"])
         self.lock = threading.RLock()
         self.people = self._load()
@@ -159,15 +186,16 @@ class People:
             return next((p for p in self.people if p["name"].lower() == key and p["kind"] != "anonymous"), None)
 
     def identify(self, emb):
-        """(person, score) of the best match above the threshold, else (None, best score)."""
+        """(person, score) of the best match at or above speaker.match, else (None, best score).
+        A best score below speaker.new means nobody it knows; in between, not sure."""
         e = _unit(emb)
         best, score = None, -1.0
         with self.lock:
             for p in self.people:
                 s = self.samples.get(p["id"])
-                if s is None or not len(s):
+                if s is None or not len(s) or s.shape[1] != len(e):
                     continue
-                sim = float(np.dot(_unit(s.mean(axis=0)), e))
+                sim = _score(s, e)
                 if sim > score:
                     best, score = p, sim
         return (best, score) if best is not None and score >= self.match else (None, score)
@@ -177,8 +205,56 @@ class People:
             s = self.samples.get(pid)
             row = _unit(emb)[None]
             s = row if s is None or not len(s) or s.shape[1] != row.shape[1] else np.vstack([s, row])
-            self.samples[pid] = s[-self.max_samples:]
+            self.samples[pid] = self._trim(s)
             self._save_samples(pid)
+
+    def _trim(self, s):
+        """Cut samples down to speaker.max_samples by dropping the most redundant of the older ones
+        (the one most like the rest), so the voiceprint keeps covering every radio and condition it
+        has heard them on. The newest sample always stays."""
+        while len(s) > self.max_samples:
+            sims = s @ s.T
+            redundancy = (sims.sum(axis=1) - 1) / (len(s) - 1)
+            s = np.delete(s, int(np.argmax(redundancy[:-1])), axis=0)
+        return s
+
+    def similar(self, pid=None):
+        """[(score, a, b)] for pairs of people, most alike first; only pairs with pid if given."""
+        with self.lock:
+            have = [p for p in self.people if self.samples.get(p["id"]) is not None and len(self.samples[p["id"]])]
+            out = []
+            for i, a in enumerate(have):
+                for b in have[i + 1:]:
+                    if pid and pid not in (a["id"], b["id"]):
+                        continue
+                    sa, sb = self.samples[a["id"]], self.samples[b["id"]]
+                    if sa.shape[1] == sb.shape[1]:
+                        out.append((float(_pair_score(sa, sb)), a, b))
+            return sorted(out, key=lambda t: -t[0])
+
+    def consolidate(self, pid):
+        """Merge anonymous callers whose voice is close to pid's (>= speaker.merge). Returns the
+        person pid ended up as (it may have been folded into someone else), and the merges done
+        as [(from, into)]."""
+        merges = []
+        with self.lock:
+            for score, a, b in self.similar(pid):
+                if score < self.merge:
+                    break
+                if self.get(a["id"]) is None or self.get(b["id"]) is None:
+                    continue
+                if a["kind"] != "anonymous" and b["kind"] != "anonymous":
+                    continue  # two named people: an operator decides that
+                # Fold the anonymous one into the named one; two anonymous: into the busier one.
+                if a["kind"] == "anonymous" and (b["kind"] != "anonymous" or b.get("overs", 0) >= a.get("overs", 0)):
+                    src, dst = a, b
+                else:
+                    src, dst = b, a
+                self.merge(src["id"], dst["id"])
+                merges.append((src, dst))
+                if src["id"] == pid:
+                    pid = dst["id"]
+            return self.get(pid), merges
 
     def seen(self, pid):
         with self.lock:
@@ -225,7 +301,7 @@ class People:
             a, b = self.samples.get(dst_id), self.samples.get(src_id)
             if b is not None and len(b):
                 merged = b if a is None or not len(a) or a.shape[1] != b.shape[1] else np.vstack([a, b])
-                self.samples[dst_id] = merged[-self.max_samples:]
+                self.samples[dst_id] = self._trim(merged)
                 self._save_samples(dst_id)
             notes = self.notes(src_id)
             if notes:

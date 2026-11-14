@@ -1153,7 +1153,8 @@ function renderBot() {
       body.append(el("span", "who", b.name));
       body.append(document.createTextNode(it.text));
       const why = it.reason ? ` (${it.reason})` : "";
-      body.append(el("span", "meta", `${it.status}${why}`));
+      const tone = { raised: "raised voice, ", shout: "shouting, " }[it.tone] || "";
+      body.append(el("span", "meta", `${tone}${it.status}${why}`));
       li.classList.toggle("gone", ["dropped", "discarded", "stopped"].includes(it.status));
       li.append(body, el("span"));
     } else {

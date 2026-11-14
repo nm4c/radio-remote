@@ -13,6 +13,13 @@ Backends, all returning float32 audio at the wire rate (16 kHz):
   mock        a short warble per word, for testing without a voice.
 
 The cloud ones need the internet (the USB modem) and take about 0.5-1.5 s per sentence.
+
+Tone (the AI agent picks one per reply): normal, raised or shout. The cloud voices are asked to
+speak faster, higher and louder (Azure and Google through prosody; ElevenLabs through capitals,
+and an audio tag on its v3 model); Piper only gets the speed. Then every backend gets the same
+"too close to the mic" treatment: driven into soft clipping with the presence pushed up. A radio
+transmits the same peak deviation whatever happens, so that density, not more level, is what
+makes it sound like someone yelling on air.
 """
 
 import asyncio
@@ -27,6 +34,22 @@ import numpy as np
 from .audio import read_wav, resample
 
 log = logging.getLogger("tts")
+
+TONES = ("normal", "raised", "shout")
+# tone -> speed factor, pitch (semitones), extra volume (dB), drive (soft clipping), presence
+TONE_SHAPE = {"normal": (1.0, 0, 0, 0, 0.0), "raised": (1.06, 1.5, 4, 2.5, 0.35),
+              "shout": (1.12, 3.5, 8, 6.0, 0.7)}
+
+
+def shape(x, tone):
+    """The "yelling into the mic" sound: presence boost, then soft clipping. Level is left to
+    the caller (it normalises the peak anyway)."""
+    _, _, _, drive, presence = TONE_SHAPE.get(tone, TONE_SHAPE["normal"])
+    if not drive or not len(x):
+        return x
+    x = x + presence * np.diff(x, prepend=x[:1]) * 4          # first-order lift of the upper mids
+    x = x / (np.max(np.abs(x)) or 1)
+    return (np.tanh(drive * x) / np.tanh(drive)).astype(np.float32)
 
 
 def clean(text, pronounce, stage_directions=True):
@@ -51,8 +74,8 @@ class Piper:
         self.voice = PiperVoice.load(cfg["voice"])
         self.src_rate = int(self.voice.config.sample_rate)
 
-    def speak(self, text):
-        length = 1.0 / self.speed
+    def speak(self, text, tone="normal"):
+        length = 1.0 / (self.speed * TONE_SHAPE[tone][0])
         if hasattr(self.voice, "synthesize_stream_raw"):  # piper-tts 1.2
             raw = b"".join(self.voice.synthesize_stream_raw(text, length_scale=length))
         else:                                             # piper-tts 1.3+
@@ -72,10 +95,12 @@ class Azure:
         self.url = f"https://{cfg['region']}.tts.speech.microsoft.com/cognitiveservices/v1"
         self.voice = cfg["voice"] or "en-AU-NatashaNeural"
 
-    async def speak(self, text):
-        rate_pct = f"{(float(self.cfg['speed']) - 1) * 100:+.0f}%"
+    async def speak(self, text, tone="normal"):
+        speed, pitch, gain = TONE_SHAPE[tone][:3]
+        rate_pct = f"{(float(self.cfg['speed']) * speed - 1) * 100:+.0f}%"
+        extra = f" pitch='{pitch:+.1f}st' volume='{gain:+.0f}dB'" if tone != "normal" else ""
         ssml = (f"<speak version='1.0' xml:lang='en-AU'><voice name='{escape(self.voice)}'>"
-                f"<prosody rate='{rate_pct}'>{escape(text)}</prosody></voice></speak>")
+                f"<prosody rate='{rate_pct}'{extra}>{escape(text)}</prosody></voice></speak>")
         headers = {"Ocp-Apim-Subscription-Key": self.cfg["api_key"], "Content-Type": "application/ssml+xml",
                    "X-Microsoft-OutputFormat": "raw-16khz-16bit-mono-pcm", "User-Agent": "radpi"}
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as s:
@@ -94,11 +119,15 @@ class Google:
         self.rate = rate
         self.voice = cfg["voice"] or "en-AU-Neural2-B"
 
-    async def speak(self, text):
+    async def speak(self, text, tone="normal"):
+        speed, pitch, gain = TONE_SHAPE[tone][:3]
+        audio = {"audioEncoding": "LINEAR16", "sampleRateHertz": 16000,
+                 "speakingRate": float(self.cfg["speed"]) * speed}
+        if tone != "normal":
+            audio.update(pitch=pitch, volumeGainDb=gain)
         body = {"input": {"text": text},
                 "voice": {"languageCode": "-".join(self.voice.split("-")[:2]), "name": self.voice},
-                "audioConfig": {"audioEncoding": "LINEAR16", "sampleRateHertz": 16000,
-                                "speakingRate": float(self.cfg["speed"])}}
+                "audioConfig": audio}
         url = "https://texttospeech.googleapis.com/v1/text:synthesize"
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as s:
             async with s.post(url, json=body, headers={"X-Goog-Api-Key": self.cfg["api_key"]}) as r:
@@ -117,11 +146,19 @@ class ElevenLabs:
         if not cfg["voice"]:
             raise SystemExit("config: an ElevenLabs voice needs voice: <voice id>")
 
-    async def speak(self, text):
+    async def speak(self, text, tone="normal"):
         url = f"https://api.elevenlabs.io/v1/text-to-speech/{self.cfg['voice']}?output_format=pcm_16000"
-        body = {"text": text, "model_id": self.cfg["model"] or "eleven_flash_v2_5"}
-        if float(self.cfg["speed"]) != 1.0:
-            body["voice_settings"] = {"speed": float(self.cfg["speed"])}
+        model = self.cfg["model"] or "eleven_flash_v2_5"
+        if tone == "shout":
+            text = text.upper()
+        if tone != "normal":
+            text = text.rstrip(".") + ("!" if not text.endswith(("!", "?")) else "")
+            if model.startswith("eleven_v3"):
+                text = ("[shouting] " if tone == "shout" else "[angry] ") + text
+        body = {"text": text, "model_id": model}
+        speed = min(1.2, float(self.cfg["speed"]) * TONE_SHAPE[tone][0])   # ElevenLabs allows 0.7-1.2
+        if speed != 1.0:
+            body["voice_settings"] = {"speed": speed}
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as s:
             async with s.post(url, json=body, headers={"xi-api-key": self.cfg["api_key"]}) as r:
                 if r.status != 200:
@@ -136,7 +173,7 @@ class MockTTS:
     def __init__(self, cfg, rate):
         self.rate = rate
 
-    def speak(self, text):
+    def speak(self, text, tone="normal"):
         out = []
         for i, _ in enumerate(text.split()):
             t = np.arange(int(self.rate * 0.22)) / self.rate
@@ -152,10 +189,13 @@ def create(cfg, rate):
     return BACKENDS[cfg["backend"]](cfg, rate)
 
 
-async def speak(engine, text):
+async def speak(engine, text, tone="normal"):
+    tone = tone if tone in TONES else "normal"
     if engine.is_async:
-        return await engine.speak(text)
-    return await asyncio.to_thread(engine.speak, text)
+        x = await engine.speak(text, tone)
+    else:
+        x = await asyncio.to_thread(engine.speak, text, tone)
+    return shape(x, tone)
 
 
 # ---- the Say panel ------------------------------------------------------------

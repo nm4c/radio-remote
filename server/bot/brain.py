@@ -4,9 +4,10 @@ Every over that reaches it becomes one chat request: the persona (a prompt file 
 freely), what the agent knows about the speaker, the last few overs on the channel, and the new
 over. The model answers with a JSON object:
 
-  {"reply": "...", "name": null, "note": null}
+  {"reply": "...", "tone": "normal", "name": null, "note": null}
 
   reply  what to say on air, or "" to stay quiet
+  tone   how to say it: normal, raised or shout (only asked for when bot.tones is on)
   name   the speaker's own name or callsign if they just said it (an anonymous caller becomes
          acquainted under that name)
   note   one short new thing worth remembering about the speaker (added to their notes)
@@ -35,20 +36,27 @@ log = logging.getLogger("bot.brain")
 DEFAULT_PERSONA = Path(__file__).resolve().parent / "prompts" / "banter.md"
 
 POLICY_TEXT = {
-    "llm": "Most overs need no answer: reply only when you have something genuinely funny, warm or "
-           "useful to add, or someone speaks to you. Otherwise give an empty reply.",
+    "llm": "Most overs need no answer: reply only when you have something worth saying (in your "
+           "persona's own style) or someone speaks to you. Otherwise give an empty reply.",
     "always": "Reply to this over (the reply must not be empty).",
     "addressed": "You have been spoken to by name: reply.",
 }
 
 SPOKEN = ("Your reply is spoken over a two-way radio: plain words only (no emoji, lists or stage "
           "directions), short (one or two sentences), and never pretend to be one of the people on the channel.")
-FORMAT_LEARN = ('Answer with one JSON object and nothing else:\n'
-                '{"reply": "<what you say on air, or empty to stay quiet>", '
-                '"name": <the speaker\'s own name or callsign if they just said it, else null>, '
-                '"note": <one short new fact worth remembering about this speaker, else null>}\n' + SPOKEN)
-FORMAT_SIMPLE = ('Answer with one JSON object and nothing else:\n'
-                 '{"reply": "<what you say on air, or empty to stay quiet>"}\n' + SPOKEN)
+TONE = ('"tone": "<how your voice sounds: normal, raised (heated, firm) or shout (yelling)>", ')
+TONE_HINT = (" Use tone to match the moment the way a person would: raise your voice or shout when "
+             "someone is shouting or getting stuck into you, and talk normally the rest of the time.")
+
+
+def answer_format(learn, tones):
+    """The JSON the model must answer with."""
+    fields = '"reply": "<what you say on air, or empty to stay quiet>", ' + (TONE if tones else "")
+    if learn:
+        fields += ('"name": <the speaker\'s own name or callsign if they just said it, else null>, '
+                   '"note": <one short new fact worth remembering about this speaker, else null>')
+    return ("Answer with one JSON object and nothing else:\n{" + fields.rstrip(", ") + "}\n" + SPOKEN
+            + (TONE_HINT if tones else ""))
 
 
 def load_persona(path):
@@ -60,12 +68,13 @@ def load_persona(path):
         return DEFAULT_PERSONA.read_text().strip()
 
 
-def build_messages(persona, name, policy, learn, speaker, notes, history, text):
-    """speaker: a display label; notes: what's known about them; history: [(when, who, text)]."""
+def build_messages(persona, name, policy, learn, speaker, notes, history, text, tones=False, delivery=None):
+    """speaker: a display label; notes: what's known about them; history: [(when, who, text)];
+    delivery: how it sounded, e.g. "very loud: shouting" (None = nothing notable)."""
     system = "\n\n".join([
         persona.replace("{name}", name),
         f'You are "{name}", listening to a two-way radio channel. {POLICY_TEXT[policy]}',
-        FORMAT_LEARN if learn else FORMAT_SIMPLE,
+        answer_format(learn, tones),
     ])
     lines = [f"[{time.strftime('%H:%M', time.localtime(t))}] {who}: {said}" for t, who, said in history]
     parts = []
@@ -73,13 +82,13 @@ def build_messages(persona, name, policy, learn, speaker, notes, history, text):
         parts.append("Recent overs on the channel:\n" + "\n".join(lines))
     parts.append(f"About {speaker}:\n{notes.strip()}" if notes and notes.strip()
                  else f"You know nothing yet about {speaker}.")
-    parts.append(f'New over from {speaker}: "{text}"')
+    parts.append(f'New over from {speaker}' + (f" ({delivery})" if delivery else "") + f': "{text}"')
     return [{"role": "system", "content": system}, {"role": "user", "content": "\n\n".join(parts)}]
 
 
 def parse(raw):
-    """The model's answer as {"reply", "name", "note"} (missing parts None / "")."""
-    out = {"reply": "", "name": None, "note": None}
+    """The model's answer as {"reply", "tone", "name", "note"} (missing parts None / "")."""
+    out = {"reply": "", "tone": None, "name": None, "note": None}
     raw = (raw or "").strip()
     m = re.search(r"\{.*\}", raw, re.S)
     data = None
@@ -94,8 +103,11 @@ def parse(raw):
             if isinstance(v, str) and v.strip() and v.strip().lower() not in ("null", "none"):
                 out[k] = v.strip()
         out["reply"] = out["reply"] or ""
+        tone = (out["tone"] or "").lower()
+        out["tone"] = {"shouting": "shout", "yell": "shout", "angry": "raised", "heated": "raised"}.get(tone, tone)
     elif raw and not raw.startswith("{"):
         out["reply"] = raw.strip('"').strip()
+    out["tone"] = out["tone"] if out["tone"] in ("raised", "shout") else "normal"
     return out
 
 

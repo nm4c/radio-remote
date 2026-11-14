@@ -146,6 +146,7 @@ DEFAULTS = {
         "wake_words": [],           # more names that count as addressing it
         "learn_anonymous": True,    # give unknown voices a pseudonym and remember them
         "learn_notes": True,        # let the LLM keep notes on people and pick up their names
+        "tones": True,              # let it raise its voice or shout when the moment calls for it
         "opt_out_phrases": [],      # e.g. ["forget me"]: deletes the speaker's profile. Empty = off
         "context_overs": 12,        # recent overs shown to the LLM
         "min_over_s": 0.8,          # shorter overs (kerchunks) are ignored
@@ -178,8 +179,10 @@ DEFAULTS = {
             "backend": "ecapa",           # ecapa (SpeechBrain), or basic (numpy, rough; for testing)
             "match": None,                # similarity to count as the same person; null = backend default
             "update": None,               # above this, the over also refines their voiceprint
+            "new": None,                  # below this it's a new caller; between new and match, not sure
+            "merge": None,                # anonymous callers this alike are merged into one
             "min_enrol_s": 2.5,           # shortest over that can start a new voiceprint
-            "max_samples": 20,            # voiceprint samples kept per person
+            "max_samples": 30,            # voiceprint samples kept per person
             "model_dir": None,            # where the ecapa model is cached; null = <dir>/models
         },
         "llm": {
@@ -261,6 +264,10 @@ def load(path):
             p = path.resolve().parent / p
         cfg[section][key] = str(p)
     bot = cfg["bot"]
+    # persona: a bare name picks a built-in prompt (server/bot/prompts/<name>.md), e.g. "cb".
+    builtin = Path(__file__).resolve().parent / "bot" / "prompts" / f"{bot.get('persona')}.md"
+    if bot.get("persona") and "/" not in bot["persona"] and builtin.is_file():
+        bot["persona"] = str(builtin)
     for sub, key in (("tts", "voice"), (None, "persona")):
         holder = bot[sub] if sub else bot
         v = holder.get(key)

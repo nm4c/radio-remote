@@ -291,13 +291,20 @@ For each over it:
    transcription server.
 2. Works out who it was: a voiceprint (SpeechBrain ECAPA) compared with the people it knows.
    People you name are **known**. An unfamiliar voice is kept as **Caller N** and recognised next
-   time, and becomes **acquainted** once it hears their name.
+   time, and becomes **acquainted** once it hears their name. Each person's voiceprint keeps a
+   spread of their overs and matches on the closest few, so someone on two different radios is
+   still one person. Callers that turn out to have the same voice are merged. When it isn't sure,
+   it says so rather than guessing. A handle or name said on air beats the voice match.
+   To tune the thresholds (`bot.speaker`): `python -m server.bot people --similar`.
 3. Decides whether to say something: an LLM gets the persona, what it knows about the speaker
    (their notes), the last few overs and the new one. It runs on Ollama, on hailo-ollama on the
    AI HAT+ 2 (Pi 5), or on any OpenAI-compatible server. It can also add to the speaker's notes
    and pick up their name.
 4. Speaks: Piper offline (your own Australian voice: [docs/voice/README.md](docs/voice/README.md)),
-   or Azure, Google or ElevenLabs Australian voices over the internet.
+   or Azure, Google or ElevenLabs Australian voices over the internet. With `bot.tones` on, it
+   picks a tone for each reply: normal, raised or shout. It also hears when someone is shouting,
+   from the over's level against the channel's usual. A raised or shouted reply is faster, higher
+   and louder (the cloud voices), and is driven into the mic like someone yelling (every voice).
 
 <p align="center">
   <img src="docs/images/radpi-ai.png" alt="The AI agent panel in Approve mode: a reply waiting for Send or Discard, the live transcript with known and anonymous speakers, and the list of people it knows" width="70%">
@@ -315,7 +322,7 @@ The panel shows the live transcript with who said what and how sure it is. Contr
 
 Behaviour comes from the config and the persona prompt, not the code:
 
-- The persona: `bot.persona`, default `server/bot/prompts/banter.md`.
+- The persona: `bot.persona`. Built in: `banter` (friendly, the default) and `cb` (foul-mouthed, gives as good as it gets), in `server/bot/prompts/`; or a path to your own file.
 - When it speaks: `reply_policy` is `llm`, `always` or `addressed`.
 - Rate limits: `max_replies_per_hour`, `min_reply_gap_s`. They're off by default.
 - What it learns: `learn_anonymous`, `learn_notes`.

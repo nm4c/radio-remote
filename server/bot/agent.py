@@ -67,6 +67,17 @@ class BotOperator:
         pass
 
 
+def _delivery(loud_db):
+    """A word for the LLM on how the over sounded, from its level against the channel's usual."""
+    if loud_db is None:
+        return None
+    if loud_db >= 7:
+        return "very loud: shouting"
+    if loud_db >= 4:
+        return "loud: voice raised"
+    return None
+
+
 class Reply:
     def __init__(self, over_id, text, seq):
         self.id = secrets.token_hex(5)
@@ -102,6 +113,7 @@ class Agent:
         self.items = collections.OrderedDict()   # id -> item shown in the web page
         self.context = collections.deque(maxlen=int(b["context_overs"]))   # (t, who, text) for the LLM
         self.embeddings = collections.OrderedDict()  # over id -> (embedding, seconds), for enrolling
+        self.levels = collections.deque(maxlen=50)   # recent overs' speech level (dBFS), for "loud"
         self.seq = 0               # overs finished so far
         self.pending = None        # the Reply waiting to go on air
         self.sent_times = collections.deque()
@@ -190,6 +202,9 @@ class Agent:
         samples = to_float(pcm)
         item = {"id": over_id, "kind": "over", "t": started, "secs": round(seconds, 1), "text": None,
                 "person": None, "who": None, "who_kind": None, "score": None}
+        loud = self._loudness(samples)
+        if loud is not None:
+            item["loud_db"] = loud
         self._upsert(item)
         if b["keep_audio"]:
             day = self.dir / "audio" / time.strftime("%Y-%m-%d", time.localtime(started))
@@ -222,11 +237,14 @@ class Agent:
                 log.error("AI agent: speaker embedding: %s", e)
         if emb is not None:
             person, score = self.people.identify(emb)
-            if person is None and b["learn_anonymous"] and text and seconds >= float(b["speaker"]["min_enrol_s"]):
+            if (person is None and score < self.people.new and b["learn_anonymous"] and text
+                    and seconds >= float(b["speaker"]["min_enrol_s"])):
                 person = self.people.create(None, "anonymous", emb)
                 item["new_person"] = True
             elif person is not None and score >= self.people.update:
                 self.people.add_sample(person["id"], emb)
+                if person["kind"] == "anonymous":
+                    person = self._consolidate(person)
             self.embeddings[over_id] = (emb, seconds)
             while len(self.embeddings) > 100:
                 self.embeddings.popitem(last=False)
@@ -262,7 +280,8 @@ class Agent:
         who = label if not person or person["kind"] != "anonymous" else f"{label} (name not known yet)"
         history = list(self.context)[:-1]
         messages = brain.build_messages(self.persona, self.name, policy, bool(b["learn_notes"]), who,
-                                        notes, history, text)
+                                        notes, history, text, tones=bool(b["tones"]),
+                                        delivery=_delivery(item.get("loud_db")))
         t0 = time.monotonic()
         try:
             raw = await self.llm.chat(messages)
@@ -276,17 +295,14 @@ class Agent:
                   prompt_chars=sum(len(m["content"]) for m in messages), raw=raw, **out)
 
         # Learning.
+        if b["learn_notes"]:
+            # A name only counts if it was actually said in this over (small models sometimes
+            # offer the name of whoever was being talked to, or one from earlier on).
+            said = out["name"] if out["name"] and len(out["name"]) <= 40 and out["name"].lower() in lowered else None
+            if said:
+                person = self._said_name(said, person, score, emb, item, over_id)
         if person and b["learn_notes"]:
             changed = False
-            if out["name"] and person["kind"] == "anonymous" and len(out["name"]) <= 40:
-                existing = self.people.find_name(out["name"])
-                if existing:
-                    self.people.merge(person["id"], existing["id"])
-                    person = existing
-                else:
-                    self.people.rename(person["id"], out["name"], "acquainted")
-                self._log("learned_name", person=person["id"], name=out["name"], over=over_id)
-                changed = True
             if out["note"]:
                 self.people.add_note(person["id"], out["note"])
                 self._log("note", person=person["id"], note=out["note"], over=over_id)
@@ -302,7 +318,7 @@ class Agent:
             return
         self._set_stage("speaking")
         try:
-            samples = await tts.speak(self.voice, spoken)
+            samples = await tts.speak(self.voice, spoken, out["tone"])
         except Exception as e:
             log.error("AI agent: text to speech: %s", e)
             self._log("tts_error", over=over_id, error=str(e))
@@ -314,7 +330,7 @@ class Agent:
             samples[-fade:] *= np.linspace(1, 0, fade, dtype=np.float32)
         peak = float(np.max(np.abs(samples))) if len(samples) else 0
         reply.samples = samples * (float(b["level"]) / peak) if peak else samples
-        reply_item = {"id": reply.id, "kind": "reply", "t": time.time(), "text": reply.text, "over": over_id,
+        reply_item = {"id": reply.id, "kind": "reply", "t": time.time(), "text": reply.text, "tone": out["tone"], "over": over_id,
                       "secs": round(len(samples) / self.rate, 1), "status": "queued", "llm_ms": llm_ms}
         self._upsert(reply_item)
         if self.pending:
@@ -466,6 +482,78 @@ class Agent:
         self.head.bot_audit(c, "bot_enrol", name=name)
         self._broadcast(people=self.people.list())
         return None
+
+    def _loudness(self, samples):
+        """How much louder than the channel's usual this over was (dB), once it has heard a few.
+        Shouting into an FM rig mostly shows as the speech sitting hotter against the deviation
+        limit, so the level of the speech itself (its loudest half of 20 ms frames) is compared."""
+        frame = self.rate // 50
+        n = len(samples) // frame
+        if n < 10:
+            return None
+        rms = np.sqrt(np.mean(samples[:n * frame].reshape(n, frame) ** 2, axis=1))
+        speech = rms[rms >= np.median(rms)]
+        level = 20 * np.log10(float(np.mean(speech)) + 1e-9)
+        diff = round(level - float(np.median(self.levels)), 1) if len(self.levels) >= 5 else None
+        self.levels.append(level)
+        return diff
+
+    def _consolidate(self, person):
+        """Merge anonymous callers that turn out to have this person's voice."""
+        person, merges = self.people.consolidate(person["id"])
+        for src, dst in merges:
+            self._log("merged", person=src["id"], name=src["name"], into=dst["id"], into_name=dst["name"])
+            self._relabel(src["id"], dst)
+        if merges:
+            self._broadcast(people=self.people.list())
+        return person
+
+    def _said_name(self, name, person, score, emb, item, over_id):
+        """The speaker said their name or handle: that beats a voice match. Returns who it was."""
+        existing = self.people.find_name(name)
+        if person is None:
+            # Not sure from the voice (or no voice): the name settles it.
+            if existing:
+                person = existing
+            elif emb is not None:
+                person = self.people.create(name, "acquainted")
+            else:
+                return None
+            if emb is not None:
+                self.people.add_sample(person["id"], emb)
+            self.people.seen(person["id"])
+            self._log("learned_name", person=person["id"], name=name, over=over_id)
+        elif person["kind"] == "anonymous":
+            if existing:
+                self.people.merge(person["id"], existing["id"])
+                self._relabel(person["id"], existing)
+                person = existing
+            else:
+                person = self.people.rename(person["id"], name, "acquainted")
+            self._log("learned_name", person=person["id"], name=name, over=over_id)
+        elif existing and existing["id"] != person["id"] and (score is None or score < self.people.update):
+            # The voice said one person, they said they're someone else: believe them.
+            self._log("reassigned", over=over_id, person=existing["id"], name=name,
+                      voice=person["id"], voice_name=person["name"], score=score)
+            if emb is not None:
+                self.people.add_sample(existing["id"], emb)
+            self.people.seen(existing["id"])
+            person = existing
+        else:
+            return person
+        item.update(person=person["id"], who=person["name"], who_kind=person["kind"])
+        self._broadcast(items=[item], people=self.people.list())
+        if self.context and self.context[-1][2] == item.get("text"):
+            t, _, said = self.context[-1]
+            self.context[-1] = (t, person["name"], said)
+        return person
+
+    def _relabel(self, old_id, person):
+        """Show recent overs of a merged-away person under who they turned out to be."""
+        for it in self.items.values():
+            if it.get("kind") == "over" and it.get("person") == old_id:
+                it.update(person=person["id"], who=person["name"], who_kind=person["kind"])
+                self._broadcast(items=[it])
 
     def _set_stage(self, stage):
         if stage != self.stage:
